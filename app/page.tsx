@@ -18,18 +18,18 @@ export default function Landing() {
     return (
         <section
             id='hero'
-            className='w-dvw h-dvh flex flex-col items-center justify-center relative'
+            className='w-dvw h-dvh flex flex-col items-center justify-center relative p-4'
         >
             <Image
                 src={logo}
                 alt=''
-                className='h-30 w-auto'
+                className='h-24 md:h-30 w-auto'
                 loading='eager'
             />
             <motion.h1
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className='font-bold text-5xl text-center'
+                className='font-bold text-3xl md:text-5xl text-center'
             >
                 DeckyVault
             </motion.h1>
@@ -38,7 +38,7 @@ export default function Landing() {
                     opacity: 0,
                 }}
                 animate={{ opacity: 1, transition: { delay: 0.5 } }}
-                className='mt-4 flex flex-col items-center font-semibold text-2xl'
+                className='mt-4 flex flex-col items-center font-semibold text-lg md:text-2xl'
             >
                 <motion.span
                     key='intro'
@@ -64,7 +64,7 @@ export default function Landing() {
             <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 0.6, transition: { delay: 1 } }}
-                className='mt-4 text-center text-lg max-w-xl'
+                className='mt-4 text-center md:text-lg max-w-xl'
             >
                 Stay tuned for the launch of DeckyVault
             </motion.p>
