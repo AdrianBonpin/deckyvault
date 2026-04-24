@@ -1,65 +1,87 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+import { AnimatePresence, motion } from "motion/react"
+import { useState } from "react"
+import logo from "@/app/icon.png"
+import Image from "next/image"
+import Link from "next/link"
+
+export default function Landing() {
+    const words = ["benchmarks", "settings", "guides", "reviews"]
+
+    const [currentWord, setCurrentWord] = useState(0)
+
+    setTimeout(() => {
+        setCurrentWord((currentWord + 1) % words.length)
+    }, 2000)
+
+    return (
+        <section
+            id='hero'
+            className='w-dvw h-dvh flex flex-col items-center justify-center relative'
+        >
             <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+                src={logo}
+                alt=''
+                className='h-30 w-auto'
+                loading='eager'
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+            <motion.h1
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className='font-bold text-5xl text-center'
+            >
+                DeckyVault
+            </motion.h1>
+            <motion.h2
+                initial={{
+                    opacity: 0,
+                }}
+                animate={{ opacity: 1, transition: { delay: 0.5 } }}
+                className='mt-4 flex flex-col items-center font-semibold text-2xl'
+            >
+                <motion.span
+                    key='intro'
+                    className='text-center'
+                >
+                    A fast, modern browser for finding game
+                </motion.span>
+                <AnimatePresence
+                    mode='wait'
+                    initial={false}
+                >
+                    <motion.span
+                        key={currentWord}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className='text-primary font-bold'
+                    >
+                        {words[currentWord]}
+                    </motion.span>
+                </AnimatePresence>
+            </motion.h2>
+            <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.6, transition: { delay: 1 } }}
+                className='mt-4 text-center text-lg max-w-xl'
+            >
+                Stay tuned for the launch of DeckyVault
+            </motion.p>
+            <motion.small
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1, transition: { delay: 1.5 } }}
+                className='absolute bottom-4 text-center text-xs flex flex-row gap-1'
+            >
+                <span className='opacity-60'>2026 DeckyVault.</span>
+                <Link
+                    title='Visit our Github Repository'
+                    href='https://github.com/AdrianBonpin/deckyvault'
+                    className='text-accent opacity-60 hover:opacity-100 transition-opacity'
+                >
+                    Github.
+                </Link>
+            </motion.small>
+        </section>
+    )
 }

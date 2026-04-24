@@ -3,7 +3,7 @@
   "version": "2026.0.1",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -19,6 +19,7 @@
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "elysia": "^1.4.28",
+    "lucide-react": "^1.11.0",
     "motion": "^12.38.0",
     "next": "16.2.4",
     "pg": "^8.20.0",

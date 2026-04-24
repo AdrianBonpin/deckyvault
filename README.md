@@ -2,11 +2,11 @@
 
 An open-source, community-driven database for Steam Deck (OLED & LCD) and Steam Machine compatibility, performance metrics, and settings.
 
-[//]: # "Add shields here if available: e.g., license, contributors, last commit"
+> **Note:** DeckyVault is currently under active development. The site is live at [deckyvault.xyz](https://deckyvault.xyz) but features are being built incrementally. Stay tuned!
 
 ## Why DeckyVault?
 
-Gaming on the Steam Deck is incredible, but finding reliable, detailed answers about whether a game will run well—or how to optimize it—can be frustrating. Existing resources are often fragmented, outdated, or lack the depth the community needs.
+Gaming on the Steam Deck is incredible, but finding reliable, detailed answers about whether a game will run well — or how to optimize it — can be frustrating. Existing resources are often fragmented, outdated, or lack the depth the community needs.
 
 **DeckyVault** aims to solve this by being the definitive, community-first hub for Steam Deck performance data.
 
@@ -33,36 +33,49 @@ Gaming on the Steam Deck is incredible, but finding reliable, detailed answers a
 
 ## Tech Stack
 
-- **[Next.js](https://nextjs.org)** — React framework for production
-- **[React](https://react.dev)** — UI library
+- **[Next.js 16](https://nextjs.org)** — React framework (App Router)
+- **[React 19](https://react.dev)** — UI library
 - **[TypeScript](https://www.typescriptlang.org)** — Type safety
-- **[Tailwind CSS](https://tailwindcss.com)** — Utility-first styling *(verify in your local setup)*
+- **[Tailwind CSS v4](https://tailwindcss.com)** — Utility-first styling
+- **[Elysia](https://elysiajs.com)** — Backend API framework
+- **[Drizzle ORM](https://orm.drizzle.team)** — Type-safe database queries
+- **[PostgreSQL](https://www.postgresql.org)** — Primary database
+- **[better-auth](https://better-auth.com)** — Authentication (Google & Discord OAuth)
+- **[Tiptap](https://tiptap.dev)** — Rich text editor
+- **[Motion](https://motion.dev)** — Animations
+- **[AWS S3](https://aws.amazon.com/s3/)** — File storage
+- **[Bun](https://bun.sh)** — Package manager & runtime
 
 ## Getting Started
 
-First, clone the repository and install dependencies:
+Clone the repository and install dependencies:
 
 ```bash
-npm install
-# or
-yarn install
-# or
-pnpm install
+bun install
 ```
 
-Then, run the development server:
+Copy the environment file and configure your values:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Run the development server:
 
-You can start editing the pages by modifying files in the `app/` directory. The page auto-updates as you edit the file.
+```bash
+bun run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to see the result.
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `bun run dev` | Start development server (HTTPS) |
+| `bun run build` | Create production build |
+| `bun run start` | Start production server |
+| `bun run lint` | Run ESLint |
 
 ## Contributing
 
@@ -73,7 +86,7 @@ We welcome contributions of all kinds! Whether you want to:
 - Improve the design
 - Contribute code
 
-Feel free to open an [issue](../../issues) or submit a [pull request](../../pulls).
+Feel free to open an [issue](https://github.com/AdrianBonpin/deckyvault/issues) or submit a [pull request](https://github.com/AdrianBonpin/deckyvault/pulls).
 
 If you're interested in helping develop or design the project, don't hesitate to reach out!
 
