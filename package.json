@@ -23,7 +23,6 @@
     "better-auth": "^1.6.9",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
-    "echarts": "^6.0.0",
     "elysia": "^1.4.28",
     "lucide-react": "^1.11.0",
     "motion": "^12.38.0",
