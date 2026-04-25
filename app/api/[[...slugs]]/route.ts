@@ -1,5 +1,6 @@
 import { Elysia } from "elysia"
 import { auth } from "@/lib/auth"
+import { rateLimit } from "@/lib/auth/rate-limit"
 import { healthRoutes } from "@/lib/api/health"
 
 const betterAuth = new Elysia({ name: "better-auth" })
@@ -31,6 +32,7 @@ export const app = new Elysia({ prefix: "/api" })
       error: code === "NOT_FOUND" ? "Not found" : "Internal server error",
     }
   })
+  .use(rateLimit(60, 100))
   .use(betterAuth)
   .use(healthRoutes)
   .get("/", () => ({
