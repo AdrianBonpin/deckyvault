@@ -3,6 +3,8 @@ import { admin, emailOTP, lastLoginMethod } from 'better-auth/plugins'
 import { passkey } from '@better-auth/passkey'
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { db } from '@/lib/db/index'
+import { ac, admin as adminRole, contributor, user } from '@/lib/auth/permissions'
+import { sendOTP, OTP_EXPIRY_SECONDS } from '@/lib/auth/email'
 
 export const auth = betterAuth({
     experimental: { joins: true },
@@ -12,18 +14,30 @@ export const auth = betterAuth({
     plugins: [
         emailOTP({
             async sendVerificationOTP({ email, otp, type }) {
-                if (type === 'sign-in') {
-                    // TODO: send the OTP to the user's email address
-                } else if (type === 'email-verification') {
-                    // TODO: send the OTP to the user's email address for email verification
-                } else {
-                    // TODO: send the OTP to the user's email address for password reset
-                }
-            }
+                await sendOTP({ email, otp, type })
+            },
+            otpLength: 6,
+            expiresIn: OTP_EXPIRY_SECONDS,
+            allowedAttempts: 5,
         }),
-        passkey(),
-        lastLoginMethod(),
-        admin()
+        passkey({
+            rpID: process.env.RP_ID ?? 'localhost',
+            rpName: 'DeckyVault',
+            origin: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
+        }),
+        lastLoginMethod({
+            storeInDatabase: true,
+        }),
+        admin({
+            ac,
+            roles: {
+                admin: adminRole,
+                contributor,
+                user,
+            },
+            defaultRole: 'user',
+            adminRoles: ['admin'],
+        }),
     ],
     socialProviders: {
         google: {
@@ -55,5 +69,8 @@ export const auth = betterAuth({
             trustedProviders: ['google', 'discord'],
             allowDifferentEmails: true
         }
-    }
+    },
+    emailAndPassword: {
+        enabled: true,
+    },
 })
