@@ -1,5 +1,25 @@
 import { Elysia } from "elysia"
+import { auth } from "@/lib/auth"
 import { healthRoutes } from "@/lib/api/health"
+
+const betterAuth = new Elysia({ name: "better-auth" })
+  .mount(auth.handler)
+  .macro({
+    auth: {
+      async resolve({ status, request: { headers } }) {
+        const session = await auth.api.getSession({
+          headers,
+        })
+
+        if (!session) return status(401)
+
+        return {
+          user: session.user,
+          session: session.session,
+        }
+      },
+    },
+  })
 
 export const app = new Elysia({ prefix: "/api" })
   .onError(({ code, error, set, request }) => {
@@ -11,6 +31,7 @@ export const app = new Elysia({ prefix: "/api" })
       error: code === "NOT_FOUND" ? "Not found" : "Internal server error",
     }
   })
+  .use(betterAuth)
   .use(healthRoutes)
   .get("/", () => ({
     name: "DeckyVault API",
