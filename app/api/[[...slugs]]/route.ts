@@ -1,8 +1,22 @@
 import { Elysia } from "elysia"
 import { auth } from "@/lib/auth"
 import { rateLimit } from "@/lib/auth/rate-limit"
-import { healthRoutes } from "@/lib/api/health"
-import { userRoutes } from "@/lib/api/user"
+import {
+  healthRoutes,
+  userRoutes,
+  gamesRoutes,
+  gameVersionsRoutes,
+  hardwareRoutes,
+  performanceRoutes,
+  performanceVerifyRoutes,
+  settingCategoriesRoutes,
+  settingDefinitionsRoutes,
+  settingsFullRoutes,
+  presetsRoutes,
+  presetUpvoteRoutes,
+  presetSettingsRoutes,
+  commentsRoutes,
+} from "@/lib/api"
 
 const betterAuth = new Elysia({ name: "better-auth" })
   .mount(auth.handler)
@@ -25,18 +39,40 @@ const betterAuth = new Elysia({ name: "better-auth" })
 
 export const app = new Elysia({ prefix: "/api" })
   .onError(({ code, error, set, request }) => {
-    console.error(`[API Error] ${code} ${request.url}`,
-      error instanceof Error ? error.message : error
+    console.error(
+      `[API Error] ${code} ${request.url}`,
+      error instanceof Error ? error.message : error,
     )
     set.status = code === "NOT_FOUND" ? 404 : 500
     return {
       error: code === "NOT_FOUND" ? "Not found" : "Internal server error",
     }
   })
-  .use(healthRoutes)
   .use(rateLimit(60, 100))
   .use(betterAuth)
+  // Health
+  .use(healthRoutes)
+  // Users
   .use(userRoutes)
+  // Games + Versions
+  .use(gamesRoutes)
+  .use(gameVersionsRoutes)
+  // Hardware
+  .use(hardwareRoutes)
+  // Performance
+  .use(performanceRoutes)
+  .use(performanceVerifyRoutes)
+  // Settings
+  .use(settingCategoriesRoutes)
+  .use(settingDefinitionsRoutes)
+  .use(settingsFullRoutes)
+  // Presets
+  .use(presetsRoutes)
+  .use(presetUpvoteRoutes)
+  .use(presetSettingsRoutes)
+  // Comments
+  .use(commentsRoutes)
+  // Root
   .get("/", () => ({
     name: "DeckyVault API",
     version: "2026.0.1",
