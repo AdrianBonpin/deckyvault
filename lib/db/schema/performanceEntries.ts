@@ -8,6 +8,7 @@ import {
 } from "drizzle-orm/pg-core"
 import { gameVersions } from "./gameVersions"
 import { hardware } from "./hardware"
+import { user } from "./auth"
 
 export const performanceEntries = pgTable("performance_entries", {
   id: text("id")
@@ -19,7 +20,9 @@ export const performanceEntries = pgTable("performance_entries", {
   hardwareSlug: text("hardware_slug")
     .notNull()
     .references(() => hardware.slug, { onDelete: "restrict" }),
-  userId: text("user_id").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
 
   // Performance metrics
   fpsAvg: real("fps_avg").notNull(),
