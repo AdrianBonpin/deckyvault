@@ -2,6 +2,8 @@ import type { Metadata } from "next"
 import { Lexend } from "next/font/google"
 import "./globals.css"
 import Script from "next/script"
+import Navbar from "@/components/navbar"
+import { Suspense } from "react"
 
 const font = Lexend({
     variable: "--font-lexend",
@@ -80,7 +82,10 @@ export default function RootLayout({
             lang='en'
             className={`${font.variable} bg-background text-text antialiased overscroll-none`}
         >
-            <body className='min-h-full flex flex-col relative'>
+            <body className='min-h-full w-dvw flex flex-col relative'>
+                <Suspense>
+                    <Navbar />
+                </Suspense>
                 {children}
                 <Script
                     src='https://analytics.ranlabs.space/api/script.js'

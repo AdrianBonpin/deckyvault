@@ -8,6 +8,8 @@
     --color-secondary: #571b8b;
     --color-accent: #fb793c;
     --color-text: #ebe4f1;
+    --color-border: color-mix(in srgb, var(--color-text) 20%, transparent);
+    --color-border-active: color-mix(in srgb, var(--color-text) 60%, transparent);
 
     /* Defaults */
     --default-transition-duration: 0.3s;
