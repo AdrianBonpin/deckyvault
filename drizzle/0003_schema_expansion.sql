@@ -3,8 +3,6 @@ CREATE TYPE "game_source" AS ENUM ('steam', 'manual', 'gog', 'epic');
 CREATE TYPE "online_multiplayer_status" AS ENUM ('none', 'supported', 'unknown');
 CREATE TYPE "fsr_version" AS ENUM ('none', 'fsr1', 'fsr2', 'fsr3');
 CREATE TYPE "frame_gen_method" AS ENUM ('none', 'fsr_fg', 'dlss_fg');
-CREATE TYPE "setting_input_type" AS ENUM ('toggle', 'select', 'range', 'number');
-CREATE TYPE "impact_level" AS ENUM ('minor', 'moderate', 'major');
 
 -- Alter games table
 ALTER TABLE "games" ALTER COLUMN "steam_app_id" DROP NOT NULL;
@@ -35,31 +33,6 @@ CREATE INDEX "perf_user_idx" ON "performance_entries" ("user_id");
 -- Alter hardware table
 ALTER TABLE "hardware" ADD COLUMN "sort_order" integer DEFAULT 0 NOT NULL;
 
--- New table: setting_categories
-CREATE TABLE "setting_categories" (
-	"id" text PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
-	"slug" text NOT NULL,
-	"sort_order" integer DEFAULT 0 NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "setting_categories_slug_unique" UNIQUE("slug")
-);
-
--- New table: setting_definitions
-CREATE TABLE "setting_definitions" (
-	"id" text PRIMARY KEY NOT NULL,
-	"category_id" text NOT NULL,
-	"name" text NOT NULL,
-	"slug" text NOT NULL,
-	"input_type" "setting_input_type" NOT NULL,
-	"options" jsonb,
-	"impact_level" "impact_level" DEFAULT 'minor' NOT NULL,
-	"sort_order" integer DEFAULT 0 NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "setting_category_slug_unique" UNIQUE("category_id","slug")
-);
-ALTER TABLE "setting_definitions" ADD CONSTRAINT "setting_definitions_category_id_setting_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "setting_categories"("id") ON DELETE cascade;
-
 -- New table: community_presets
 CREATE TABLE "community_presets" (
 	"id" text PRIMARY KEY NOT NULL,
@@ -69,6 +42,7 @@ CREATE TABLE "community_presets" (
 	"description" text,
 	"created_by" text,
 	"upvotes" integer DEFAULT 0 NOT NULL,
+	"settings_json" jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "preset_game_hardware_name_unique" UNIQUE("game_id","hardware_slug","name")
@@ -76,18 +50,6 @@ CREATE TABLE "community_presets" (
 ALTER TABLE "community_presets" ADD CONSTRAINT "community_presets_game_id_games_id_fk" FOREIGN KEY ("game_id") REFERENCES "games"("id") ON DELETE cascade;
 ALTER TABLE "community_presets" ADD CONSTRAINT "community_presets_hardware_slug_hardware_slug_fk" FOREIGN KEY ("hardware_slug") REFERENCES "hardware"("slug") ON DELETE restrict;
 ALTER TABLE "community_presets" ADD CONSTRAINT "community_presets_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "user"("id") ON DELETE set null;
-
--- New table: preset_settings
-CREATE TABLE "preset_settings" (
-	"id" text PRIMARY KEY NOT NULL,
-	"preset_id" text NOT NULL,
-	"setting_definition_id" text NOT NULL,
-	"value" jsonb NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "preset_setting_unique" UNIQUE("preset_id","setting_definition_id")
-);
-ALTER TABLE "preset_settings" ADD CONSTRAINT "preset_settings_preset_id_community_presets_id_fk" FOREIGN KEY ("preset_id") REFERENCES "community_presets"("id") ON DELETE cascade;
-ALTER TABLE "preset_settings" ADD CONSTRAINT "preset_settings_setting_definition_id_setting_definitions_id_fk" FOREIGN KEY ("setting_definition_id") REFERENCES "setting_definitions"("id") ON DELETE cascade;
 
 -- New table: game_comments
 CREATE TABLE "game_comments" (

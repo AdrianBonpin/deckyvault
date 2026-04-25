@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia"
 import { createCrudRoutes } from "./crud-builder"
-import { communityPresets, presetSettings, settingDefinitions } from "@/lib/db/schema"
+import { communityPresets } from "@/lib/db/schema"
 import { db } from "@/lib/db/index"
 import { eq, sql } from "drizzle-orm"
 import { requireRole } from "@/lib/auth/guard"
@@ -57,40 +57,33 @@ export const presetUpvoteRoutes = new Elysia({ prefix: "/presets" }).post(
 )
 
 // ── Preset Settings (nested under /presets/:presetId/settings) ────
+// Settings are stored as freeform JSON on the preset itself.
 export const presetSettingsRoutes = new Elysia({
   prefix: "/presets/:presetId/settings",
 })
-  // LIST all settings for a preset (with definition details)
+  // GET the settings JSON for a preset
   .get(
     "/",
-    async ({ params }) => {
-      const data = await db
-        .select({
-          id: presetSettings.id,
-          presetId: presetSettings.presetId,
-          settingDefinitionId: presetSettings.settingDefinitionId,
-          value: presetSettings.value,
-          settingName: settingDefinitions.name,
-          settingSlug: settingDefinitions.slug,
-          inputType: settingDefinitions.inputType,
-          options: settingDefinitions.options,
-          impactLevel: settingDefinitions.impactLevel,
-        })
-        .from(presetSettings)
-        .innerJoin(
-          settingDefinitions,
-          eq(presetSettings.settingDefinitionId, settingDefinitions.id),
-        )
-        .where(eq(presetSettings.presetId, params.presetId))
+    async ({ params, set }) => {
+      const [preset] = await db
+        .select({ settingsJson: communityPresets.settingsJson })
+        .from(communityPresets)
+        .where(eq(communityPresets.id, params.presetId))
+        .limit(1)
 
-      return data
+      if (!preset) {
+        set.status = 404
+        return { error: "Preset not found" }
+      }
+
+      return preset.settingsJson ?? []
     },
     {
       params: t.Object({ presetId: t.String() }),
     },
   )
-  // UPSERT settings for a preset (bulk create/update)
-  .post(
+  // PUT (replace) the settings JSON for a preset
+  .put(
     "/",
     async ({ params, body, request, set }) => {
       const guard = await requireRole(request.headers, [
@@ -120,36 +113,29 @@ export const presetSettingsRoutes = new Elysia({
         return { error: "Not authorized to modify this preset" }
       }
 
-      // Delete existing settings and re-insert
-      await db
-        .delete(presetSettings)
-        .where(eq(presetSettings.presetId, params.presetId))
+      const [updated] = await db
+        .update(communityPresets)
+        .set({
+          settingsJson: body.settings,
+          updatedAt: new Date(),
+        })
+        .where(eq(communityPresets.id, params.presetId))
+        .returning()
 
-      if (body.settings.length > 0) {
-        await db.insert(presetSettings).values(
-          body.settings.map((s: { settingDefinitionId: string; value: boolean | string | number }) => ({
-            presetId: params.presetId,
-            settingDefinitionId: s.settingDefinitionId,
-            value: s.value,
-          })),
-        )
-      }
-
-      // Return the updated settings
-      const data = await db
-        .select()
-        .from(presetSettings)
-        .where(eq(presetSettings.presetId, params.presetId))
-
-      return data
+      return updated
     },
     {
       params: t.Object({ presetId: t.String() }),
       body: t.Object({
         settings: t.Array(
           t.Object({
-            settingDefinitionId: t.String(),
-            value: t.Union([t.Boolean(), t.String(), t.Number()]),
+            category: t.String(),
+            settings: t.Array(
+              t.Object({
+                title: t.String(),
+                value: t.Union([t.String(), t.Number(), t.Boolean()]),
+              }),
+            ),
           }),
         ),
       }),

@@ -4,11 +4,6 @@ export { gamesRoutes, gameVersionsRoutes } from "./games"
 export { hardwareRoutes } from "./hardware"
 export { performanceRoutes, performanceVerifyRoutes } from "./performance"
 export {
-  settingCategoriesRoutes,
-  settingDefinitionsRoutes,
-  settingsFullRoutes,
-} from "./settings"
-export {
   presetsRoutes,
   presetUpvoteRoutes,
   presetSettingsRoutes,
