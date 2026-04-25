@@ -13,6 +13,8 @@ CREATE INDEX "games_source_idx" ON "games" ("source");
 -- Alter performance_entries table
 ALTER TABLE "performance_entries" ADD COLUMN "fsr_version" "fsr_version" DEFAULT 'none' NOT NULL;
 ALTER TABLE "performance_entries" ADD COLUMN "frame_gen_method" "frame_gen_method" DEFAULT 'none' NOT NULL;
+ALTER TABLE "performance_entries" ADD COLUMN "upvotes" integer DEFAULT 0 NOT NULL;
+ALTER TABLE "performance_entries" ADD COLUMN "downvotes" integer DEFAULT 0 NOT NULL;
 ALTER TABLE "performance_entries" ADD COLUMN "verified_at" timestamp;
 ALTER TABLE "performance_entries" ADD COLUMN "verified_by" text;
 

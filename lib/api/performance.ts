@@ -1,8 +1,8 @@
 import { Elysia, t } from "elysia"
 import { createCrudRoutes } from "./crud-builder"
-import { performanceEntries, games, gameVersions } from "@/lib/db/schema"
+import { performanceEntries, games, gameVersions, hardware, user } from "@/lib/db/schema"
 import { db } from "@/lib/db/index"
-import { eq, and, sql } from "drizzle-orm"
+import { eq, and, desc, sql } from "drizzle-orm"
 import { requireRole } from "@/lib/auth/guard"
 
 // ── Performance Entries CRUD ──────────────────────────────────────
@@ -58,6 +58,169 @@ export const performanceVerifyRoutes = new Elysia({
     },
     {
       params: t.Object({ id: t.String() }),
+    },
+  )
+  // ── Upvote ────────────────────────────────────────────────────────
+  .post(
+    "/:id/upvote",
+    async ({ params, request, set }) => {
+      const guard = await requireRole(request.headers, [
+        "user",
+        "contributor",
+        "admin",
+      ])
+      if (!guard.ok) {
+        set.status = guard.status
+        return { error: guard.error }
+      }
+
+      const [updated] = await db
+        .update(performanceEntries)
+        .set({
+          upvotes: sql`${performanceEntries.upvotes} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(performanceEntries.id, params.id),
+            eq(performanceEntries.isRemoved, false),
+          ),
+        )
+        .returning()
+
+      if (!updated) {
+        set.status = 404
+        return { error: "Performance entry not found" }
+      }
+
+      return updated
+    },
+    {
+      params: t.Object({ id: t.String() }),
+    },
+  )
+  // ── Downvote ──────────────────────────────────────────────────────
+  .post(
+    "/:id/downvote",
+    async ({ params, request, set }) => {
+      const guard = await requireRole(request.headers, [
+        "user",
+        "contributor",
+        "admin",
+      ])
+      if (!guard.ok) {
+        set.status = guard.status
+        return { error: guard.error }
+      }
+
+      const [updated] = await db
+        .update(performanceEntries)
+        .set({
+          downvotes: sql`${performanceEntries.downvotes} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(performanceEntries.id, params.id),
+            eq(performanceEntries.isRemoved, false),
+          ),
+        )
+        .returning()
+
+      if (!updated) {
+        set.status = 404
+        return { error: "Performance entry not found" }
+      }
+
+      return updated
+    },
+    {
+      params: t.Object({ id: t.String() }),
+    },
+  )
+  // ── Best entry: highest-rated for latest version ──────────────────
+  .get(
+    "/best",
+    async ({ query, set }) => {
+      const { gameId, hardwareSlug } = query as {
+        gameId?: string
+        hardwareSlug?: string
+      }
+
+      if (!gameId) {
+        set.status = 400
+        return { error: "gameId query parameter is required" }
+      }
+
+      // Find the latest version for this game
+      const [latestVersion] = await db
+        .select()
+        .from(gameVersions)
+        .where(
+          and(eq(gameVersions.gameId, gameId), eq(gameVersions.isLatest, true)),
+        )
+        .limit(1)
+
+      if (!latestVersion) {
+        set.status = 404
+        return { error: "No versions found for this game" }
+      }
+
+      const conditions = [
+        eq(performanceEntries.versionId, latestVersion.id),
+        eq(performanceEntries.isRemoved, false),
+      ]
+
+      if (hardwareSlug) {
+        conditions.push(eq(performanceEntries.hardwareSlug, hardwareSlug))
+      }
+
+      const [bestEntry] = await db
+        .select({
+          id: performanceEntries.id,
+          versionId: performanceEntries.versionId,
+          hardwareSlug: performanceEntries.hardwareSlug,
+          fpsAvg: performanceEntries.fpsAvg,
+          fpsLow: performanceEntries.fpsLow,
+          fpsHigh: performanceEntries.fpsHigh,
+          fsrVersion: performanceEntries.fsrVersion,
+          frameGenMethod: performanceEntries.frameGenMethod,
+          settingsJson: performanceEntries.settingsJson,
+          userNotes: performanceEntries.userNotes,
+          upvotes: performanceEntries.upvotes,
+          downvotes: performanceEntries.downvotes,
+          verifiedAt: performanceEntries.verifiedAt,
+          createdAt: performanceEntries.createdAt,
+          userName: user.name,
+          userImage: user.image,
+          hardwareName: hardware.name,
+          versionString: gameVersions.versionString,
+        })
+        .from(performanceEntries)
+        .innerJoin(user, eq(performanceEntries.userId, user.id))
+        .innerJoin(hardware, eq(performanceEntries.hardwareSlug, hardware.slug))
+        .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+        .where(and(...conditions))
+        .orderBy(
+          desc(
+            sql`${performanceEntries.upvotes} - ${performanceEntries.downvotes}`,
+          ),
+          desc(performanceEntries.upvotes),
+        )
+        .limit(1)
+
+      if (!bestEntry) {
+        set.status = 404
+        return { error: "No performance entries found" }
+      }
+
+      return bestEntry
+    },
+    {
+      query: t.Object({
+        gameId: t.String(),
+        hardwareSlug: t.Optional(t.String()),
+      }),
     },
   )
   // ── Stats endpoint: aggregated performance for a game+hardware combo ──

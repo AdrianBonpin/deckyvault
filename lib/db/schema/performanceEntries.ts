@@ -1,5 +1,6 @@
 import {
   boolean,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -67,6 +68,10 @@ export const performanceEntries = pgTable(
     // Moderation
     isRemoved: boolean("is_removed").default(false).notNull(),
     removedReason: text("removed_reason"),
+
+    // Community rating
+    upvotes: integer("upvotes").default(0).notNull(),
+    downvotes: integer("downvotes").default(0).notNull(),
 
     // Verification (admin/mod workflow)
     verifiedAt: timestamp("verified_at"),
