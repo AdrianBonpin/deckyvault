@@ -69,10 +69,7 @@ export const rateLimit = (
     }
 
     // These headers are informational — clients can use them to throttle
-    set.headers = {
-      ...set.headers,
-      "X-RateLimit-Limit": String(max),
-      "X-RateLimit-Remaining": String(result.remaining),
-      "X-RateLimit-Reset": String(Math.ceil(result.resetAt / 1000)),
-    }
+    set.headers["X-RateLimit-Limit"] = String(max)
+    set.headers["X-RateLimit-Remaining"] = String(result.remaining)
+    set.headers["X-RateLimit-Reset"] = String(Math.ceil(result.resetAt / 1000))
   })

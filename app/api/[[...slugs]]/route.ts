@@ -2,6 +2,7 @@ import { Elysia } from "elysia"
 import { auth } from "@/lib/auth"
 import { rateLimit } from "@/lib/auth/rate-limit"
 import { healthRoutes } from "@/lib/api/health"
+import { userRoutes } from "@/lib/api/user"
 
 const betterAuth = new Elysia({ name: "better-auth" })
   .mount(auth.handler)
@@ -35,6 +36,7 @@ export const app = new Elysia({ prefix: "/api" })
   .use(rateLimit(60, 100))
   .use(betterAuth)
   .use(healthRoutes)
+  .use(userRoutes)
   .get("/", () => ({
     name: "DeckyVault API",
     version: "2026.0.1",
