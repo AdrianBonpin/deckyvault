@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest"
-import { testAuth, getTestHelpers } from "@/lib/auth/test"
+import { getTestHelpers } from "@/lib/auth/test"
 import type { TestHelpers } from "better-auth/plugins"
 
 describe("Better-Auth integration", () => {
