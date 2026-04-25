@@ -1,12 +1,11 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Loader2 } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import {
     loginEmailSchema,
     loginSchema,
-    type LoginInput,
 } from "@/lib/auth/validation"
 import SocialButtons from "./social-buttons"
 import Link from "next/link"
@@ -221,7 +220,7 @@ export default function LoginForm() {
             )}
 
             <p className="text-center text-xs text-[#ebe4f1]/50">
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <Link
                     href="/signup"
                     className="text-[#eb3779] hover:underline"

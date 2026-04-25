@@ -5,7 +5,6 @@ import { Lock, Loader2, ArrowLeft } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import {
     forgotPasswordSchema,
-    type ForgotPasswordInput,
 } from "@/lib/auth/validation"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -51,7 +50,7 @@ export default function ForgotPasswordForm() {
                     Forgot your password?
                 </h1>
                 <p className="text-xs text-[#ebe4f1]/50 mt-1 leading-relaxed">
-                    Enter your email and we'll send you a verification code to
+                    Enter your email and we&apos;ll send you a verification code to
                     reset your password.
                 </p>
             </div>

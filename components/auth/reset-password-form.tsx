@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import {
     Mail,
     CheckCircle2,
@@ -10,7 +10,6 @@ import {
 import { authClient } from "@/lib/auth-client"
 import {
     resetPasswordSchema,
-    type ResetPasswordInput,
 } from "@/lib/auth/validation"
 import OtpInput from "./otp-input"
 import PasswordStrengthMeter from "./password-strength"
@@ -30,14 +29,11 @@ export default function ResetPasswordForm({
     const [isLoading, setIsLoading] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
     const [resendTimer, setResendTimer] = useState(300)
-    const [canResend, setCanResend] = useState(false)
+    const canResend = resendTimer <= 0
 
     // Countdown timer
     useEffect(() => {
-        if (resendTimer <= 0) {
-            setCanResend(true)
-            return
-        }
+        if (resendTimer <= 0) return
         const interval = setInterval(() => {
             setResendTimer((prev) => prev - 1)
         }, 1000)
@@ -65,9 +61,10 @@ export default function ResetPasswordForm({
         }
 
         setIsLoading(true)
-        const { error } = await authClient.resetPassword({
-            newPassword,
+        const { error } = await authClient.emailOtp.resetPassword({
+            email,
             otp,
+            password: newPassword,
         })
         setIsLoading(false)
 
@@ -87,7 +84,6 @@ export default function ResetPasswordForm({
         setError("")
         await authClient.emailOtp.requestPasswordReset({ email })
         setResendTimer(300)
-        setCanResend(false)
     }
 
     if (isSuccess) {

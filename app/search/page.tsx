@@ -7,7 +7,6 @@ import {
   ExternalLinkIcon,
   Gamepad2Icon,
   MessageSquareIcon,
-  MonitorIcon,
   SettingsIcon,
   TrendingUpIcon,
   DatabaseIcon,
@@ -50,13 +49,11 @@ function SearchContent() {
   const [results, setResults] = useState<UnifiedResult[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const isValidQuery = query && query.length >= 2
+
   // Handle direct navigation / browser back-forward
   useEffect(() => {
-    if (!query || query.length < 2) {
-      setResults([])
-      setError(null)
-      return
-    }
+    if (!isValidQuery) return
 
     let cancelled = false
 
@@ -85,7 +82,7 @@ function SearchContent() {
     return () => {
       cancelled = true
     }
-  }, [query])
+  }, [isValidQuery, query])
 
   function handleClick(result: UnifiedResult) {
     const path = result.appId
@@ -114,7 +111,7 @@ function SearchContent() {
             : "Enter a game name or AppID to find benchmarks, settings, and reviews."}
         </motion.p>
 
-        {!query && (
+        {!isValidQuery && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -127,7 +124,7 @@ function SearchContent() {
           </motion.div>
         )}
 
-        {query && loading && (
+        {isValidQuery && loading && (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <motion.div
               animate={{ rotate: 360 }}
@@ -140,7 +137,7 @@ function SearchContent() {
           </div>
         )}
 
-        {query && !loading && error && (
+        {isValidQuery && !loading && error && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -150,7 +147,7 @@ function SearchContent() {
           </motion.div>
         )}
 
-        {query && !loading && !error && results.length === 0 && (
+        {isValidQuery && !loading && !error && results.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -163,7 +160,7 @@ function SearchContent() {
           </motion.div>
         )}
 
-        {query && !loading && !error && results.length > 0 && (
+        {isValidQuery && !loading && !error && results.length > 0 && (
           <motion.div
             className="flex flex-col gap-3"
             initial="hidden"

@@ -49,7 +49,7 @@ export default function PasskeySetupStep({
                     Set up a passkey
                 </h1>
                 <p className="text-xs text-[#ebe4f1]/50 mt-1 leading-relaxed">
-                    Sign in faster with biometrics or your device's security
+                    Sign in faster with biometrics or your device&apos;s security
                     key. No password needed.
                 </p>
             </div>

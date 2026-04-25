@@ -9,7 +9,7 @@ import { CircleXIcon, Gamepad2Icon, MenuIcon, XIcon } from "lucide-react"
 import { routes } from "@/lib/routes"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useDebounce } from "@/lib/hooks/useDebounce"
-import { authClient } from "@/lib/auth-client"
+import { authClient, useSession } from "@/lib/auth-client"
 import { LogOut, User } from "lucide-react"
 
 export default function Navbar() {
@@ -27,13 +27,14 @@ export default function Navbar() {
     const inputRef = useRef<HTMLInputElement>(null)
 
     const { data: session, isPending: isSessionLoading } =
-        authClient.useSession()
+        useSession()
     const [userMenuOpen, setUserMenuOpen] = useState(false)
 
     // Sync search query with URL ?q= param
     useEffect(() => {
         const q = searchParams.get("q") || ""
-        setSearchQuery(q)
+        const timeout = setTimeout(() => setSearchQuery(q), 0)
+        return () => clearTimeout(timeout)
     }, [searchParams])
 
     // Update URL when debounced query changes (skip if already matches)
@@ -61,13 +62,16 @@ export default function Navbar() {
             sessionStorage.getItem("focusSearch") === "true"
         ) {
             sessionStorage.removeItem("focusSearch")
-            setForceFocusStyles(true)
+            const focusTimeout = setTimeout(() => setForceFocusStyles(true), 0)
             // Focus the input after the layout animation element mounts
             requestAnimationFrame(() => {
                 inputRef.current?.focus()
             })
             const timer = setTimeout(() => setForceFocusStyles(false), 450)
-            return () => clearTimeout(timer)
+            return () => {
+                clearTimeout(focusTimeout)
+                clearTimeout(timer)
+            }
         }
     }, [isLanding, searchQuery])
 
@@ -200,9 +204,12 @@ export default function Navbar() {
                                 className='flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/[0.05] transition-colors'
                             >
                                 {session.user.image ? (
-                                    <img
+                                    <Image
                                         src={session.user.image}
                                         alt=''
+                                        width={28}
+                                        height={28}
+                                        unoptimized
                                         className='h-7 w-7 rounded-full'
                                     />
                                 ) : (
@@ -320,9 +327,12 @@ export default function Navbar() {
                                     <div className='space-y-3'>
                                         <div className='flex items-center gap-2'>
                                             {session.user.image ? (
-                                                <img
+                                                <Image
                                                     src={session.user.image}
                                                     alt=''
+                                                    width={32}
+                                                    height={32}
+                                                    unoptimized
                                                     className='h-8 w-8 rounded-full'
                                                 />
                                             ) : (

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
-import { signupSchema, type SignupInput } from "@/lib/auth/validation"
+import { signupSchema } from "@/lib/auth/validation"
 import SocialButtons from "./social-buttons"
 import PasswordStrengthMeter from "./password-strength"
 import Link from "next/link"
@@ -61,7 +61,7 @@ export default function SignupFormStep({ onSuccess }: SignupFormStepProps) {
                     Create your account
                 </h1>
                 <p className="text-xs text-[#ebe4f1]/50 mt-1">
-                    Choose how you'd like to sign up
+                    Choose how you&apos;d like to sign up
                 </p>
             </div>
 

@@ -53,7 +53,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
     )
 
     // Fetch platform support + anti-cheat for local games
-    let platformSupportMap = new Map<
+    const platformSupportMap = new Map<
       string,
       {
         isSupported: boolean

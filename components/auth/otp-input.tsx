@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, useCallback, useEffect } from "react"
+import { useRef, useCallback, useMemo } from "react"
 
 interface OtpInputProps {
     length?: number
@@ -17,23 +17,18 @@ export default function OtpInput({
     disabled = false,
     error,
 }: OtpInputProps) {
-    const [digits, setDigits] = useState<string[]>(
-        value.split("").concat(Array(length).fill("")).slice(0, length),
+    const digits = useMemo(
+        () =>
+            value
+                .split("")
+                .concat(Array(length).fill(""))
+                .slice(0, length),
+        [value, length],
     )
     const refs = useRef<(HTMLInputElement | null)[]>([])
 
-    // Sync with external value
-    useEffect(() => {
-        const newDigits = value
-            .split("")
-            .concat(Array(length).fill(""))
-            .slice(0, length)
-        setDigits(newDigits)
-    }, [value, length])
-
     const updateDigits = useCallback(
         (newDigits: string[]) => {
-            setDigits(newDigits)
             onChange(newDigits.join(""))
         },
         [onChange],

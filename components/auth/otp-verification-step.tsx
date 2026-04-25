@@ -20,14 +20,11 @@ export default function OtpVerificationStep({
     const [error, setError] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [resendTimer, setResendTimer] = useState(300) // 5 minutes
-    const [canResend, setCanResend] = useState(false)
+    const canResend = resendTimer <= 0
 
     // Countdown timer
     useEffect(() => {
-        if (resendTimer <= 0) {
-            setCanResend(true)
-            return
-        }
+        if (resendTimer <= 0) return
         const interval = setInterval(() => {
             setResendTimer((prev) => prev - 1)
         }, 1000)
@@ -40,37 +37,33 @@ export default function OtpVerificationStep({
         return `${mins}:${secs.toString().padStart(2, "0")}`
     }
 
-    const handleVerify = useCallback(async () => {
-        if (otp.length !== 6) return
+    const handleVerify = useCallback(
+        async (otpValue: string) => {
+            if (otpValue.length !== 6) return
 
-        setIsLoading(true)
-        setError("")
+            setIsLoading(true)
+            setError("")
 
-        const { error } = await authClient.emailOtp.verifyEmail({
-            email,
-            otp,
-        })
+            const { error } = await authClient.emailOtp.verifyEmail({
+                email,
+                otp: otpValue,
+            })
 
-        setIsLoading(false)
+            setIsLoading(false)
 
-        if (error) {
-            setError(
-                error.code === "TOO_MANY_ATTEMPTS"
-                    ? "Too many attempts. Please request a new code."
-                    : "Invalid code. Please try again.",
-            )
-            return
-        }
+            if (error) {
+                setError(
+                    error.code === "TOO_MANY_ATTEMPTS"
+                        ? "Too many attempts. Please request a new code."
+                        : "Invalid code. Please try again.",
+                )
+                return
+            }
 
-        onSuccess()
-    }, [otp, email, onSuccess])
-
-    // Auto-submit when all digits entered
-    useEffect(() => {
-        if (otp.length === 6) {
-            handleVerify()
-        }
-    }, [otp, handleVerify])
+            onSuccess()
+        },
+        [email, onSuccess],
+    )
 
     const handleResend = async () => {
         setError("")
@@ -79,7 +72,6 @@ export default function OtpVerificationStep({
             type: "email-verification",
         })
         setResendTimer(300)
-        setCanResend(false)
     }
 
     return (
@@ -101,7 +93,12 @@ export default function OtpVerificationStep({
                 </label>
                 <OtpInput
                     value={otp}
-                    onChange={setOtp}
+                    onChange={(value) => {
+                        setOtp(value)
+                        if (value.length === 6) {
+                            handleVerify(value)
+                        }
+                    }}
                     disabled={isLoading}
                     error={error}
                 />
@@ -126,7 +123,7 @@ export default function OtpVerificationStep({
             </div>
 
             <button
-                onClick={handleVerify}
+                onClick={() => handleVerify(otp)}
                 disabled={isLoading || otp.length !== 6}
                 className="w-full py-2.5 rounded-lg bg-[#eb3779] text-white text-sm font-semibold hover:bg-[#eb3779]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
