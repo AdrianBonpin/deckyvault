@@ -17,7 +17,7 @@ export default function Navbar() {
 
     const isLanding = pathname === "/"
 
-    const [searchQuery, setSearchQuery] = useState("")
+    const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") || "")
     const debouncedQuery = useDebounce(searchQuery, 300)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [isFocused, setIsFocused] = useState(false)
@@ -35,6 +35,8 @@ export default function Navbar() {
         if (isLanding) return
         const currentQ = searchParams.get("q") || ""
         if (debouncedQuery === currentQ) return
+        // Don't overwrite URL if the typed query hasn't debounced yet
+        if (searchQuery !== debouncedQuery) return
 
         const params = new URLSearchParams(searchParams.toString())
         if (debouncedQuery) {
@@ -43,7 +45,7 @@ export default function Navbar() {
             params.delete("q")
         }
         router.replace(`/search?${params.toString()}`, { scroll: false })
-    }, [debouncedQuery, isLanding, router, searchParams])
+    }, [debouncedQuery, isLanding, router, searchParams, searchQuery])
 
     // Maintain focus & styles when flying from landing page search
     useEffect(() => {

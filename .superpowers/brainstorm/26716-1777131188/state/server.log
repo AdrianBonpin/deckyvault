@@ -1,0 +1,7 @@
+{"type":"server-started","port":54158,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:54158","screen_dir":"/Users/adrianbonpin/Documents/Code/personal/deckyvault/.superpowers/brainstorm/26716-1777131188/content","state_dir":"/Users/adrianbonpin/Documents/Code/personal/deckyvault/.superpowers/brainstorm/26716-1777131188/state"}
+{"type":"screen-added","file":"/Users/adrianbonpin/Documents/Code/personal/deckyvault/.superpowers/brainstorm/26716-1777131188/content/auth-layout.html"}
+{"type":"screen-added","file":"/Users/adrianbonpin/Documents/Code/personal/deckyvault/.superpowers/brainstorm/26716-1777131188/content/signup-wizard.html"}
+{"type":"screen-added","file":"/Users/adrianbonpin/Documents/Code/personal/deckyvault/.superpowers/brainstorm/26716-1777131188/content/login-flow.html"}
+{"type":"screen-added","file":"/Users/adrianbonpin/Documents/Code/personal/deckyvault/.superpowers/brainstorm/26716-1777131188/content/password-reset.html"}
+{"type":"screen-added","file":"/Users/adrianbonpin/Documents/Code/personal/deckyvault/.superpowers/brainstorm/26716-1777131188/content/waiting.html"}
+{"type":"server-stopped","reason":"idle timeout"}

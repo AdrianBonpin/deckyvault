@@ -4,12 +4,12 @@ import { games } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 
 interface SteamAppDetails {
+  type?: string
   steam_appid: number
   name: string
   developers?: string[]
   publishers?: string[]
   header_image?: string
-  capsule_imagev5?: string
   genres?: { id: string; description: string }[]
   website?: string
 }
@@ -50,6 +50,13 @@ export const gameStubRoutes = new Elysia({ prefix: "/games" }).post(
           details = entry.data
         }
       }
+
+      // Reject non-games (DLCs, soundtracks, demos, etc.)
+      if (details?.type && details.type !== "game") {
+        set.status = 400
+        return { error: `Not a game (type: ${details.type})` }
+     
+      }
     } catch (err) {
       console.error("Failed to fetch Steam appdetails:", err)
     }
@@ -60,7 +67,7 @@ export const gameStubRoutes = new Elysia({ prefix: "/games" }).post(
     const genres = details?.genres?.map((g) => g.description) || []
     const headerImage = details?.header_image || null
     const capsuleImage =
-      details?.capsule_imagev5 || details?.header_image || null
+      `https://cdn.akamai.steamstatic.com/steam/apps/${body.steamAppId}/library_600x900.jpg`
 
     const [game] = await db
       .insert(games)

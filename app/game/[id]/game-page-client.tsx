@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import Image from "next/image"
 import {
   Gamepad2Icon,
@@ -61,20 +61,23 @@ export function GamePageClient({
   platformSupport: PlatformSupport[]
 }) {
   const [activeTab, setActiveTab] = useState<TabKey>("overview")
+  const [imgError, setImgError] = useState(false)
+  const handleImgError = useCallback(() => setImgError(true), [])
 
-  const headerImage = game.headerImage || game.capsuleImage
+  const headerImage = game.capsuleImage || game.headerImage
 
   return (
     <section className="w-full flex flex-col">
       {/* Hero */}
       <div className="relative w-full h-48 sm:h-64 md:h-80 overflow-hidden">
-        {headerImage ? (
+        {headerImage && !imgError ? (
           <Image
             src={headerImage}
             alt={game.title}
             fill
             className="object-cover"
             priority
+            onError={handleImgError}
           />
         ) : (
           <div className="w-full h-full bg-text/10 flex items-center justify-center">

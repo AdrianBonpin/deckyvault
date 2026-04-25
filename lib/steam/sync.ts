@@ -8,7 +8,6 @@ interface SteamAppDetails {
   developers?: string[]
   publishers?: string[]
   header_image?: string
-  capsule_imagev5?: string
   genres?: { id: string; description: string }[]
   website?: string
   short_description?: string
@@ -59,7 +58,7 @@ export async function syncSteamGame(steamAppId: number): Promise<void> {
         description: d.short_description || null,
         genres: d.genres?.map((g) => g.description) || [],
         headerImage: d.header_image || null,
-        capsuleImage: d.capsule_imagev5 || d.header_image || null,
+        capsuleImage: `https://cdn.akamai.steamstatic.com/steam/apps/${steamAppId}/library_600x900.jpg`,
         storeUrl: `https://store.steampowered.com/app/${steamAppId}`,
         lastSync: new Date(),
         syncStatus: "synced",

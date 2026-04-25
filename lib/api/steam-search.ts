@@ -38,11 +38,36 @@ export const steamSearchRoutes = new Elysia({ prefix: "/search" })
 
         const data = await res.json()
 
+        const items: SteamSearchItem[] = (data.items || []).filter(
+          (item: SteamSearchItem) => {
+            const name = item.name.toLowerCase()
+            const exclude = [
+              "soundtrack",
+              " original soundtrack",
+              " ost",
+              " - ost",
+              "dlc",
+              "expansion",
+              "season pass",
+              " deluxe edition",
+              " ultimate edition",
+              " premium edition",
+              " demo",
+              " trial",
+              " playtest",
+              " beta",
+              " artbook",
+              " soundtrack bundle",
+            ]
+            return !exclude.some((kw) => name.includes(kw))
+          },
+        )
+
         return {
-          items: (data.items || []).map((item: SteamSearchItem) => ({
+          items: items.map((item) => ({
             appId: item.id,
             title: item.name,
-            image: item.tiny_image,
+            image: `https://cdn.akamai.steamstatic.com/steam/apps/${item.id}/library_600x900.jpg`,
             platforms: item.platforms,
             metascore: item.metascore,
           })),

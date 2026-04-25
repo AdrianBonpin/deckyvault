@@ -39,23 +39,27 @@ async function createGameStub(steamAppId: number) {
     const data = (await res.json()) as Record<
       string,
       { success: boolean; data: {
+        type?: string
         name: string
         developers?: string[]
         publishers?: string[]
         genres?: { description: string }[]
         header_image?: string
-        capsule_imagev5?: string
         short_description?: string
       } }
     >
     const entry = data[String(steamAppId)]
     if (entry?.success && entry.data) {
+      // Reject non-games (DLCs, soundtracks, demos, etc.)
+      if (entry.data.type && entry.data.type !== "game") {
+        notFound()
+      }
       title = entry.data.name
       developer = entry.data.developers?.[0] ?? null
       publisher = entry.data.publishers?.[0] ?? null
       genres = entry.data.genres?.map((g) => g.description) ?? []
       headerImage = entry.data.header_image ?? null
-      capsuleImage = entry.data.capsule_imagev5 ?? entry.data.header_image ?? null
+      capsuleImage = `https://cdn.akamai.steamstatic.com/steam/apps/${steamAppId}/library_600x900.jpg`
       description = entry.data.short_description ?? null
     }
   }

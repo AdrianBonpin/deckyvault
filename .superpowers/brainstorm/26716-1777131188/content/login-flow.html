@@ -1,0 +1,124 @@
+<h2>Login Flow — Email-First with Conditional Passkey</h2>
+<p class="subtitle">Two-phase login: email check → password/passkey</p>
+
+<div class="section">
+  <h3>Phase 1: Email Entry</h3>
+  <div class="mockup">
+    <div class="mockup-header">Login — Initial Screen</div>
+    <div class="mockup-body" style="background: #100b14; padding: 20px; min-height: 380px;">
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px; max-width: 380px; margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 18px; font-weight: bold; color: #ebe4f1;">Welcome back</div>
+          <div style="font-size: 12px; color: rgba(235,228,241,0.5); margin-top: 4px;">Sign in to DeckyVault</div>
+        </div>
+        
+        <!-- Social buttons -->
+        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+          <button style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: #ebe4f1; font-size: 13px;">🔵 Google</button>
+          <button style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: #ebe4f1; font-size: 13px;">🟣 Discord</button>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 12px; margin: 16px 0;">
+          <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.08);"></div>
+          <span style="font-size: 11px; color: rgba(235,228,241,0.4);">or continue with email</span>
+          <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.08);"></div>
+        </div>
+        
+        <!-- Email only — NO password field yet -->
+        <label style="font-size: 12px; color: rgba(235,228,241,0.6); display: block; margin-bottom: 4px;">Email</label>
+        <input style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: #ebe4f1; font-size: 14px; margin-bottom: 16px; box-sizing: border-box;" placeholder="you@example.com" autocomplete="username webauthn" />
+        
+        <button style="width: 100%; padding: 10px; border-radius: 8px; border: none; background: #eb3779; color: white; font-size: 14px; font-weight: 600;">Continue</button>
+        
+        <div style="text-align: center; margin-top: 14px; font-size: 12px;">
+          <span style="color: rgba(235,228,241,0.5);">Don't have an account? </span>
+          <a style="color: #eb3779;">Create one</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="background: rgba(34,197,94,0.05); border: 1px solid rgba(34,197,94,0.15); border-radius: 8px; padding: 12px; margin-top: 12px;">
+    <p style="color: rgba(235,228,241,0.7); font-size: 12px; margin: 0;">
+      <strong>Key:</strong> Only email field is shown initially. The <code>autocomplete="username webauthn"</code> attribute enables passkey conditional UI — browsers with passkey support will offer to autofill passkey credentials.
+    </p>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Phase 2a: Email Exists → Password Entry</h3>
+  <div class="mockup">
+    <div class="mockup-header">Login — Password Step (email exists)</div>
+    <div class="mockup-body" style="background: #100b14; padding: 20px; min-height: 380px;">
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px; max-width: 380px; margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 18px; font-weight: bold; color: #ebe4f1;">Welcome back</div>
+          <div style="font-size: 12px; color: rgba(235,228,241,0.5); margin-top: 4px;">Signing in as <strong style="color: #ebe4f1;">user@example.com</strong> <a style="color: #eb3779; font-size: 11px; cursor: pointer;">change</a></div>
+        </div>
+        
+        <!-- Password field with autocomplete for passkey conditional UI -->
+        <label style="font-size: 12px; color: rgba(235,228,241,0.6); display: block; margin-bottom: 4px;">Password</label>
+        <input style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); color: #ebe4f1; font-size: 14px; margin-bottom: 8px; box-sizing: border-box;" type="password" placeholder="Enter your password" autocomplete="current-password webauthn" />
+        
+        <div style="text-align: right; margin-bottom: 16px;">
+          <a style="font-size: 12px; color: rgba(235,228,241,0.5);">Forgot password?</a>
+        </div>
+        
+        <button style="width: 100%; padding: 10px; border-radius: 8px; border: none; background: #eb3779; color: white; font-size: 14px; font-weight: 600;">Sign in</button>
+        
+        <!-- Passkey autofill hint -->
+        <div style="margin-top: 12px; padding: 10px; border-radius: 8px; background: rgba(235,55,121,0.05); border: 1px solid rgba(235,55,121,0.1); text-align: center;">
+          <div style="font-size: 12px; color: rgba(235,228,241,0.6);">🔑 Your browser may offer to sign in with a passkey</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="background: rgba(34,197,94,0.05); border: 1px solid rgba(34,197,94,0.15); border-radius: 8px; padding: 12px; margin-top: 12px;">
+    <p style="color: rgba(235,228,241,0.7); font-size: 12px; margin: 0;">
+      <strong>Conditional UI:</strong> The password field has <code>autocomplete="current-password webauthn"</code>. On mount, we call <code>authClient.signIn.passkey({ autoFill: true })</code> to preload passkeys. Browsers that support Conditional UI (Chrome, Safari, Edge) will show a passkey autofill dropdown when the user interacts with the password field.
+    </p>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Phase 2b: Email NOT Found → Error + Signup Link</h3>
+  <div class="mockup">
+    <div class="mockup-header">Login — Email Not Found</div>
+    <div class="mockup-body" style="background: #100b14; padding: 20px; min-height: 380px;">
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px; max-width: 380px; margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 18px; font-weight: bold; color: #ebe4f1;">Welcome back</div>
+          <div style="font-size: 12px; color: rgba(235,228,241,0.5); margin-top: 4px;">Sign in to DeckyVault</div>
+        </div>
+        
+        <!-- Email with error state -->
+        <label style="font-size: 12px; color: rgba(235,228,241,0.6); display: block; margin-bottom: 4px;">Email</label>
+        <input style="width: 100%; padding: 10px 12px; border-radius: 8px; border: 2px solid #ef4444; background: rgba(239,68,68,0.05); color: #ebe4f1; font-size: 14px; margin-bottom: 8px; box-sizing: border-box;" value="unknown@example.com" />
+        
+        <!-- Error message -->
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 16px;">
+          <span style="color: #ef4444; font-size: 14px;">⚠</span>
+          <span style="font-size: 12px; color: #ef4444;">No account found with this email.</span>
+          <a style="font-size: 12px; color: #eb3779; white-space: nowrap; font-weight: 600;">Create one →</a>
+        </div>
+        
+        <button style="width: 100%; padding: 10px; border-radius: 8px; border: none; background: #eb3779; color: white; font-size: 14px; font-weight: 600;">Continue</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>How Email Check Works</h3>
+  <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 16px;">
+    <ol style="color: rgba(235,228,241,0.7); font-size: 13px; margin: 0; padding-left: 20px; line-height: 1.8;">
+      <li>User enters email and clicks "Continue"</li>
+      <li>Client calls <code>authClient.signIn.email()</code> with email + empty password</li>
+      <li>Better-auth returns an error if email doesn't exist</li>
+      <li>If error: show "No account found" with signup link</li>
+      <li>If email exists: transition to password field with email displayed</li>
+    </ol>
+    <p style="color: rgba(235,228,241,0.5); font-size: 11px; margin: 12px 0 0 0;">
+      <strong>Note:</strong> We use <code>signIn.email()</code> as the check mechanism rather than a separate endpoint. This avoids leaking whether an email exists via a dedicated check API.
+    </p>
+  </div>
+</div>

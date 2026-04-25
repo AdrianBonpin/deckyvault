@@ -1,6 +1,12 @@
 import { Elysia, t } from "elysia"
 import { db } from "@/lib/db/index"
-import { games, gameVersions, performanceEntries, communityPresets, gameComments } from "@/lib/db/schema"
+import {
+  games,
+  gameVersions,
+  performanceEntries,
+  communityPresets,
+  gameComments,
+} from "@/lib/db/schema"
 import { ilike, or, sql, eq, inArray } from "drizzle-orm"
 
 interface SteamSearchItem {
@@ -8,7 +14,9 @@ interface SteamSearchItem {
   name: string
   tiny_image: string
   metascore: string
+  price?: { currency: string; initial: number; final: number }
   platforms: { windows: boolean; mac: boolean; linux: boolean }
+  controller_support?: string
 }
 
 interface SteamSearchResponse {
@@ -43,6 +51,42 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
     const localSteamAppIds = new Set(
       localGames.map((g) => g.steamAppId).filter(Boolean),
     )
+
+    // Fetch platform support + anti-cheat for local games
+    let platformSupportMap = new Map<
+      string,
+      {
+        isSupported: boolean
+        protonStatus: string
+        antiCheatRelevant: boolean
+        antiCheatName: string | null
+        antiCheatStatus: string
+      }
+    >()
+    if (localGameIds.length > 0) {
+      const { gamePlatformSupport } = await import("@/lib/db/schema")
+      const supportRows = await db
+        .select({
+          gameId: gamePlatformSupport.gameId,
+          isSupported: gamePlatformSupport.isSupported,
+          protonStatus: gamePlatformSupport.protonStatus,
+          antiCheatRelevant: gamePlatformSupport.antiCheatRelevant,
+          antiCheatName: gamePlatformSupport.antiCheatName,
+          antiCheatStatus: gamePlatformSupport.antiCheatStatus,
+        })
+        .from(gamePlatformSupport)
+        .where(inArray(gamePlatformSupport.gameId, localGameIds))
+
+      for (const row of supportRows) {
+        platformSupportMap.set(row.gameId, {
+          isSupported: row.isSupported,
+          protonStatus: row.protonStatus,
+          antiCheatRelevant: row.antiCheatRelevant,
+          antiCheatName: row.antiCheatName,
+          antiCheatStatus: row.antiCheatStatus,
+        })
+      }
+    }
 
     // ── 2. Count related data for local games ───────────────────────
     let benchmarkCounts: { gameId: string; count: number }[] = []
@@ -115,19 +159,40 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
       })
       if (res.ok) {
         const data = (await res.json()) as SteamSearchResponse
-        steamItems = data.items || []
+        steamItems = (data.items || []).filter((item) => {
+          const name = item.name.toLowerCase()
+          const exclude = [
+            "soundtrack",
+            " original soundtrack",
+            " ost",
+            " - ost",
+            "dlc",
+            "expansion",
+            "season pass",
+            " deluxe edition",
+            " ultimate edition",
+            " premium edition",
+            " demo",
+            " trial",
+            " playtest",
+            " beta",
+            " artbook",
+            " soundtrack bundle",
+          ]
+          return !exclude.some((kw) => name.includes(kw))
+        })
       }
     } catch {
       // Steam search failure is non-fatal
     }
 
     // ── 4. Build unified results ────────────────────────────────────
-    // Local games first (they have data), then Steam-only results
     const results = []
 
     // Add local games
     for (const g of localGames) {
       const counts = countMap.get(g.id)!
+      const platform = platformSupportMap.get(g.id)
       results.push({
         kind: "local" as const,
         id: g.id,
@@ -136,23 +201,47 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
         image: g.capsuleImage || g.headerImage,
         developer: g.developer,
         publisher: g.publisher,
+        description: g.description,
+        genres: g.genres,
         source: g.source,
         counts,
+        platformSupport: platform
+          ? {
+              isSupported: platform.isSupported,
+              protonStatus: platform.protonStatus,
+              antiCheatRelevant: platform.antiCheatRelevant,
+              antiCheatName: platform.antiCheatName,
+              antiCheatStatus: platform.antiCheatStatus,
+            }
+          : null,
       })
     }
 
-    // Add Steam-only games (deduplicated against local steamAppIds)
+    // Add Steam-only games
     for (const item of steamItems) {
       if (localSteamAppIds.has(item.id)) continue
       results.push({
         kind: "steam" as const,
         appId: item.id,
         title: item.name,
-        image: item.tiny_image,
+        image: `https://cdn.akamai.steamstatic.com/steam/apps/${item.id}/library_600x900.jpg`,
         developer: null,
         publisher: null,
+        description: null,
+        genres: null,
         source: "steam" as const,
         counts: null,
+        platformSupport: null,
+        metascore: item.metascore || null,
+        price: item.price
+          ? {
+              currency: item.price.currency,
+              initial: item.price.initial,
+              final: item.price.final,
+            }
+          : null,
+        platforms: item.platforms,
+        controllerSupport: item.controller_support || null,
       })
     }
 
