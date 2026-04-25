@@ -1,8 +1,8 @@
-import { Elysia, t } from "elysia"
+import { Elysia } from "elysia"
 import { createCrudRoutes } from "./crud-builder"
 import { settingCategories, settingDefinitions } from "@/lib/db/schema"
 import { db } from "@/lib/db/index"
-import { eq, asc } from "drizzle-orm"
+import { asc } from "drizzle-orm"
 
 // ── Setting Categories CRUD ───────────────────────────────────────
 export const settingCategoriesRoutes = createCrudRoutes(settingCategories, {

@@ -22,7 +22,7 @@ export const gameComments = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    parentId: text("parent_id").references((): any => gameComments.id, {
+    parentId: text("parent_id").references((): any => gameComments.id, { // eslint-disable-line @typescript-eslint/no-explicit-any
       onDelete: "cascade",
     }),
     // Tiptap JSON document

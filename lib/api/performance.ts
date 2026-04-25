@@ -2,7 +2,7 @@ import { Elysia, t } from "elysia"
 import { createCrudRoutes } from "./crud-builder"
 import { performanceEntries, games, gameVersions } from "@/lib/db/schema"
 import { db } from "@/lib/db/index"
-import { eq, and, desc, sql } from "drizzle-orm"
+import { eq, and, sql } from "drizzle-orm"
 import { requireRole } from "@/lib/auth/guard"
 
 // ── Performance Entries CRUD ──────────────────────────────────────
@@ -84,7 +84,7 @@ export const performanceVerifyRoutes = new Elysia({
         conditions.push(eq(performanceEntries.hardwareSlug, hardwareSlug))
       }
       if (fsrVersion) {
-        conditions.push(eq(performanceEntries.fsrVersion, fsrVersion as any))
+        conditions.push(eq(performanceEntries.fsrVersion, fsrVersion as any)) // eslint-disable-line @typescript-eslint/no-explicit-any
       }
 
       // Join through gameVersions to get to games

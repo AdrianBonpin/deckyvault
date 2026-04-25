@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Elysia, t } from "elysia"
 import { db } from "@/lib/db/index"
 import { getTableColumns } from "drizzle-orm"
@@ -44,6 +45,7 @@ export type CrudAuthConfig = {
  * @param config.filter - Exact-match filter configuration
  * @param config.name - Human-readable name for error messages
  * @param config.primaryKey - Column name used as primary key (default: "id")
+ * @param config.paramName - URL parameter name (defaults to primaryKey)
  * @param config.softDelete - If true, DELETE sets isRemoved=true instead of deleting
  */
 export function createCrudRoutes<T extends AnyPgTable>(
@@ -55,6 +57,7 @@ export function createCrudRoutes<T extends AnyPgTable>(
     filter?: CrudFilterConfig
     name?: string
     primaryKey?: string
+    paramName?: string
     softDelete?: boolean
   },
 ) {
@@ -65,6 +68,7 @@ export function createCrudRoutes<T extends AnyPgTable>(
     filter,
     name = "resource",
     primaryKey = "id",
+    paramName = primaryKey,
     softDelete = false,
   } = config
 
@@ -152,9 +156,9 @@ export function createCrudRoutes<T extends AnyPgTable>(
 
   // ── GET BY ID ─────────────────────────────────────────────────────
   routes.get(
-    `/:${primaryKey}`,
+    `/:${paramName}`,
     async ({ params, set }) => {
-      const id = (params as any)[primaryKey]
+      const id = (params as any)[paramName]
 
       const [record] = await db
         .select()
@@ -171,7 +175,7 @@ export function createCrudRoutes<T extends AnyPgTable>(
     },
     {
       params: t.Object({
-        [primaryKey]: t.String(),
+        [paramName]: t.String(),
       }),
     },
   )
@@ -206,7 +210,7 @@ export function createCrudRoutes<T extends AnyPgTable>(
 
   // ── UPDATE ────────────────────────────────────────────────────────
   routes.patch(
-    `/:${primaryKey}`,
+    `/:${paramName}`,
     async ({ params, body, request, set }) => {
       const roleMap: Record<string, string[]> = {
         user: ["user", "contributor", "admin"],
@@ -221,7 +225,7 @@ export function createCrudRoutes<T extends AnyPgTable>(
         return { error: guard.error }
       }
 
-      const id = (params as any)[primaryKey]
+      const id = (params as any)[paramName]
 
       // Add updatedAt if column exists
       const updateData = columns["updatedAt"]
@@ -243,7 +247,7 @@ export function createCrudRoutes<T extends AnyPgTable>(
     },
     {
       params: t.Object({
-        [primaryKey]: t.String(),
+        [paramName]: t.String(),
       }),
       body: t.Record(t.String(), t.Any()),
     },
@@ -251,7 +255,7 @@ export function createCrudRoutes<T extends AnyPgTable>(
 
   // ── DELETE ────────────────────────────────────────────────────────
   routes.delete(
-    `/:${primaryKey}`,
+    `/:${paramName}`,
     async ({ params, request, set }) => {
       const guard = await requireRole(request.headers, [authConfig.delete])
 
@@ -260,7 +264,7 @@ export function createCrudRoutes<T extends AnyPgTable>(
         return { error: guard.error }
       }
 
-      const id = (params as any)[primaryKey]
+      const id = (params as any)[paramName]
 
       if (softDelete && columns["isRemoved"]) {
         const [updated] = (await db
@@ -291,7 +295,7 @@ export function createCrudRoutes<T extends AnyPgTable>(
     },
     {
       params: t.Object({
-        [primaryKey]: t.String(),
+        [paramName]: t.String(),
       }),
     },
   )

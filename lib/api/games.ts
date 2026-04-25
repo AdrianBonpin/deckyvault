@@ -12,6 +12,7 @@ export const gamesRoutes = createCrudRoutes(games, {
   auth: { read: "public", write: "contributor", delete: "admin" },
   search: { fields: ["title", "developer", "publisher"] },
   filter: { fields: ["source", "onlineMultiplayerStatus", "syncStatus"] },
+  paramName: "gameId",
 })
 
 // ── Game Versions (nested under /games/:gameId/versions) ──────────

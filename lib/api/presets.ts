@@ -12,11 +12,12 @@ export const presetsRoutes = createCrudRoutes(communityPresets, {
   auth: { read: "public", write: "user", delete: "admin" },
   search: { fields: ["name", "description"] },
   filter: { fields: ["gameId", "hardwareSlug"] },
+  paramName: "presetId",
 })
 
 // ── Upvote endpoint ───────────────────────────────────────────────
 export const presetUpvoteRoutes = new Elysia({ prefix: "/presets" }).post(
-  "/:id/upvote",
+  "/:presetId/upvote",
   async ({ params, request, set }) => {
     const guard = await requireRole(request.headers, [
       "user",
@@ -31,7 +32,7 @@ export const presetUpvoteRoutes = new Elysia({ prefix: "/presets" }).post(
     const [preset] = await db
       .select()
       .from(communityPresets)
-      .where(eq(communityPresets.id, params.id))
+      .where(eq(communityPresets.id, params.presetId))
       .limit(1)
 
     if (!preset) {
@@ -45,13 +46,13 @@ export const presetUpvoteRoutes = new Elysia({ prefix: "/presets" }).post(
         upvotes: sql`${communityPresets.upvotes} + 1`,
         updatedAt: new Date(),
       })
-      .where(eq(communityPresets.id, params.id))
+      .where(eq(communityPresets.id, params.presetId))
       .returning()
 
     return updated
   },
   {
-    params: t.Object({ id: t.String() }),
+    params: t.Object({ presetId: t.String() }),
   },
 )
 
