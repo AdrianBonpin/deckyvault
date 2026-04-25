@@ -22,6 +22,13 @@
       "when": 1777096891299,
       "tag": "0002_square_slayback",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777089104475,
+      "tag": "0003_schema_expansion",
+      "breakpoints": true
     }
   ]
 }

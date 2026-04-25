@@ -1,7 +1,12 @@
-// Barrel export — will be populated as schema files are created
+// Barrel export — domain + auth schemas
 export * from "./auth"
 export * from "./games"
 export * from "./gameVersions"
 export * from "./hardware"
 export * from "./performanceEntries"
 export * from "./gamePlatformSupport"
+export * from "./settingCategories"
+export * from "./settingDefinitions"
+export * from "./communityPresets"
+export * from "./presetSettings"
+export * from "./gameComments"
