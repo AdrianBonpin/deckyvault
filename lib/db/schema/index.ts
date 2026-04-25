@@ -2,5 +2,6 @@
 export * from "./games"
 export * from "./gameVersions"
 export * from "./hardware"
-export * from "./performanceEntries"
-export * from "./gamePlatformSupport"
+// TODO: uncomment when files are created in Chunk 3
+// export * from "./performanceEntries"
+// export * from "./gamePlatformSupport"
