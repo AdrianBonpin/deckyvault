@@ -2,7 +2,6 @@
 
 import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import { motion } from "motion/react"
 import { Gamepad2Icon } from "lucide-react"
 
 function SearchContent() {
@@ -11,9 +10,9 @@ function SearchContent() {
 
     return (
         <section className="w-full min-h-[calc(100vh-3.6rem)] flex flex-col items-center p-4 md:px-[10svw]">
-            <div className="w-full max-w-4xl mt-8">
-                <h1 className="text-2xl font-bold mb-2">
-                    {query ? `Search results for "${query}"` : "Search"}
+            <div className="w-full max-w-7xl">
+                <h1 className="text-2xl font-light mb-2">
+                    {query ? `results for "${query}"` : "search using game name or appid"}
                 </h1>
                 <p className="text-text/60 text-sm mb-8">
                     {query

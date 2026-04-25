@@ -134,7 +134,21 @@ export default function Navbar() {
                             />
                             <motion.button>
                                 <CircleXIcon
-                                    onClick={() => setSearchQuery("")}
+                                    onClick={() => {
+                                        setSearchQuery("")
+                                        if (!isLanding) {
+                                            const params = new URLSearchParams(
+                                                searchParams.toString(),
+                                            )
+                                            params.delete("q")
+                                            router.replace(
+                                                `/search?${params.toString()}`,
+                                                {
+                                                    scroll: false,
+                                                },
+                                            )
+                                        }
+                                    }}
                                     className={`h-3 w-3 transition-color cursor-default hover:stroke-accent transition-all ${
                                         isFocused || forceFocusStyles
                                             ? "opacity-100"
