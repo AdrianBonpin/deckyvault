@@ -45,3 +45,5 @@ certificates
 
 # Drizzle Kit state (not migration files)
 drizzle/meta/
+
+/docs/superpowers
