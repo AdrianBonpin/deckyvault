@@ -9,6 +9,8 @@ import { CircleXIcon, Gamepad2Icon, MenuIcon, XIcon } from "lucide-react"
 import { routes } from "@/lib/routes"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useDebounce } from "@/lib/hooks/useDebounce"
+import { authClient } from "@/lib/auth-client"
+import { LogOut, User } from "lucide-react"
 
 export default function Navbar() {
     const pathname = usePathname()
@@ -23,6 +25,10 @@ export default function Navbar() {
     const [isFocused, setIsFocused] = useState(false)
     const [forceFocusStyles, setForceFocusStyles] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
+
+    const { data: session, isPending: isSessionLoading } =
+        authClient.useSession()
+    const [userMenuOpen, setUserMenuOpen] = useState(false)
 
     // Sync search query with URL ?q= param
     useEffect(() => {
@@ -183,6 +189,70 @@ export default function Navbar() {
                     ))}
                 </ul>
 
+                {/* Desktop Auth Controls */}
+                <div className='hidden md:flex items-center gap-3 shrink-0'>
+                    {isSessionLoading ? (
+                        <div className='w-20 h-8 rounded-lg bg-white/[0.03] animate-pulse' />
+                    ) : session ? (
+                        <div className='relative'>
+                            <button
+                                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                className='flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/[0.05] transition-colors'
+                            >
+                                {session.user.image ? (
+                                    <img
+                                        src={session.user.image}
+                                        alt=''
+                                        className='h-7 w-7 rounded-full'
+                                    />
+                                ) : (
+                                    <div className='h-7 w-7 rounded-full bg-[#571b8b] flex items-center justify-center'>
+                                        <User className='h-3.5 w-3.5 text-[#ebe4f1]' />
+                                    </div>
+                                )}
+                                <span className='text-sm text-[#ebe4f1] max-w-[100px] truncate'>
+                                    {session.user.name}
+                                </span>
+                            </button>
+                            {userMenuOpen && (
+                                <>
+                                    <div
+                                        className='fixed inset-0 z-40'
+                                        onClick={() => setUserMenuOpen(false)}
+                                    />
+                                    <div className='absolute right-0 top-full mt-1 w-48 bg-[#1a1020] border border-white/10 rounded-lg shadow-lg z-50 py-1'>
+                                        <button
+                                            onClick={async () => {
+                                                setUserMenuOpen(false)
+                                                await authClient.signOut()
+                                            }}
+                                            className='w-full flex items-center gap-2 px-3 py-2 text-sm text-[#ebe4f1]/70 hover:text-[#ebe4f1] hover:bg-white/[0.05] transition-colors'
+                                        >
+                                            <LogOut className='h-4 w-4' />
+                                            Sign out
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    ) : (
+                        <>
+                            <Link
+                                href='/login'
+                                className='text-sm font-medium text-[#ebe4f1]/70 hover:text-[#ebe4f1] transition-colors'
+                            >
+                                Sign in
+                            </Link>
+                            <Link
+                                href='/signup'
+                                className='px-3.5 py-1.5 rounded-lg bg-[#eb3779] text-white text-sm font-medium hover:bg-[#eb3779]/90 transition-colors'
+                            >
+                                Sign up
+                            </Link>
+                        </>
+                    )}
+                </div>
+
                 {/* Mobile Hamburger Button */}
                 <button
                     onClick={() => setMobileMenuOpen(true)}
@@ -242,6 +312,63 @@ export default function Navbar() {
                                     </Link>
                                 ))}
                             </nav>
+                            {/* Mobile Auth Controls */}
+                            <div className='mt-auto p-4 border-t border-white/[0.08]'>
+                                {isSessionLoading ? (
+                                    <div className='w-full h-10 rounded-lg bg-white/[0.03] animate-pulse' />
+                                ) : session ? (
+                                    <div className='space-y-3'>
+                                        <div className='flex items-center gap-2'>
+                                            {session.user.image ? (
+                                                <img
+                                                    src={session.user.image}
+                                                    alt=''
+                                                    className='h-8 w-8 rounded-full'
+                                                />
+                                            ) : (
+                                                <div className='h-8 w-8 rounded-full bg-[#571b8b] flex items-center justify-center'>
+                                                    <User className='h-4 w-4 text-[#ebe4f1]' />
+                                                </div>
+                                            )}
+                                            <div className='min-w-0'>
+                                                <p className='text-sm font-medium text-[#ebe4f1] truncate'>
+                                                    {session.user.name}
+                                                </p>
+                                                <p className='text-xs text-[#ebe4f1]/50 truncate'>
+                                                    {session.user.email}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={async () => {
+                                                setMobileMenuOpen(false)
+                                                await authClient.signOut()
+                                            }}
+                                            className='w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-white/10 text-sm text-[#ebe4f1]/70 hover:text-[#ebe4f1] hover:bg-white/[0.05] transition-colors'
+                                        >
+                                            <LogOut className='h-4 w-4' />
+                                            Sign out
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className='space-y-2'>
+                                        <Link
+                                            href='/login'
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className='block w-full text-center px-3 py-2 rounded-lg border border-white/10 text-sm text-[#ebe4f1] hover:bg-white/[0.05] transition-colors'
+                                        >
+                                            Sign in
+                                        </Link>
+                                        <Link
+                                            href='/signup'
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className='block w-full text-center px-3 py-2 rounded-lg bg-[#eb3779] text-white text-sm font-medium hover:bg-[#eb3779]/90 transition-colors'
+                                        >
+                                            Sign up
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
                         </motion.aside>
                     </>
                 )}
