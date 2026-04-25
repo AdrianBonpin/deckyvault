@@ -47,3 +47,4 @@ certificates
 
 # git worktrees
 .worktrees/
+.pi/
