@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db/index"
 import { user, performanceEntries } from "@/lib/db/schema"
 import { eq, sql } from "drizzle-orm"
+
 export const userRoutes = new Elysia({ prefix: "/user" })
   .get(
     "/profile/:id",
@@ -34,14 +35,12 @@ export const userRoutes = new Elysia({ prefix: "/user" })
       // Reputation = contributions * 10 (simple formula for now)
       const reputation = contributions * 10
 
+      const { emailVerified, ...publicProfile } = profile
       return {
-        ...profile,
+        ...publicProfile,
         contributions,
         reputation,
-        verified: profile.emailVerified,
-        // Hide email from public profiles
-        email: undefined,
-        emailVerified: undefined,
+        verified: emailVerified,
       }
     },
     {
@@ -63,7 +62,15 @@ export const userRoutes = new Elysia({ prefix: "/user" })
       }
 
       const [profile] = await db
-        .select()
+        .select({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          role: user.role,
+          createdAt: user.createdAt,
+          emailVerified: user.emailVerified,
+        })
         .from(user)
         .where(eq(user.id, session.user.id))
         .limit(1)

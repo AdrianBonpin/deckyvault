@@ -5,6 +5,9 @@ type RateLimitEntry = {
   resetAt: number
 }
 
+// NOTE: This is an in-memory rate limiter for development/single-instance
+// deployments. For production with multiple instances or serverless, use a
+// shared store like Redis or Upstash.
 const store = new Map<string, RateLimitEntry>()
 
 // Clean up expired entries every 60 seconds

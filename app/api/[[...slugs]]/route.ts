@@ -33,9 +33,9 @@ export const app = new Elysia({ prefix: "/api" })
       error: code === "NOT_FOUND" ? "Not found" : "Internal server error",
     }
   })
+  .use(healthRoutes)
   .use(rateLimit(60, 100))
   .use(betterAuth)
-  .use(healthRoutes)
   .use(userRoutes)
   .get("/", () => ({
     name: "DeckyVault API",
