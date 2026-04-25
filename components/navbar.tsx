@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react"
 import { CircleXIcon, Gamepad2Icon, MenuIcon, XIcon } from "lucide-react"
 import { routes } from "@/lib/routes"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useDebounce } from "@/lib/hooks/useDebounce"
 
 export default function Navbar() {
     const pathname = usePathname()
@@ -17,6 +18,7 @@ export default function Navbar() {
     const isLanding = pathname === "/"
 
     const [searchQuery, setSearchQuery] = useState("")
+    const debouncedQuery = useDebounce(searchQuery, 300)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [isFocused, setIsFocused] = useState(false)
     const [forceFocusStyles, setForceFocusStyles] = useState(false)
@@ -24,9 +26,24 @@ export default function Navbar() {
 
     // Sync search query with URL ?q= param
     useEffect(() => {
-        const q = searchParams.get("q")
-        if (q) setSearchQuery(q)
+        const q = searchParams.get("q") || ""
+        setSearchQuery(q)
     }, [searchParams])
+
+    // Update URL when debounced query changes (skip if already matches)
+    useEffect(() => {
+        if (isLanding) return
+        const currentQ = searchParams.get("q") || ""
+        if (debouncedQuery === currentQ) return
+
+        const params = new URLSearchParams(searchParams.toString())
+        if (debouncedQuery) {
+            params.set("q", debouncedQuery)
+        } else {
+            params.delete("q")
+        }
+        router.replace(`/search?${params.toString()}`, { scroll: false })
+    }, [debouncedQuery, isLanding, router, searchParams])
 
     // Maintain focus & styles when flying from landing page search
     useEffect(() => {
@@ -47,17 +64,7 @@ export default function Navbar() {
     }, [isLanding, searchQuery])
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value
-        setSearchQuery(value)
-        if (!isLanding) {
-            const params = new URLSearchParams(searchParams.toString())
-            if (value) {
-                params.set("q", value)
-            } else {
-                params.delete("q")
-            }
-            router.replace(`/search?${params.toString()}`, { scroll: false })
-        }
+        setSearchQuery(e.target.value)
     }
 
     const handleSearchSubmit = () => {

@@ -14,6 +14,9 @@ import {
   presetSettingsRoutes,
   commentsRoutes,
 } from "@/lib/api"
+import { steamSearchRoutes } from "@/lib/api/steam-search"
+import { searchUnifiedRoutes } from "@/lib/api/search-unified"
+import { gameStubRoutes } from "@/lib/api/game-stub"
 
 const betterAuth = new Elysia({ name: "better-auth" })
   .mount(auth.handler)
@@ -65,6 +68,12 @@ export const app = new Elysia({ prefix: "/api" })
   .use(presetSettingsRoutes)
   // Comments
   .use(commentsRoutes)
+  // Steam search proxy
+  .use(steamSearchRoutes)
+  // Unified search
+  .use(searchUnifiedRoutes)
+  // Game stub creation
+  .use(gameStubRoutes)
   // Root
   .get("/", () => ({
     name: "DeckyVault API",

@@ -1,0 +1,188 @@
+import { notFound } from "next/navigation"
+import { after } from "next/server"
+import { db } from "@/lib/db/index"
+import {
+  games,
+  gameVersions,
+  performanceEntries,
+  communityPresets,
+  gameComments,
+  gamePlatformSupport,
+} from "@/lib/db/schema"
+import { eq, sql } from "drizzle-orm"
+import { isSyncStale, syncSteamGame } from "@/lib/steam/sync"
+import { GamePageClient } from "./game-page-client"
+
+export const metadata = {
+  title: "Game",
+}
+
+async function createGameStub(steamAppId: number) {
+  const url = new URL("https://store.steampowered.com/api/appdetails/")
+  url.searchParams.set("appids", String(steamAppId))
+  url.searchParams.set("cc", "US")
+  url.searchParams.set("l", "en")
+
+  const res = await fetch(url.toString(), {
+    headers: { Accept: "application/json" },
+  })
+
+  let title = `Steam App ${steamAppId}`
+  let developer: string | null = null
+  let publisher: string | null = null
+  let genres: string[] | null = null
+  let headerImage: string | null = null
+  let capsuleImage: string | null = null
+  let description: string | null = null
+
+  if (res.ok) {
+    const data = (await res.json()) as Record<
+      string,
+      { success: boolean; data: {
+        name: string
+        developers?: string[]
+        publishers?: string[]
+        genres?: { description: string }[]
+        header_image?: string
+        capsule_imagev5?: string
+        short_description?: string
+      } }
+    >
+    const entry = data[String(steamAppId)]
+    if (entry?.success && entry.data) {
+      title = entry.data.name
+      developer = entry.data.developers?.[0] ?? null
+      publisher = entry.data.publishers?.[0] ?? null
+      genres = entry.data.genres?.map((g) => g.description) ?? []
+      headerImage = entry.data.header_image ?? null
+      capsuleImage = entry.data.capsule_imagev5 ?? entry.data.header_image ?? null
+      description = entry.data.short_description ?? null
+    }
+  }
+
+  const [game] = await db
+    .insert(games)
+    .values({
+      steamAppId,
+      source: "steam",
+      title,
+      developer,
+      publisher,
+      genres,
+      headerImage,
+      capsuleImage,
+      description,
+      storeUrl: `https://store.steampowered.com/app/${steamAppId}`,
+      lastSync: new Date(),
+      syncStatus: "synced",
+    })
+    .returning()
+
+  return game
+}
+
+export default async function GamePage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+  const isNumeric = /^\d+$/.test(id)
+
+  // ── Resolve game ────────────────────────────────────────────────
+  let game
+  if (isNumeric) {
+    const rows = await db
+      .select()
+      .from(games)
+      .where(eq(games.steamAppId, Number(id)))
+      .limit(1)
+    game = rows[0]
+  } else {
+    const rows = await db
+      .select()
+      .from(games)
+      .where(eq(games.id, id))
+      .limit(1)
+    game = rows[0]
+  }
+
+  // Auto-create stub for missing Steam games
+  if (!game && isNumeric) {
+    try {
+      game = await createGameStub(Number(id))
+    } catch (err) {
+      console.error("Failed to auto-create game stub:", err)
+    }
+  }
+
+  if (!game) {
+    notFound()
+  }
+
+  // ── Fetch related counts ────────────────────────────────────────
+  const [benchmarkCount, presetCount, commentCount, platformSupport] =
+    await Promise.all([
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(performanceEntries)
+        .innerJoin(
+          gameVersions,
+          eq(performanceEntries.versionId, gameVersions.id),
+        )
+        .where(eq(gameVersions.gameId, game.id))
+        .then((r) => r[0]?.count ?? 0),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(communityPresets)
+        .where(eq(communityPresets.gameId, game.id))
+        .then((r) => r[0]?.count ?? 0),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(gameComments)
+        .where(eq(gameComments.gameId, game.id))
+        .then((r) => r[0]?.count ?? 0),
+      db
+        .select()
+        .from(gamePlatformSupport)
+        .where(eq(gamePlatformSupport.gameId, game.id))
+        .then((r) => r),
+    ])
+
+  // ── Stale-While-Revalidate: schedule background sync ────────────
+  if (game.source === "steam" && game.steamAppId && isSyncStale(game.lastSync)) {
+    after(async () => {
+      await syncSteamGame(game.steamAppId!)
+    })
+  }
+
+  // Serialize for client component (Dates → strings)
+  const serializedGame = {
+    id: game.id,
+    steamAppId: game.steamAppId,
+    title: game.title,
+    description: game.description,
+    developer: game.developer,
+    publisher: game.publisher,
+    genres: game.genres,
+    headerImage: game.headerImage,
+    capsuleImage: game.capsuleImage,
+    storeUrl: game.storeUrl,
+    source: game.source,
+    lastSync: game.lastSync ? game.lastSync.toISOString() : null,
+    syncStatus: game.syncStatus,
+    createdAt: game.createdAt.toISOString(),
+  }
+
+  return (
+    <GamePageClient
+      game={serializedGame}
+      counts={{
+        benchmarks: benchmarkCount,
+        presets: presetCount,
+        comments: commentCount,
+      }}
+      platformSupport={platformSupport}
+    />
+  )
+}
