@@ -47,3 +47,6 @@ certificates
 drizzle/meta/
 
 /docs/superpowers
+
+# git worktrees
+.worktrees/
