@@ -244,23 +244,9 @@ export default function Navbar() {
                                 >
                                     <button
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
-                                        className='flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors uppercase'
+                                        className='text-sm font-medium hover:text-primary transition-colors uppercase cursor-pointer'
                                     >
-                                        {session.user.image ? (
-                                            <Image
-                                                src={session.user.image}
-                                                alt=''
-                                                width={20}
-                                                height={20}
-                                                unoptimized
-                                                className='h-5 w-5 rounded-full'
-                                            />
-                                        ) : (
-                                            <div className='h-5 w-5 rounded-full bg-secondary flex items-center justify-center'>
-                                                <User className='h-3 w-3 text-text' />
-                                            </div>
-                                        )}
-                                        <span>Profile</span>
+                                        Profile
                                     </button>
                                     {userMenuOpen && (
                                         <>
