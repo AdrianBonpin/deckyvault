@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db/index"
-import { user, performanceEntries, games, gameVersions, hardware, account, passkey } from "@/lib/db/schema"
+import { user, performanceEntries, games, gameVersions, hardware, account } from "@/lib/db/schema"
 import { eq, sql, and, desc } from "drizzle-orm"
 import { hashPassword } from "better-auth/crypto"
 
@@ -156,10 +156,9 @@ export const userRoutes = new Elysia({ prefix: "/user" })
         .where(eq(account.userId, session.user.id))
 
       // Count passkeys
-      const [passkeyRow] = await db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(passkey)
-        .where(eq(passkey.userId, session.user.id))
+      const passkeys = await auth.api.listPasskeys({
+        headers: request.headers,
+      })
 
       // Check if user has a password (from accounts where providerId is "credential")
       const hasPassword = accounts.some((a) => a.providerId === "credential")
@@ -173,12 +172,13 @@ export const userRoutes = new Elysia({ prefix: "/user" })
         }))
 
       // Total auth methods = passwords + passkeys + oauth accounts
+      const passkeyCount = passkeys.length
       const totalAuthMethods =
-        (hasPassword ? 1 : 0) + (passkeyRow?.count ?? 0) + oauthProviders.length
+        (hasPassword ? 1 : 0) + passkeyCount + oauthProviders.length
 
       return {
         hasPassword,
-        passkeyCount: passkeyRow?.count ?? 0,
+        passkeyCount,
         oauthProviders,
         totalAuthMethods,
       }
@@ -311,84 +311,4 @@ export const userRoutes = new Elysia({ prefix: "/user" })
       }),
     },
   )
-  // Passkey management endpoints (better-auth doesn't provide these)
-  .post(
-    "/me/passkey/delete",
-    async ({ request, body, set }) => {
-      const session = await auth.api.getSession({
-        headers: request.headers,
-      })
 
-      if (!session) {
-        set.status = 401
-        return { error: "Unauthorized" }
-      }
-
-      // Verify the passkey belongs to the user
-      const [pk] = await db
-        .select({ id: passkey.id })
-        .from(passkey)
-        .where(and(
-          eq(passkey.id, body.id),
-          eq(passkey.userId, session.user.id)
-        ))
-        .limit(1)
-
-      if (!pk) {
-        set.status = 404
-        return { error: "Passkey not found" }
-      }
-
-      await db
-        .delete(passkey)
-        .where(eq(passkey.id, body.id))
-
-      return { success: true }
-    },
-    {
-      body: t.Object({
-        id: t.String(),
-      }),
-    },
-  )
-  .post(
-    "/me/passkey/update",
-    async ({ request, body, set }) => {
-      const session = await auth.api.getSession({
-        headers: request.headers,
-      })
-
-      if (!session) {
-        set.status = 401
-        return { error: "Unauthorized" }
-      }
-
-      // Verify the passkey belongs to the user
-      const [pk] = await db
-        .select({ id: passkey.id })
-        .from(passkey)
-        .where(and(
-          eq(passkey.id, body.id),
-          eq(passkey.userId, session.user.id)
-        ))
-        .limit(1)
-
-      if (!pk) {
-        set.status = 404
-        return { error: "Passkey not found" }
-      }
-
-      await db
-        .update(passkey)
-        .set({ name: body.name })
-        .where(eq(passkey.id, body.id))
-
-      return { success: true }
-    },
-    {
-      body: t.Object({
-        id: t.String(),
-        name: t.String(),
-      }),
-    },
-  )
