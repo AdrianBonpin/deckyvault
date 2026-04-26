@@ -120,7 +120,8 @@ export const hardwareStatsRoutes = new Elysia({ prefix: "/hardware" })
           fpsAvg: performanceEntries.fpsAvg,
           fpsLow: performanceEntries.fpsLow,
           fpsHigh: performanceEntries.fpsHigh,
-          fsrVersion: performanceEntries.fsrVersion,
+          upscalerType: performanceEntries.upscalerType,
+          upscalerVersion: performanceEntries.upscalerVersion,
           frameGenMethod: performanceEntries.frameGenMethod,
           protonVersion: performanceEntries.protonVersion,
           osVersion: performanceEntries.osVersion,
@@ -152,7 +153,7 @@ export const hardwareStatsRoutes = new Elysia({ prefix: "/hardware" })
           topGames: [],
           genreBreakdown: [],
           protonBreakdown: [],
-          fsrBreakdown: [],
+          upscalerBreakdown: [],
         }
       }
 
@@ -250,17 +251,17 @@ export const hardwareStatsRoutes = new Elysia({ prefix: "/hardware" })
         .sort((a, b) => b[1] - a[1])
         .map(([version, count]) => ({ version, count }))
 
-      // ── FSR breakdown ───────────────────────────────────
-      const fsrMap = new Map<string, { count: number; avgFps: number }>()
+      // ── Upscaler breakdown ───────────────────────────────────
+      const upscalerMap = new Map<string, { count: number; avgFps: number }>()
       for (const e of entries) {
-        const key = e.fsrVersion ?? "none"
-        if (!fsrMap.has(key)) fsrMap.set(key, { count: 0, avgFps: 0 })
-        const f = fsrMap.get(key)!
+        const key = e.upscalerType ?? "none"
+        if (!upscalerMap.has(key)) upscalerMap.set(key, { count: 0, avgFps: 0 })
+        const f = upscalerMap.get(key)!
         f.count++
         f.avgFps += e.fpsAvg ?? 0
       }
-      const fsrBreakdown = [...fsrMap.entries()].map(([version, data]) => ({
-        version,
+      const upscalerBreakdown = [...upscalerMap.entries()].map(([type, data]) => ({
+        upscalerType: type,
         count: data.count,
         avgFps: Math.round((data.avgFps / data.count) * 10) / 10,
       }))
@@ -276,7 +277,7 @@ export const hardwareStatsRoutes = new Elysia({ prefix: "/hardware" })
         topGames,
         genreBreakdown,
         protonBreakdown,
-        fsrBreakdown,
+        upscalerBreakdown,
       }
     },
     {

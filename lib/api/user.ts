@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db/index"
-import { user, performanceEntries, games, gameVersions, hardware, account } from "@/lib/db/schema"
+import { user, performanceEntries, games, gameVersions, hardware, account, passkey } from "@/lib/db/schema"
 import { eq, sql, and, desc } from "drizzle-orm"
 import { hashPassword } from "better-auth/crypto"
 
@@ -155,10 +155,11 @@ export const userRoutes = new Elysia({ prefix: "/user" })
         .from(account)
         .where(eq(account.userId, session.user.id))
 
-      // Count passkeys
-      const passkeys = await auth.api.listPasskeys({
-        headers: request.headers,
-      })
+      // Count passkeys via direct DB query (avoids auth.api.listPasskeys hanging)
+      const passkeys = await db
+        .select({ id: passkey.id })
+        .from(passkey)
+        .where(eq(passkey.userId, session.user.id))
 
       // Check if user has a password (from accounts where providerId is "credential")
       const hasPassword = accounts.some((a) => a.providerId === "credential")
@@ -256,7 +257,8 @@ export const userRoutes = new Elysia({ prefix: "/user" })
           fpsHigh: performanceEntries.fpsHigh,
           hardwareSlug: performanceEntries.hardwareSlug,
           hardwareName: hardware.name,
-          fsrVersion: performanceEntries.fsrVersion,
+          upscalerType: performanceEntries.upscalerType,
+          upscalerVersion: performanceEntries.upscalerVersion,
           frameGenMethod: performanceEntries.frameGenMethod,
           verifiedAt: performanceEntries.verifiedAt,
           createdAt: performanceEntries.createdAt,

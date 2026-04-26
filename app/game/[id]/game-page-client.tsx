@@ -393,16 +393,6 @@ export function GamePageClient({
                                         ★ {game.metascore}
                                     </span>
                                 )}
-                            <BookmarkButton gameId={game.id} />
-                            {session && (
-                                <Link
-                                    href={`/game/${game.id}/submit`}
-                                    className='inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer'
-                                >
-                                    <Plus className='h-4 w-4' />
-                                    Add Benchmark
-                                </Link>
-                            )}
                         </div>
 
                         {/* External links */}
@@ -464,6 +454,20 @@ export function GamePageClient({
                                             {formatDate(game.lastSync)}
                                         </span>
                                     </>
+                                )}
+                            </div>
+                        )}
+                        {stats && (
+                            <div className='flex flex-wrap items-center gap-2 mt-2'>
+                                <BookmarkButton gameId={game.id} />
+                                {session && (
+                                    <Link
+                                        href={`/game/${game.id}/submit`}
+                                        className='inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer'
+                                    >
+                                        <Plus className='h-4 w-4' />
+                                        Add Benchmark
+                                    </Link>
                                 )}
                             </div>
                         )}

@@ -146,8 +146,9 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
       countMap.get(c.gameId)!.comments = c.count
     }
 
-    // ── 2b. Raw Performer + best FPS ────────────────────────────────
+    // ── 2b. Raw Performer + Poor Performance + best FPS ────────────
     const rawPerformerMap = new Map<string, boolean>()
+    const poorPerformerMap = new Map<string, boolean>()
     const bestFpsMap = new Map<string, number>()
 
     if (localGameIds.length > 0) {
@@ -157,9 +158,10 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
           bestFps: sql<number>`MAX(${performanceEntries.fpsAvg})::real`,
           isRawPerformer: sql<boolean>`BOOL_OR(
             ${performanceEntries.fpsAvg} >= 60
-            AND ${performanceEntries.fsrVersion} = 'none'
+            AND ${performanceEntries.upscalerType} = 'none'
             AND ${performanceEntries.frameGenMethod} = 'none'
           )`,
+          isPoorPerformance: sql<boolean>`BOOL_OR(${performanceEntries.fpsAvg} < 30)`,
         })
         .from(performanceEntries)
         .innerJoin(
@@ -177,6 +179,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
       for (const row of perfStats) {
         bestFpsMap.set(row.gameId, row.bestFps)
         rawPerformerMap.set(row.gameId, row.isRawPerformer)
+        poorPerformerMap.set(row.gameId, row.isPoorPerformance)
       }
     }
 
@@ -273,6 +276,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
             }
           : null,
         isRawPerformer: rawPerformerMap.get(g.id) ?? false,
+        isPoorPerformance: poorPerformerMap.get(g.id) ?? false,
         bestFps: bestFpsMap.get(g.id) ?? null,
         latestVersion: latestVersionMap.get(g.id) ?? null,
       })

@@ -12,7 +12,7 @@ export const performanceRoutes = createCrudRoutes(performanceEntries, {
   auth: { read: "public", write: "user", delete: "admin" },
   softDelete: true,
   search: { fields: ["userNotes"] },
-  filter: { fields: ["hardwareSlug", "fsrVersion", "frameGenMethod"] },
+  filter: { fields: ["hardwareSlug", "upscalerType", "upscalerVersion", "frameGenMethod"] },
 })
 
 // ── Verify endpoint (admin/mod) ───────────────────────────────────
@@ -183,7 +183,8 @@ export const performanceVerifyRoutes = new Elysia({
           fpsAvg: performanceEntries.fpsAvg,
           fpsLow: performanceEntries.fpsLow,
           fpsHigh: performanceEntries.fpsHigh,
-          fsrVersion: performanceEntries.fsrVersion,
+          upscalerType: performanceEntries.upscalerType,
+          upscalerVersion: performanceEntries.upscalerVersion,
           frameGenMethod: performanceEntries.frameGenMethod,
           settingsJson: performanceEntries.settingsJson,
           userNotes: performanceEntries.userNotes,
@@ -227,10 +228,11 @@ export const performanceVerifyRoutes = new Elysia({
   .get(
     "/stats",
     async ({ query, set }) => {
-      const { gameId, hardwareSlug, fsrVersion } = query as {
+      const { gameId, hardwareSlug, upscalerType, upscalerVersion } = query as {
         gameId?: string
         hardwareSlug?: string
-        fsrVersion?: string
+        upscalerType?: string
+        upscalerVersion?: string
       }
 
       if (!gameId) {
@@ -246,8 +248,11 @@ export const performanceVerifyRoutes = new Elysia({
       if (hardwareSlug) {
         conditions.push(eq(performanceEntries.hardwareSlug, hardwareSlug))
       }
-      if (fsrVersion) {
-        conditions.push(eq(performanceEntries.fsrVersion, fsrVersion as any)) // eslint-disable-line @typescript-eslint/no-explicit-any
+      if (upscalerType) {
+        conditions.push(eq(performanceEntries.upscalerType, upscalerType as any)) // eslint-disable-line @typescript-eslint/no-explicit-any
+      }
+      if (upscalerVersion) {
+        conditions.push(eq(performanceEntries.upscalerVersion, upscalerVersion))
       }
 
       // Join through gameVersions to get to games
@@ -272,7 +277,8 @@ export const performanceVerifyRoutes = new Elysia({
       query: t.Object({
         gameId: t.String(),
         hardwareSlug: t.Optional(t.String()),
-        fsrVersion: t.Optional(t.String()),
+        upscalerType: t.Optional(t.String()),
+        upscalerVersion: t.Optional(t.String()),
       }),
     },
   )

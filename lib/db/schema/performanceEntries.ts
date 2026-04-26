@@ -13,17 +13,21 @@ import { gameVersions } from "./gameVersions"
 import { hardware } from "./hardware"
 import { user } from "./auth"
 
-export const fsrVersionEnum = pgEnum("fsr_version", [
+export const upscalerTypeEnum = pgEnum("upscaler_type", [
   "none",
-  "fsr1",
-  "fsr2",
-  "fsr3",
+  "fsr",
+  "dlss",
+  "xess",
+  "lsfg",
+  "other",
 ])
 
 export const frameGenMethodEnum = pgEnum("frame_gen_method", [
   "none",
   "fsr_fg",
   "dlss_fg",
+  "lsfg",
+  "other",
 ])
 
 export type GameSettingCategory = {
@@ -56,8 +60,9 @@ export const performanceEntries = pgTable(
     protonVersion: text("proton_version"),
     osVersion: text("os_version"),
 
-    // Upscaler tracking (replaces isFsrEnabled boolean)
-    fsrVersion: fsrVersionEnum("fsr_version").default("none").notNull(),
+    // Upscaler tracking
+    upscalerType: upscalerTypeEnum("upscaler_type").default("none").notNull(),
+    upscalerVersion: text("upscaler_version"),
     frameGenMethod: frameGenMethodEnum("frame_gen_method")
       .default("none")
       .notNull(),
@@ -72,6 +77,12 @@ export const performanceEntries = pgTable(
     // Settings & notes
     settingsJson: jsonb("settings_json").$type<GameSettingCategory[]>(),
     userNotes: text("user_notes"),
+
+    // Battery estimate (minutes)
+    estimatedBatteryMin: integer("estimated_battery_min"),
+
+    // Custom system flag
+    customSystem: boolean("custom_system").default(false).notNull(),
 
     // Moderation
     isRemoved: boolean("is_removed").default(false).notNull(),
@@ -91,7 +102,7 @@ export const performanceEntries = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => [
-    index("perf_hardware_fsr_idx").on(table.hardwareSlug, table.fsrVersion),
+    index("perf_hardware_upscaler_idx").on(table.hardwareSlug, table.upscalerType),
     index("perf_version_idx").on(table.versionId),
     index("perf_user_idx").on(table.userId),
   ],

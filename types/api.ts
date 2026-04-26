@@ -11,7 +11,8 @@ export type ContributionEntry = {
   fpsHigh: number | null
   hardwareSlug: string
   hardwareName: string
-  fsrVersion: string
+  upscalerType: string
+  upscalerVersion: string | null
   frameGenMethod: string
   verifiedAt: string | null
   createdAt: string

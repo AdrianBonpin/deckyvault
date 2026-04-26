@@ -35,7 +35,7 @@ export default function ProfilePage() {
 
     useEffect(() => {
         if (!isSessionLoading && !session) {
-            router.push("/login")
+            router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`)
         }
     }, [session, isSessionLoading, router])
 

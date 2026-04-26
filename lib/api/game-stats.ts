@@ -34,7 +34,8 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
         fpsAvg: performanceEntries.fpsAvg,
         fpsLow: performanceEntries.fpsLow,
         fpsHigh: performanceEntries.fpsHigh,
-        fsrVersion: performanceEntries.fsrVersion,
+        upscalerType: performanceEntries.upscalerType,
+        upscalerVersion: performanceEntries.upscalerVersion,
         frameGenMethod: performanceEntries.frameGenMethod,
         protonVersion: performanceEntries.protonVersion,
         osVersion: performanceEntries.osVersion,
@@ -112,9 +113,12 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
     const isRawPerformer = entries.some(
       (e) =>
         (e.fpsAvg ?? 0) >= 60 &&
-        e.fsrVersion === "none" &&
+        e.upscalerType === "none" &&
         e.frameGenMethod === "none",
     )
+
+    // ── 3b. Poor Performance check ─────────────────────────────────
+    const isPoorPerformance = entries.some((e) => (e.fpsAvg ?? 0) < 30)
 
     // ── 4. Boxplot per device ─────────────────────────────────────
     const boxplotMap = new Map<
@@ -185,7 +189,7 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
       { hardwareSlug: string; sum: number; count: number }
     >()
     for (const e of entries) {
-      const key = `${e.fsrVersion}|${e.frameGenMethod}|${e.hardwareSlug}`
+      const key = `${e.upscalerType}|${e.upscalerVersion ?? ''}|${e.frameGenMethod}|${e.hardwareSlug}`
       const existing = upscalerMap.get(key) || {
         hardwareSlug: e.hardwareSlug,
         sum: 0,
@@ -198,9 +202,10 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
 
     const upscalerStats = Array.from(upscalerMap.entries()).map(
       ([key, data]) => {
-        const [fsrVersion, frameGenMethod] = key.split("|")
+        const [upscalerType, upscalerVersion, frameGenMethod] = key.split("|")
         return {
-          fsrVersion,
+          upscalerType,
+          upscalerVersion: upscalerVersion || null,
           frameGenMethod,
           hardwareSlug: data.hardwareSlug,
           avgFps: Math.round((data.sum / data.count) * 10) / 10,
@@ -220,8 +225,9 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
         fpsHigh: e.fpsHigh!,
         isRawPerformer:
           (e.fpsAvg ?? 0) >= 60 &&
-          e.fsrVersion === "none" &&
+          e.upscalerType === "none" &&
           e.frameGenMethod === "none",
+        isPoorPerformer: (e.fpsAvg ?? 0) < 30,
       }))
 
     // ── 8. Device breakdown ───────────────────────────────────────
@@ -261,6 +267,7 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
         versionCount,
       },
       isRawPerformer,
+      isPoorPerformance,
       boxplot,
       historical,
       upscalerStats,

@@ -5,7 +5,15 @@ import logo from "@/app/icon.png"
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { Bookmark, CircleXIcon, Gamepad2Icon, LogOut, MenuIcon, User, XIcon } from "lucide-react"
+import {
+    Bookmark,
+    CircleXIcon,
+    Gamepad2Icon,
+    LogOut,
+    MenuIcon,
+    User,
+    XIcon,
+} from "lucide-react"
 import { routes, authRoutes } from "@/lib/routes"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useDebounce } from "@/lib/hooks/useDebounce"
@@ -17,7 +25,11 @@ export default function Navbar() {
     const searchParams = useSearchParams()
 
     const isLanding = pathname === "/"
-    const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/signup") || pathname.startsWith("/forgot-password") || pathname.startsWith("/reset-password")
+    const isAuthRoute =
+        pathname.startsWith("/login") ||
+        pathname.startsWith("/signup") ||
+        pathname.startsWith("/forgot-password") ||
+        pathname.startsWith("/reset-password")
 
     const [searchQuery, setSearchQuery] = useState(
         () => searchParams.get("q") || "",
@@ -140,6 +152,7 @@ export default function Navbar() {
                             src={logo}
                             alt='DeckyVault Logo'
                             className='h-6 my-1 w-auto'
+                            loading='eager'
                         />
                         {!isLanding && (
                             <motion.span className='hidden md:inline-block'>
@@ -243,7 +256,9 @@ export default function Navbar() {
                                     className='relative'
                                 >
                                     <button
-                                        onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                        onClick={() =>
+                                            setUserMenuOpen(!userMenuOpen)
+                                        }
                                         className='text-sm font-medium hover:text-primary transition-colors uppercase cursor-pointer'
                                     >
                                         Profile
@@ -252,18 +267,30 @@ export default function Navbar() {
                                         <>
                                             <div
                                                 className='fixed inset-0 z-40'
-                                                onClick={() => setUserMenuOpen(false)}
+                                                onClick={() =>
+                                                    setUserMenuOpen(false)
+                                                }
                                             />
                                             <div className='absolute right-0 top-full mt-1 w-48 bg-[#1a1020] border border-white/10 rounded-lg shadow-lg z-50 py-1'>
                                                 {authRoutes.map((route) => (
                                                     <Link
                                                         key={route.href}
                                                         href={route.href}
-                                                        onClick={() => setUserMenuOpen(false)}
+                                                        onClick={() =>
+                                                            setUserMenuOpen(
+                                                                false,
+                                                            )
+                                                        }
                                                         className='w-full flex items-center gap-2 px-3 py-2 text-sm text-text/70 hover:text-text hover:bg-text/5 transition-colors cursor-pointer'
                                                     >
-                                                        {route.icon === "User" && <User className='h-4 w-4' />}
-                                                        {route.icon === "Bookmark" && <Bookmark className='h-4 w-4' />}
+                                                        {route.icon ===
+                                                            "User" && (
+                                                            <User className='h-4 w-4' />
+                                                        )}
+                                                        {route.icon ===
+                                                            "Bookmark" && (
+                                                            <Bookmark className='h-4 w-4' />
+                                                        )}
                                                         {route.title}
                                                     </Link>
                                                 ))}
@@ -370,11 +397,17 @@ export default function Navbar() {
                                             <Link
                                                 key={route.href}
                                                 href={route.href}
-                                                onClick={() => setMobileMenuOpen(false)}
+                                                onClick={() =>
+                                                    setMobileMenuOpen(false)
+                                                }
                                                 className='flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text/70 hover:text-text hover:bg-text/5 transition-colors cursor-pointer'
                                             >
-                                                {route.icon === "User" && <User className='h-4 w-4' />}
-                                                {route.icon === "Bookmark" && <Bookmark className='h-4 w-4' />}
+                                                {route.icon === "User" && (
+                                                    <User className='h-4 w-4' />
+                                                )}
+                                                {route.icon === "Bookmark" && (
+                                                    <Bookmark className='h-4 w-4' />
+                                                )}
                                                 {route.title}
                                             </Link>
                                         ))}
@@ -393,7 +426,9 @@ export default function Navbar() {
                                     <div className='space-y-2'>
                                         <Link
                                             href='/login'
-                                            onClick={() => setMobileMenuOpen(false)}
+                                            onClick={() =>
+                                                setMobileMenuOpen(false)
+                                            }
                                             className='block w-full text-center px-3 py-2 rounded-lg border border-white/10 text-sm text-text hover:bg-text/5 transition-colors cursor-pointer'
                                         >
                                             Login
