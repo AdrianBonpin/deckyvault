@@ -48,3 +48,5 @@ certificates
 # git worktrees
 .worktrees/
 .pi/
+
+.superpowers/
