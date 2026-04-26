@@ -17,6 +17,16 @@ export async function proxy(req: NextRequest) {
         return NextResponse.next()
     }
 
+    // Allow authenticated users to complete the signup wizard.
+    // After signUp.email() creates a session, the wizard needs to stay
+    // on /signup to complete OTP verification and passkey setup.
+    if (path === "/signup") {
+        const step = req.nextUrl.searchParams.get("step")
+        if (step === "otp" || step === "passkey") {
+            return NextResponse.next()
+        }
+    }
+
     // Validate session server-side instead of just checking cookie existence.
     // This prevents stale cookies from causing redirect loops.
     const session = await auth.api.getSession({
