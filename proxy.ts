@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
 const authRoutes = [
     "/login",
@@ -7,14 +8,18 @@ const authRoutes = [
     "/reset-password",
 ]
 
-export default async function proxy(req: NextRequest) {
+export function proxy(req: NextRequest) {
     const path = req.nextUrl.pathname
     const isAuthRoute = authRoutes.some((route) => path.startsWith(route))
 
-    // Check for better-auth session cookie
+    // Check for better-auth session cookie (default name: better-auth.session_token)
     const hasSession = req.cookies
         .getAll()
-        .some((cookie) => cookie.name.startsWith("better-auth."))
+        .some(
+            (cookie) =>
+                cookie.name.startsWith("better-auth.") &&
+                cookie.value.length > 0,
+        )
 
     // Redirect authenticated users away from auth pages
     if (isAuthRoute && hasSession) {
