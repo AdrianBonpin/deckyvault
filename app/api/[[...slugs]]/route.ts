@@ -13,6 +13,7 @@ import {
   presetUpvoteRoutes,
   presetSettingsRoutes,
   commentsRoutes,
+  savedGamesRoutes,
 } from "@/lib/api"
 import { steamSearchRoutes } from "@/lib/api/steam-search"
 import { searchUnifiedRoutes } from "@/lib/api/search-unified"
@@ -77,6 +78,8 @@ export const app = new Elysia({ prefix: "/api" })
   .use(gameStubRoutes)
   // Game stats aggregation
   .use(gameStatsRoutes)
+  // Saved games
+  .use(savedGamesRoutes)
   // Root
   .get("/", () => ({
     name: "DeckyVault API",

@@ -10,3 +10,4 @@ export {
 } from "./presets"
 export { commentsRoutes } from "./comments"
 export { gameStatsRoutes } from "./game-stats"
+export { savedGamesRoutes } from "./saved-games"
