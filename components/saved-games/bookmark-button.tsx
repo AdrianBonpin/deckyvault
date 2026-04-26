@@ -77,7 +77,7 @@ export function BookmarkButton({ gameId, className = "" }: BookmarkButtonProps) 
       whileTap={{ scale: 0.9 }}
       onClick={toggleSave}
       disabled={isToggling}
-      className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+      className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors cursor-pointer ${
         isSaved
           ? "bg-primary/10 border-primary/30 text-primary"
           : "bg-text/5 border-border text-text/50 hover:text-text hover:border-primary/30"

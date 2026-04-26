@@ -208,7 +208,7 @@ export default function ResetPasswordForm({
 
             <Link
                 href="/login"
-                className="flex items-center justify-center gap-2 text-sm text-text/50 hover:text-text transition-colors"
+                className="flex items-center justify-center gap-2 text-sm text-text/50 hover:text-text transition-colors cursor-pointer"
             >
                 <ArrowLeft className="h-4 w-4" />
                 Back to sign in

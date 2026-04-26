@@ -367,7 +367,7 @@ export function GamePageClient({
               {session && (
                 <Link
                   href={`/game/${game.id}/submit`}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
                   Add Benchmark
@@ -382,7 +382,7 @@ export function GamePageClient({
                   href={game.storeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-text/60 hover:text-primary transition-colors"
+                  className="inline-flex items-center gap-1 text-xs text-text/60 hover:text-primary transition-colors cursor-pointer"
                 >
                   <FaSteam className="h-3.5 w-3.5" />
                   Steam
@@ -394,7 +394,7 @@ export function GamePageClient({
                   href={protonDbUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-text/60 hover:text-primary transition-colors"
+                  className="inline-flex items-center gap-1 text-xs text-text/60 hover:text-primary transition-colors cursor-pointer"
                 >
                   ProtonDB
                   <ExternalLinkIcon className="h-3 w-3" />
@@ -405,7 +405,7 @@ export function GamePageClient({
                   href={steamDbUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-text/60 hover:text-primary transition-colors"
+                  className="inline-flex items-center gap-1 text-xs text-text/60 hover:text-primary transition-colors cursor-pointer"
                 >
                   SteamDB
                   <ExternalLinkIcon className="h-3 w-3" />
@@ -537,7 +537,7 @@ export function GamePageClient({
                   <button
                     key={device.hardwareSlug}
                     onClick={() => toggleDevice(device.hardwareSlug)}
-                    className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
                       active
                         ? "bg-primary/20 border-primary text-primary"
                         : "bg-transparent border-border text-text/60 hover:text-text/80"

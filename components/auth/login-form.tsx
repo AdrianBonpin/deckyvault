@@ -190,7 +190,7 @@ export default function LoginForm() {
                     <div className="text-right">
                         <Link
                             href="/forgot-password"
-                            className="text-sm text-text/50 hover:text-text transition-colors"
+                            className="text-sm text-text/50 hover:text-text transition-colors cursor-pointer"
                         >
                             Forgot password?
                         </Link>
@@ -218,7 +218,7 @@ export default function LoginForm() {
                 Don&apos;t have an account?{" "}
                 <Link
                     href="/signup"
-                    className="text-primary hover:underline"
+                    className="text-primary hover:underline cursor-pointer"
                 >
                     Create one
                 </Link>

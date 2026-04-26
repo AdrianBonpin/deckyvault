@@ -374,7 +374,7 @@ function SearchResultCard({
                   href={`https://store.steampowered.com/app/${result.appId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="relative z-10 inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-md bg-[#1b2838] border border-[#2a475e] text-[#c6d4df] text-[11px] hover:bg-[#2a475e] transition-colors w-full"
+                  className="relative z-10 inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-md bg-[#1b2838] border border-[#2a475e] text-[#c6d4df] text-[11px] hover:bg-[#2a475e] transition-colors w-full cursor-pointer"
                   onClick={(e) => e.stopPropagation()}
                   title="Open store page on Steam"
                 >
@@ -386,7 +386,7 @@ function SearchResultCard({
                   href={`https://www.protondb.com/app/${result.appId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="relative z-10 inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[11px] hover:bg-purple-500/20 transition-colors w-full"
+                  className="relative z-10 inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[11px] hover:bg-purple-500/20 transition-colors w-full cursor-pointer"
                   onClick={(e) => e.stopPropagation()}
                   title="View Proton compatibility on ProtonDB"
                 >
@@ -398,7 +398,7 @@ function SearchResultCard({
                   href={`https://steamdb.info/app/${result.appId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="relative z-10 inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[11px] hover:bg-blue-500/20 transition-colors w-full"
+                  className="relative z-10 inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[11px] hover:bg-blue-500/20 transition-colors w-full cursor-pointer"
                   onClick={(e) => e.stopPropagation()}
                   title="View app details on SteamDB"
                 >

@@ -143,7 +143,7 @@ export default function SignupFormStep({ onSuccess }: SignupFormStepProps) {
 
             <p className="text-center text-sm text-text/50">
                 Already have an account?{" "}
-                <Link href="/login" className="text-primary hover:underline">
+                <Link href="/login" className="text-primary hover:underline cursor-pointer">
                     Sign in
                 </Link>
             </p>

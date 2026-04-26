@@ -117,7 +117,7 @@ export function SavedGamesGrid() {
             <button
               onClick={() => removeGame(game.id, game.gameId)}
               disabled={removingId === game.id}
-              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-text/70 hover:text-red-400 hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100"
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-text/70 hover:text-red-400 hover:bg-black/70 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer disabled:cursor-not-allowed"
             >
               {removingId === game.id ? (
                 <Loader2 className="h-3 w-3 animate-spin" />

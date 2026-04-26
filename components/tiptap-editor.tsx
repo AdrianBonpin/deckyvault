@@ -81,7 +81,7 @@ export function TiptapEditor({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`p-1.5 rounded hover:bg-text/10 transition-colors ${
+          className={`p-1.5 rounded hover:bg-text/10 transition-colors cursor-pointer ${
             editor.isActive("bold") ? "bg-text/10 text-primary" : "text-text/50"
           }`}
         >
@@ -90,7 +90,7 @@ export function TiptapEditor({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`p-1.5 rounded hover:bg-text/10 transition-colors ${
+          className={`p-1.5 rounded hover:bg-text/10 transition-colors cursor-pointer ${
             editor.isActive("italic") ? "bg-text/10 text-primary" : "text-text/50"
           }`}
         >
@@ -100,7 +100,7 @@ export function TiptapEditor({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`p-1.5 rounded hover:bg-text/10 transition-colors ${
+          className={`p-1.5 rounded hover:bg-text/10 transition-colors cursor-pointer ${
             editor.isActive("bulletList") ? "bg-text/10 text-primary" : "text-text/50"
           }`}
         >
@@ -109,7 +109,7 @@ export function TiptapEditor({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`p-1.5 rounded hover:bg-text/10 transition-colors ${
+          className={`p-1.5 rounded hover:bg-text/10 transition-colors cursor-pointer ${
             editor.isActive("orderedList") ? "bg-text/10 text-primary" : "text-text/50"
           }`}
         >
@@ -119,7 +119,7 @@ export function TiptapEditor({
         <button
           type="button"
           onClick={toggleLink}
-          className={`p-1.5 rounded hover:bg-text/10 transition-colors ${
+          className={`p-1.5 rounded hover:bg-text/10 transition-colors cursor-pointer ${
             editor.isActive("link") ? "bg-text/10 text-primary" : "text-text/50"
           }`}
         >

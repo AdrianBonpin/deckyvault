@@ -133,7 +133,7 @@ export default function OtpVerificationStep({
 
             <button
                 onClick={onBack}
-                className="flex items-center justify-center gap-2 w-full text-sm text-text/50 hover:text-text transition-colors"
+                className="flex items-center justify-center gap-2 w-full text-sm text-text/50 hover:text-text transition-colors cursor-pointer"
             >
                 <ArrowLeft className="h-4 w-4" />
                 Back to signup

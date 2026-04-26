@@ -47,7 +47,7 @@ export function SettingsSecurityTab() {
     let cancelled = false
     Promise.all([
       fetch("/api/user/me/auth-methods", { credentials: "include" }).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/auth/passkey/list-user-passkeys", { credentials: "include" }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch("/api/auth/passkey/list", { credentials: "include" }).then(r => r.ok ? r.json() : []).catch(() => []),
     ]).then(([methodsData, passkeyData]) => {
       if (cancelled) return
       if (methodsData) setAuthMethods(methodsData)
@@ -65,7 +65,7 @@ export function SettingsSecurityTab() {
   }
 
   const refreshPasskeys = async () => {
-    const res = await fetch("/api/auth/passkey/list-user-passkeys", { credentials: "include" })
+    const res = await fetch("/api/auth/passkey/list", { credentials: "include" })
     if (res.ok) {
       const data = await res.json()
       setPasskeys(Array.isArray(data) ? data : [])
@@ -146,7 +146,7 @@ export function SettingsSecurityTab() {
 
     setIsDeletingPasskey(id)
     try {
-      const res = await fetch("/api/auth/passkey/delete-passkey", {
+      const res = await fetch("/api/user/me/passkey/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
@@ -176,7 +176,7 @@ export function SettingsSecurityTab() {
   const handleRenamePasskey = async (id: string) => {
     setIsUpdatingPasskey(true)
     try {
-      const res = await fetch("/api/auth/passkey/update-passkey", {
+      const res = await fetch("/api/user/me/passkey/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, name: editingName }),
@@ -347,7 +347,7 @@ export function SettingsSecurityTab() {
                           <button
                             onClick={() => handleRenamePasskey(pk.id)}
                             disabled={isUpdatingPasskey}
-                            className="p-1 rounded hover:bg-green-500/10 text-green-400 transition-colors"
+                            className="p-1 rounded hover:bg-green-500/10 text-green-400 transition-colors cursor-pointer disabled:cursor-not-allowed"
                           >
                             {isUpdatingPasskey ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -357,7 +357,7 @@ export function SettingsSecurityTab() {
                           </button>
                           <button
                             onClick={cancelEditingPasskey}
-                            className="p-1 rounded hover:bg-red-500/10 text-red-400 transition-colors"
+                            className="p-1 rounded hover:bg-red-500/10 text-red-400 transition-colors cursor-pointer"
                           >
                             <X className="h-3.5 w-3.5" />
                           </button>

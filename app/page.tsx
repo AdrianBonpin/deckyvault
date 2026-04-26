@@ -111,7 +111,7 @@ export default function Landing() {
                 <Link
                     title="Visit our Github Repository"
                     href="https://github.com/AdrianBonpin/deckyvault"
-                    className="text-accent opacity-60 hover:opacity-100 transition-opacity"
+                    className="text-accent opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
                 >
                     Github.
                 </Link>

@@ -311,3 +311,84 @@ export const userRoutes = new Elysia({ prefix: "/user" })
       }),
     },
   )
+  // Passkey management endpoints (better-auth doesn't provide these)
+  .post(
+    "/me/passkey/delete",
+    async ({ request, body, set }) => {
+      const session = await auth.api.getSession({
+        headers: request.headers,
+      })
+
+      if (!session) {
+        set.status = 401
+        return { error: "Unauthorized" }
+      }
+
+      // Verify the passkey belongs to the user
+      const [pk] = await db
+        .select({ id: passkey.id })
+        .from(passkey)
+        .where(and(
+          eq(passkey.id, body.id),
+          eq(passkey.userId, session.user.id)
+        ))
+        .limit(1)
+
+      if (!pk) {
+        set.status = 404
+        return { error: "Passkey not found" }
+      }
+
+      await db
+        .delete(passkey)
+        .where(eq(passkey.id, body.id))
+
+      return { success: true }
+    },
+    {
+      body: t.Object({
+        id: t.String(),
+      }),
+    },
+  )
+  .post(
+    "/me/passkey/update",
+    async ({ request, body, set }) => {
+      const session = await auth.api.getSession({
+        headers: request.headers,
+      })
+
+      if (!session) {
+        set.status = 401
+        return { error: "Unauthorized" }
+      }
+
+      // Verify the passkey belongs to the user
+      const [pk] = await db
+        .select({ id: passkey.id })
+        .from(passkey)
+        .where(and(
+          eq(passkey.id, body.id),
+          eq(passkey.userId, session.user.id)
+        ))
+        .limit(1)
+
+      if (!pk) {
+        set.status = 404
+        return { error: "Passkey not found" }
+      }
+
+      await db
+        .update(passkey)
+        .set({ name: body.name })
+        .where(eq(passkey.id, body.id))
+
+      return { success: true }
+    },
+    {
+      body: t.Object({
+        id: t.String(),
+        name: t.String(),
+      }),
+    },
+  )

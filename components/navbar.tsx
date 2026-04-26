@@ -217,7 +217,7 @@ export default function Navbar() {
                                 key={route.href}
                                 href={route.href}
                                 title={`Navigate to ${route.title}`}
-                                className='text-sm font-medium hover:text-primary transition-colors uppercase'
+                                className='text-sm font-medium hover:text-primary transition-colors uppercase cursor-pointer'
                             >
                                 {route.title}
                             </Link>
@@ -260,7 +260,7 @@ export default function Navbar() {
                                                         key={route.href}
                                                         href={route.href}
                                                         onClick={() => setUserMenuOpen(false)}
-                                                        className='w-full flex items-center gap-2 px-3 py-2 text-sm text-text/70 hover:text-text hover:bg-text/5 transition-colors'
+                                                        className='w-full flex items-center gap-2 px-3 py-2 text-sm text-text/70 hover:text-text hover:bg-text/5 transition-colors cursor-pointer'
                                                     >
                                                         {route.icon === "User" && <User className='h-4 w-4' />}
                                                         {route.icon === "Bookmark" && <Bookmark className='h-4 w-4' />}
@@ -273,7 +273,7 @@ export default function Navbar() {
                                                         setUserMenuOpen(false)
                                                         await authClient.signOut()
                                                     }}
-                                                    className='w-full flex items-center gap-2 px-3 py-2 text-sm text-text/70 hover:text-text hover:bg-text/5 transition-colors'
+                                                    className='w-full flex items-center gap-2 px-3 py-2 text-sm text-text/70 hover:text-text hover:bg-text/5 transition-colors cursor-pointer'
                                                 >
                                                     <LogOut className='h-4 w-4' />
                                                     Sign out
@@ -291,7 +291,7 @@ export default function Navbar() {
                                 >
                                     <Link
                                         href='/login'
-                                        className='text-sm font-medium hover:text-primary transition-colors uppercase'
+                                        className='text-sm font-medium hover:text-primary transition-colors uppercase cursor-pointer'
                                     >
                                         login
                                     </Link>
@@ -303,7 +303,7 @@ export default function Navbar() {
                     {/* Mobile Hamburger Button */}
                     <button
                         onClick={() => setMobileMenuOpen(true)}
-                        className='flex md:hidden flex-row items-center justify-center p-2 -mr-2 rounded-md hover:bg-text/5 transition-colors'
+                        className='flex md:hidden flex-row items-center justify-center p-2 -mr-2 rounded-md hover:bg-text/5 transition-colors cursor-pointer'
                         aria-label='Open menu'
                     >
                         <MenuIcon className='h-5 w-5' />
@@ -338,7 +338,7 @@ export default function Navbar() {
                                 <span className='font-bold text-lg'>Menu</span>
                                 <button
                                     onClick={() => setMobileMenuOpen(false)}
-                                    className='p-2 -mr-2 rounded-md hover:bg-text/5 transition-colors'
+                                    className='p-2 -mr-2 rounded-md hover:bg-text/5 transition-colors cursor-pointer'
                                     aria-label='Close menu'
                                 >
                                     <XIcon className='h-5 w-5' />
@@ -350,7 +350,7 @@ export default function Navbar() {
                                         key={route.href}
                                         href={route.href}
                                         onClick={() => setMobileMenuOpen(false)}
-                                        className={`text-sm font-medium hover:text-primary transition-colors uppercase px-3 py-2 rounded-md hover:bg-text/5 ${
+                                        className={`text-sm font-medium hover:text-primary transition-colors uppercase px-3 py-2 rounded-md hover:bg-text/5 cursor-pointer ${
                                             pathname === route.href
                                                 ? "text-primary bg-text/5"
                                                 : ""
@@ -371,7 +371,7 @@ export default function Navbar() {
                                                 key={route.href}
                                                 href={route.href}
                                                 onClick={() => setMobileMenuOpen(false)}
-                                                className='flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text/70 hover:text-text hover:bg-text/5 transition-colors'
+                                                className='flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text/70 hover:text-text hover:bg-text/5 transition-colors cursor-pointer'
                                             >
                                                 {route.icon === "User" && <User className='h-4 w-4' />}
                                                 {route.icon === "Bookmark" && <Bookmark className='h-4 w-4' />}
@@ -383,7 +383,7 @@ export default function Navbar() {
                                                 setMobileMenuOpen(false)
                                                 await authClient.signOut()
                                             }}
-                                            className='w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-white/10 text-sm text-text/70 hover:text-text hover:bg-text/5 transition-colors'
+                                            className='w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-white/10 text-sm text-text/70 hover:text-text hover:bg-text/5 transition-colors cursor-pointer'
                                         >
                                             <LogOut className='h-4 w-4' />
                                             Sign out
@@ -394,7 +394,7 @@ export default function Navbar() {
                                         <Link
                                             href='/login'
                                             onClick={() => setMobileMenuOpen(false)}
-                                            className='block w-full text-center px-3 py-2 rounded-lg border border-white/10 text-sm text-text hover:bg-text/5 transition-colors'
+                                            className='block w-full text-center px-3 py-2 rounded-lg border border-white/10 text-sm text-text hover:bg-text/5 transition-colors cursor-pointer'
                                         >
                                             Login
                                         </Link>

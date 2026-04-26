@@ -109,7 +109,7 @@ export function StepIndicator({
             type="button"
             onMouseEnter={() => setShowTooltip(currentStep)}
             onMouseLeave={() => setShowTooltip(null)}
-            className="text-text/40 hover:text-text transition-colors"
+            className="text-text/40 hover:text-text transition-colors cursor-pointer"
           >
             <Info className="h-4 w-4" />
           </button>
@@ -137,7 +137,7 @@ export function StepIndicator({
             key={index}
             type="button"
             onClick={() => index <= currentStep && onStepClick?.(index)}
-            className={`h-1.5 rounded-full transition-all ${
+            className={`h-1.5 rounded-full transition-all cursor-pointer ${
               index === currentStep
                 ? "w-6 bg-primary"
                 : index < currentStep
