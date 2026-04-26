@@ -39,6 +39,9 @@ interface UnifiedResult {
   price?: { currency: string; initial: number; final: number } | null
   platforms?: { windows: boolean; mac: boolean; linux: boolean } | null
   controllerSupport?: string | null
+  isRawPerformer?: boolean
+  bestFps?: number | null
+  latestVersion?: string | null
 }
 
 function SearchContent() {
@@ -86,8 +89,8 @@ function SearchContent() {
 
   function handleClick(result: UnifiedResult) {
     const path = result.appId
-      ? `/game/${result.appId}`
-      : `/game/${result.id}`
+      ? `/game/${result.appId}?sync=1`
+      : `/game/${result.id}?sync=1`
     router.push(path)
   }
 
@@ -244,9 +247,16 @@ function SearchResultCard({
           {/* Row 1: Title + metascore/price row */}
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="text-sm sm:text-base font-semibold text-text group-hover:text-primary transition-colors duration-200 truncate">
-                {result.title}
-              </h3>
+              <div className="min-w-0 flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm sm:text-base font-semibold text-text group-hover:text-primary transition-colors duration-200 truncate">
+                  {result.title}
+                </h3>
+                {result.isRawPerformer && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-semibold shrink-0">
+                    ⚡ RAW PERFORMER
+                  </span>
+                )}
+              </div>
               {(result.developer || result.publisher) && (
                 <p className="text-[11px] text-text/45 mt-0.5 truncate">
                   {result.developer}
@@ -422,11 +432,19 @@ function SearchResultCard({
             color={result.platformSupport ? protonColor(result.platformSupport.protonStatus) : undefined}
           />
 
-          {/* Avg FPS */}
-          <DataField label="Avg. FPS" value="—" bar />
+          {/* Best FPS */}
+          <DataField
+            label="Best FPS"
+            value={result.bestFps != null ? String(Math.round(result.bestFps)) : "—"}
+            bar={result.bestFps != null}
+            color={result.bestFps != null && result.bestFps >= 60 ? "text-green-400" : undefined}
+          />
 
           {/* Version */}
-          <DataField label="Version" value="—" />
+          <DataField
+            label="Version"
+            value={result.latestVersion ?? "—"}
+          />
         </div>
       </div>
     </motion.article>

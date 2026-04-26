@@ -7,7 +7,7 @@ import {
   communityPresets,
   gameComments,
 } from "@/lib/db/schema"
-import { ilike, or, sql, eq, inArray } from "drizzle-orm"
+import { ilike, or, sql, eq, inArray, and } from "drizzle-orm"
 
 interface SteamSearchItem {
   id: number
@@ -146,6 +146,64 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
       countMap.get(c.gameId)!.comments = c.count
     }
 
+    // ── 2b. Raw Performer + best FPS ────────────────────────────────
+    let rawPerformerMap = new Map<string, boolean>()
+    let bestFpsMap = new Map<string, number>()
+
+    if (localGameIds.length > 0) {
+      const perfStats = await db
+        .select({
+          gameId: gameVersions.gameId,
+          bestFps: sql<number>`MAX(${performanceEntries.fpsAvg})::real`,
+          isRawPerformer: sql<boolean>`BOOL_OR(
+            ${performanceEntries.fpsAvg} >= 60
+            AND ${performanceEntries.fsrVersion} = 'none'
+            AND ${performanceEntries.frameGenMethod} = 'none'
+          )`,
+        })
+        .from(performanceEntries)
+        .innerJoin(
+          gameVersions,
+          eq(performanceEntries.versionId, gameVersions.id),
+        )
+        .where(
+          and(
+            inArray(gameVersions.gameId, localGameIds),
+            eq(performanceEntries.isRemoved, false),
+          ),
+        )
+        .groupBy(gameVersions.gameId)
+
+      for (const row of perfStats) {
+        bestFpsMap.set(row.gameId, row.bestFps)
+        rawPerformerMap.set(row.gameId, row.isRawPerformer)
+      }
+    }
+
+    // ── 2c. Latest version ──────────────────────────────────────────
+    let latestVersionMap = new Map<string, string>()
+
+    if (localGameIds.length > 0) {
+      const versionRows = await db
+        .select({
+          gameId: gameVersions.gameId,
+          versionString: gameVersions.versionString,
+        })
+        .from(gameVersions)
+        .where(
+          and(
+            inArray(gameVersions.gameId, localGameIds),
+            eq(gameVersions.isLatest, true),
+          ),
+        )
+
+      for (const row of versionRows) {
+        if (row.versionString) {
+          latestVersionMap.set(row.gameId, row.versionString)
+        }
+      }
+    }
+
     // ── 3. Search Steam ─────────────────────────────────────────────
     let steamItems: SteamSearchItem[] = []
     try {
@@ -214,6 +272,9 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
               antiCheatStatus: platform.antiCheatStatus,
             }
           : null,
+        isRawPerformer: rawPerformerMap.get(g.id) ?? false,
+        bestFps: bestFpsMap.get(g.id) ?? null,
+        latestVersion: latestVersionMap.get(g.id) ?? null,
       })
     }
 
@@ -242,6 +303,9 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
           : null,
         platforms: item.platforms,
         controllerSupport: item.controller_support || null,
+        isRawPerformer: false,
+        bestFps: null,
+        latestVersion: null,
       })
     }
 
