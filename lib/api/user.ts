@@ -2,7 +2,7 @@ import { Elysia, t } from "elysia"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db/index"
 import { user, performanceEntries, games, gameVersions, hardware } from "@/lib/db/schema"
-import { eq, sql } from "drizzle-orm"
+import { eq, sql, and, desc } from "drizzle-orm"
 
 export const userRoutes = new Elysia({ prefix: "/user" })
   .get(
@@ -46,10 +46,11 @@ export const userRoutes = new Elysia({ prefix: "/user" })
       const { emailVerified, ...publicProfile } = profile
       return {
         ...publicProfile,
+        createdAt: publicProfile.createdAt.toISOString(),
         contributions,
         verifiedEntries,
         reputation,
-        verified: emailVerified,
+        verified: !!emailVerified,
       }
     },
     {
@@ -103,11 +104,16 @@ export const userRoutes = new Elysia({ prefix: "/user" })
         )
 
       return {
-        ...profile,
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        image: profile.image,
+        role: profile.role,
+        createdAt: profile.createdAt.toISOString(),
         contributions,
         verifiedEntries,
         reputation: contributions * 10,
-        verified: profile.emailVerified,
+        verified: !!profile.emailVerified,
       }
     },
   )
@@ -173,15 +179,21 @@ export const userRoutes = new Elysia({ prefix: "/user" })
           hardware,
           eq(performanceEntries.hardwareSlug, hardware.slug),
         )
-        .where(eq(performanceEntries.userId, params.id))
-        .orderBy(sql`${performanceEntries.createdAt} DESC`)
+        .where(and(
+          eq(performanceEntries.userId, params.id),
+          eq(performanceEntries.isRemoved, false)
+        ))
+        .orderBy(desc(performanceEntries.createdAt))
         .limit(limit)
         .offset(offset)
 
       const [{ count: total }] = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(performanceEntries)
-        .where(eq(performanceEntries.userId, params.id))
+        .where(and(
+          eq(performanceEntries.userId, params.id),
+          eq(performanceEntries.isRemoved, false)
+        ))
 
       return {
         data: entries.map((e) => ({
