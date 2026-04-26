@@ -1,8 +1,9 @@
 import { Elysia, t } from "elysia"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db/index"
-import { user, performanceEntries, games, gameVersions, hardware } from "@/lib/db/schema"
+import { user, performanceEntries, games, gameVersions, hardware, account, passkey } from "@/lib/db/schema"
 import { eq, sql, and, desc } from "drizzle-orm"
+import { hashPassword } from "better-auth/crypto"
 
 export const userRoutes = new Elysia({ prefix: "/user" })
   .get(
@@ -134,6 +135,100 @@ export const userRoutes = new Elysia({ prefix: "/user" })
       })
 
       return sessions
+    },
+  )
+  .get(
+    "/me/auth-methods",
+    async ({ request, set }) => {
+      const session = await auth.api.getSession({
+        headers: request.headers,
+      })
+
+      if (!session) {
+        set.status = 401
+        return { error: "Unauthorized" }
+      }
+
+      // Count accounts by provider
+      const accounts = await db
+        .select({ providerId: account.providerId, id: account.id })
+        .from(account)
+        .where(eq(account.userId, session.user.id))
+
+      // Count passkeys
+      const [passkeyRow] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(passkey)
+        .where(eq(passkey.userId, session.user.id))
+
+      // Check if user has a password (from accounts where providerId is "credential")
+      const hasPassword = accounts.some((a) => a.providerId === "credential")
+
+      // OAuth providers
+      const oauthProviders = accounts
+        .filter((a) => a.providerId !== "credential")
+        .map((a) => ({
+          providerId: a.providerId,
+          id: a.id,
+        }))
+
+      // Total auth methods = passwords + passkeys + oauth accounts
+      const totalAuthMethods =
+        (hasPassword ? 1 : 0) + (passkeyRow?.count ?? 0) + oauthProviders.length
+
+      return {
+        hasPassword,
+        passkeyCount: passkeyRow?.count ?? 0,
+        oauthProviders,
+        totalAuthMethods,
+      }
+    },
+  )
+  .post(
+    "/me/set-password",
+    async ({ request, body, set }) => {
+      const session = await auth.api.getSession({
+        headers: request.headers,
+      })
+
+      if (!session) {
+        set.status = 401
+        return { error: "Unauthorized" }
+      }
+
+      // Check if user already has a password
+      const existing = await db
+        .select({ id: account.id })
+        .from(account)
+        .where(
+          and(
+            eq(account.userId, session.user.id),
+            eq(account.providerId, "credential")
+          )
+        )
+        .limit(1)
+
+      if (existing.length > 0) {
+        set.status = 400
+        return { error: "Password already set" }
+      }
+
+      const hashed = await hashPassword(body.newPassword)
+
+      await db.insert(account).values({
+        id: crypto.randomUUID(),
+        userId: session.user.id,
+        providerId: "credential",
+        accountId: session.user.id,
+        password: hashed,
+      })
+
+      return { success: true }
+    },
+    {
+      body: t.Object({
+        newPassword: t.String({ minLength: 8 }),
+      }),
     },
   )
   .get(
