@@ -11,4 +11,5 @@ export {
 } from "./presets"
 export { commentsRoutes } from "./comments"
 export { gameStatsRoutes } from "./game-stats"
+export { hardwareStatsRoutes } from "./hardware-stats"
 export { savedGamesRoutes } from "./saved-games"
