@@ -73,7 +73,8 @@ interface Preset {
     fpsAvg: number | null
     fpsLow: number | null
     fpsHigh: number | null
-    fsrVersion: string | null
+    upscalerType: string | null
+    upscalerVersion: string | null
     frameGenMethod: string | null
     protonVersion: string | null
     osVersion: string | null
@@ -89,6 +90,7 @@ interface StatsResponse {
         versionCount: number
     }
     isRawPerformer: boolean
+    isPoorPerformance: boolean
     boxplot: Array<{
         hardwareSlug: string
         hardwareName: string
@@ -107,7 +109,8 @@ interface StatsResponse {
         }>
     }>
     upscalerStats: Array<{
-        fsrVersion: string
+        upscalerType: string
+        upscalerVersion?: string
         frameGenMethod: string
         hardwareSlug: string
         avgFps: number
@@ -149,8 +152,8 @@ interface Props {
     gameId: string
 }
 
-const FSR_OPTIONS = ["Any", "None", "FSR1", "FSR2", "FSR3"]
-const FRAMEGEN_OPTIONS = ["Any", "None", "FSR FG", "DLSS FG"]
+const UPSCALER_OPTIONS = ["Any", "None", "FSR", "DLSS", "XeSS", "LSFG", "Other"]
+const FRAMEGEN_OPTIONS = ["Any", "None", "FSR FG", "DLSS FG", "LSFG", "Other"]
 
 function formatDate(value: string | null): string {
     if (!value) return "—"
@@ -161,9 +164,13 @@ function isRawPerformerPreset(preset: Preset): boolean {
     return (
         preset.fpsAvg !== null &&
         preset.fpsAvg >= 60 &&
-        preset.fsrVersion === "none" &&
+        preset.upscalerType === "none" &&
         preset.frameGenMethod === "none"
     )
+}
+
+function isPoorPerformancePreset(preset: Preset): boolean {
+    return preset.fpsAvg !== null && preset.fpsAvg < 30
 }
 
 function getFpsColor(preset: Preset): string {
@@ -173,7 +180,7 @@ function getFpsColor(preset: Preset): string {
         if (preset.frameGenMethod === "dlss_fg") return "text-blue-400"
         return "text-orange-400"
     }
-    if (preset.fsrVersion && preset.fsrVersion !== "none")
+    if (preset.upscalerType && preset.upscalerType !== "none")
         return "text-orange-400"
     return "text-text/60"
 }
@@ -192,7 +199,7 @@ export function GamePageClient({
     const [filters, setFilters] = useState({
         proton: "all",
         os: "all",
-        fsr: "all",
+        upscaler: "all",
         frameGen: "all",
     })
     const [loading, setLoading] = useState(true)
@@ -243,7 +250,7 @@ export function GamePageClient({
         const filterUpscaler = (arr: StatsResponse["upscalerStats"]) =>
             arr.filter((item) => {
                 if (!deviceSet.has(item.hardwareSlug)) return false
-                if (filters.fsr !== "all" && item.fsrVersion !== filters.fsr)
+                if (filters.upscaler !== "all" && item.upscalerType !== filters.upscaler)
                     return false
                 if (
                     filters.frameGen !== "all" &&
@@ -282,7 +289,7 @@ export function GamePageClient({
             if (filters.proton !== "all" && p.protonVersion !== filters.proton)
                 return false
             if (filters.os !== "all" && p.osVersion !== filters.os) return false
-            if (filters.fsr !== "all" && p.fsrVersion !== filters.fsr)
+            if (filters.upscaler !== "all" && p.upscalerType !== filters.upscaler)
                 return false
             if (
                 filters.frameGen !== "all" &&
@@ -349,6 +356,11 @@ export function GamePageClient({
                                 <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-semibold'>
                                     <SparklesIcon className='h-3 w-3' />
                                     Raw Performer
+                                </span>
+                            )}
+                            {stats?.isPoorPerformance && (
+                                <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-semibold'>
+                                    ⚠ Poor Performance
                                 </span>
                             )}
                         </div>
@@ -636,11 +648,11 @@ export function GamePageClient({
                             }
                         />
                         <FilterSelect
-                            label='FSR Version'
-                            value={filters.fsr}
-                            options={FSR_OPTIONS.map((o) => o.toLowerCase())}
+                            label='Upscaler'
+                            value={filters.upscaler}
+                            options={UPSCALER_OPTIONS.map((o) => o.toLowerCase())}
                             onChange={(v) =>
-                                setFilters((f) => ({ ...f, fsr: v }))
+                                setFilters((f) => ({ ...f, upscaler: v }))
                             }
                         />
                         <FilterSelect
@@ -829,6 +841,11 @@ export function GamePageClient({
                                                             Raw
                                                         </span>
                                                     )}
+                                                    {isPoorPerformancePreset(preset) && preset.fpsAvg !== null && (
+                                                        <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-semibold'>
+                                                            ⚠ Slow
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <p className='text-xs text-text/50 mt-0.5'>
                                                     {preset.hardwareName}
@@ -869,11 +886,12 @@ export function GamePageClient({
 
                                         {/* Technology tags */}
                                         <div className='flex flex-wrap items-center gap-1.5'>
-                                            {preset.fsrVersion &&
-                                                preset.fsrVersion !==
+                                            {preset.upscalerType &&
+                                                preset.upscalerType !==
                                                     "none" && (
                                                     <span className='px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20'>
-                                                        {preset.fsrVersion.toUpperCase()}
+                                                        {preset.upscalerType.toUpperCase()}
+                                                        {preset.upscalerVersion ? ` ${preset.upscalerVersion}` : ""}
                                                     </span>
                                                 )}
                                             {preset.frameGenMethod &&

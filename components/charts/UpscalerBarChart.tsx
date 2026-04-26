@@ -5,17 +5,28 @@ import { EChartWrapper, CHART_THEME, getDeviceColor } from "./EChartWrapper"
 import type { EChartsOption } from "echarts"
 
 interface UpscalerStat {
-  fsrVersion: string
+  upscalerType: string
+  upscalerVersion?: string | null
   frameGenMethod: string
   hardwareSlug: string
   avgFps: number
   count: number
 }
 
-function formatCombo(fsr: string, fg: string): string {
+function formatCombo(upscalerType: string, upscalerVersion: string | null | undefined, fg: string): string {
   const parts: string[] = []
-  if (fsr !== "none") parts.push(fsr.toUpperCase())
-  if (fg !== "none") parts.push(fg === "fsr_fg" ? "FSR FG" : "DLSS FG")
+  if (upscalerType !== "none") {
+    const upscalerLabel = upscalerVersion 
+      ? `${upscalerType.toUpperCase()} ${upscalerVersion}`
+      : upscalerType.toUpperCase()
+    parts.push(upscalerLabel)
+  }
+  if (fg !== "none") {
+    if (fg === "fsr_fg") parts.push("FSR FG")
+    else if (fg === "dlss_fg") parts.push("DLSS FG")
+    else if (fg === "lsfg") parts.push("LSFG")
+    else parts.push(fg.toUpperCase())
+  }
   return parts.length > 0 ? parts.join(" + ") : "Native"
 }
 
@@ -29,7 +40,7 @@ export function UpscalerBarChart({
   const option = useMemo<EChartsOption>(() => {
     const combos = [
       ...new Set(
-        data.map((d) => formatCombo(d.fsrVersion, d.frameGenMethod)),
+        data.map((d) => formatCombo(d.upscalerType, d.upscalerVersion, d.frameGenMethod)),
       ),
     ]
     const deviceSlugs = [...new Set(data.map((d) => d.hardwareSlug))]
@@ -40,7 +51,7 @@ export function UpscalerBarChart({
       data: combos.map((combo) => {
         const match = data.find(
           (d) =>
-            formatCombo(d.fsrVersion, d.frameGenMethod) === combo &&
+            formatCombo(d.upscalerType, d.upscalerVersion, d.frameGenMethod) === combo &&
             d.hardwareSlug === slug,
         )
         return match?.avgFps ?? 0
