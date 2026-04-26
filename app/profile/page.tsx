@@ -8,20 +8,16 @@ import { StatsRow } from "@/components/profile/stats-row"
 import { ContributionList } from "@/components/profile/contribution-list"
 import { SavedGamesGrid } from "@/components/saved-games/saved-games-grid"
 import { Bookmark, Settings, Loader2, TrendingUp } from "lucide-react"
-import { SettingsProfileTab } from "@/components/profile/settings-profile-tab"
-import { SettingsSecurityTab } from "@/components/profile/settings-security-tab"
-import { SettingsAccountsTab } from "@/components/profile/settings-accounts-tab"
+import { SettingsContainer } from "@/components/profile/settings-container"
 import { motion } from "motion/react"
 import type { ContributionEntry } from "@/types/api"
 
 type Tab = "overview" | "saved" | "settings"
-type SettingsTab = "profile" | "security" | "accounts"
 
 export default function ProfilePage() {
     const router = useRouter()
     const { data: session, isPending: isSessionLoading } = useSession()
     const [activeTab, setActiveTab] = useState<Tab>("overview")
-    const [settingsSubTab, setSettingsSubTab] = useState<SettingsTab>("profile")
     const [profile, setProfile] = useState<{
         id: string
         name: string
@@ -173,56 +169,13 @@ export default function ProfilePage() {
 
                         {activeTab === "saved" && <SavedGamesGrid />}
 
-                        {activeTab === "settings" && (
-                            <div className='space-y-4'>
-                                {/* Settings sub-tabs */}
-                                <div className='flex gap-1 border-b border-border'>
-                                    {[
-                                        {
-                                            id: "profile" as SettingsTab,
-                                            label: "Profile",
-                                        },
-                                        {
-                                            id: "security" as SettingsTab,
-                                            label: "Security",
-                                        },
-                                        {
-                                            id: "accounts" as SettingsTab,
-                                            label: "Linked Accounts",
-                                        },
-                                    ].map((subTab) => (
-                                        <button
-                                            key={subTab.id}
-                                            onClick={() =>
-                                                setSettingsSubTab(subTab.id)
-                                            }
-                                            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px cursor-pointer ${
-                                                settingsSubTab === subTab.id
-                                                    ? "border-primary text-primary"
-                                                    : "border-transparent text-text/50 hover:text-text/70"
-                                            }`}
-                                        >
-                                            {subTab.label}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                {/* Settings sub-tab content */}
-                                {settingsSubTab === "profile" && (
-                                    <SettingsProfileTab
-                                        name={profile.name}
-                                        email={profile.email}
-                                        role={profile.role}
-                                        createdAt={profile.createdAt}
-                                    />
-                                )}
-                                {settingsSubTab === "security" && (
-                                    <SettingsSecurityTab />
-                                )}
-                                {settingsSubTab === "accounts" && (
-                                    <SettingsAccountsTab />
-                                )}
-                            </div>
+                        {activeTab === "settings" && profile && (
+                            <SettingsContainer
+                                name={profile.name}
+                                email={profile.email}
+                                role={profile.role}
+                                createdAt={profile.createdAt}
+                            />
                         )}
                     </motion.div>
                 </div>
