@@ -1,6 +1,6 @@
 {
-  "id": "273a7a41-0813-4612-ad50-bc53aa0eac5f",
-  "prevId": "c6630c3d-832a-4f22-a679-2c76621fc4a2",
+  "id": "7f7353e5-646d-4e21-92e6-250b5b28ee50",
+  "prevId": "273a7a41-0813-4612-ad50-bc53aa0eac5f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -567,6 +567,12 @@
           "notNull": true,
           "default": 0
         },
+        "performance_entry_id": {
+          "name": "performance_entry_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "settings_json": {
           "name": "settings_json",
           "type": "jsonb",
@@ -622,6 +628,19 @@
           "tableTo": "user",
           "columnsFrom": [
             "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "community_presets_performance_entry_id_performance_entries_id_fk": {
+          "name": "community_presets_performance_entry_id_performance_entries_id_fk",
+          "tableFrom": "community_presets",
+          "tableTo": "performance_entries",
+          "columnsFrom": [
+            "performance_entry_id"
           ],
           "columnsTo": [
             "id"

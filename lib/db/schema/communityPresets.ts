@@ -8,6 +8,7 @@ import {
 } from "drizzle-orm/pg-core"
 import { games } from "./games"
 import { hardware } from "./hardware"
+import { performanceEntries } from "./performanceEntries"
 import { user } from "./auth"
 
 export const communityPresets = pgTable(
@@ -28,6 +29,10 @@ export const communityPresets = pgTable(
       onDelete: "set null",
     }),
     upvotes: integer("upvotes").default(0).notNull(),
+    performanceEntryId: text("performance_entry_id").references(
+      () => performanceEntries.id,
+      { onDelete: "set null" },
+    ),
     // Freeform settings JSON — same flexible structure as performanceEntries.settingsJson
     settingsJson: jsonb("settings_json").$type<
       {

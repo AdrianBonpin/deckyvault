@@ -1,0 +1,2 @@
+ALTER TABLE "community_presets" ADD COLUMN "performance_entry_id" text;--> statement-breakpoint
+ALTER TABLE "community_presets" ADD CONSTRAINT "community_presets_performance_entry_id_performance_entries_id_fk" FOREIGN KEY ("performance_entry_id") REFERENCES "public"."performance_entries"("id") ON DELETE set null ON UPDATE no action;
