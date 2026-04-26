@@ -19,7 +19,9 @@ export default function Navbar() {
 
     const isLanding = pathname === "/"
 
-    const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") || "")
+    const [searchQuery, setSearchQuery] = useState(
+        () => searchParams.get("q") || "",
+    )
     const debouncedQuery = useDebounce(searchQuery, 300)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [isFocused, setIsFocused] = useState(false)
@@ -31,8 +33,7 @@ export default function Navbar() {
     // doesn't overwrite the URL params before it catches up.
     const skipNextUrlWrite = useRef(false)
 
-    const { data: session, isPending: isSessionLoading } =
-        useSession()
+    const { data: session, isPending: isSessionLoading } = useSession()
     const [userMenuOpen, setUserMenuOpen] = useState(false)
 
     // Sync search query with URL ?q= param
@@ -207,74 +208,87 @@ export default function Navbar() {
                             {route.title}
                         </Link>
                     ))}
-                </ul>
-
-                {/* Desktop Auth Controls */}
-                <div className='hidden md:flex items-center gap-3 shrink-0'>
-                    {isSessionLoading ? (
-                        <div className='w-20 h-8 rounded-lg bg-white/[0.03] animate-pulse' />
-                    ) : session ? (
-                        <div className='relative'>
-                            <button
-                                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                                className='flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/[0.05] transition-colors'
+                    <AnimatePresence mode='popLayout' initial={false}>
+                        {isSessionLoading ? (
+                            <motion.li
+                                key='loading-placeholder'
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className='w-20 h-8 rounded-lg bg-white/3 animate-pulse'
+                            />
+                        ) : session ? (
+                            <motion.li
+                                key='dashboard-link'
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className='relative'
                             >
-                                {session.user.image ? (
-                                    <Image
-                                        src={session.user.image}
-                                        alt=''
-                                        width={28}
-                                        height={28}
-                                        unoptimized
-                                        className='h-7 w-7 rounded-full'
-                                    />
-                                ) : (
-                                    <div className='h-7 w-7 rounded-full bg-[#571b8b] flex items-center justify-center'>
-                                        <User className='h-3.5 w-3.5 text-[#ebe4f1]' />
-                                    </div>
-                                )}
-                                <span className='text-sm text-[#ebe4f1] max-w-[100px] truncate'>
-                                    {session.user.name}
-                                </span>
-                            </button>
-                            {userMenuOpen && (
-                                <>
-                                    <div
-                                        className='fixed inset-0 z-40'
-                                        onClick={() => setUserMenuOpen(false)}
-                                    />
-                                    <div className='absolute right-0 top-full mt-1 w-48 bg-[#1a1020] border border-white/10 rounded-lg shadow-lg z-50 py-1'>
-                                        <button
-                                            onClick={async () => {
+                                <button
+                                    onClick={() =>
+                                        setUserMenuOpen(!userMenuOpen)
+                                    }
+                                    className='flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors'
+                                >
+                                    {session.user.image ? (
+                                        <Image
+                                            src={session.user.image}
+                                            alt=''
+                                            width={28}
+                                            height={28}
+                                            unoptimized
+                                            className='h-7 w-7 rounded-full'
+                                        />
+                                    ) : (
+                                        <div className='h-7 w-7 rounded-full bg-secondary flex items-center justify-center'>
+                                            <User className='h-3.5 w-3.5 text-text' />
+                                        </div>
+                                    )}
+                                    <span className='text-sm text-text max-w-25 truncate'>
+                                        {session.user.name}
+                                    </span>
+                                </button>
+                                {userMenuOpen && (
+                                    <>
+                                        <div
+                                            className='fixed inset-0 z-40'
+                                            onClick={() =>
                                                 setUserMenuOpen(false)
-                                                await authClient.signOut()
-                                            }}
-                                            className='w-full flex items-center gap-2 px-3 py-2 text-sm text-[#ebe4f1]/70 hover:text-[#ebe4f1] hover:bg-white/[0.05] transition-colors'
-                                        >
-                                            <LogOut className='h-4 w-4' />
-                                            Sign out
-                                        </button>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    ) : (
-                        <>
-                            <Link
-                                href='/login'
-                                className='text-sm font-medium text-[#ebe4f1]/70 hover:text-[#ebe4f1] transition-colors'
+                                            }
+                                        />
+                                        <div className='absolute right-0 top-full mt-1 w-48 bg-[#1a1020] border border-white/10 rounded-lg shadow-lg z-50 py-1'>
+                                            <button
+                                                onClick={async () => {
+                                                    setUserMenuOpen(false)
+                                                    await authClient.signOut()
+                                                }}
+                                                className='w-full flex items-center gap-2 px-3 py-2 text-sm text-text/70 hover:text-text hover:bg-text/5 transition-colors'
+                                            >
+                                                <LogOut className='h-4 w-4' />
+                                                Sign out
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </motion.li>
+                        ) : (
+                            <motion.li
+                                key='sign-in-link'
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
                             >
-                                Sign in
-                            </Link>
-                            <Link
-                                href='/signup'
-                                className='px-3.5 py-1.5 rounded-lg bg-[#eb3779] text-white text-sm font-medium hover:bg-[#eb3779]/90 transition-colors'
-                            >
-                                Sign up
-                            </Link>
-                        </>
-                    )}
-                </div>
+                                <Link
+                                    href='/login'
+                                    className='text-sm font-medium hover:text-primary transition-colors uppercase'
+                                >
+                                    login
+                                </Link>
+                            </motion.li>
+                        )}
+                    </AnimatePresence>
+                </ul>
 
                 {/* Mobile Hamburger Button */}
                 <button
@@ -336,9 +350,9 @@ export default function Navbar() {
                                 ))}
                             </nav>
                             {/* Mobile Auth Controls */}
-                            <div className='mt-auto p-4 border-t border-white/[0.08]'>
+                            <div className='mt-auto p-4 border-t border-text/8'>
                                 {isSessionLoading ? (
-                                    <div className='w-full h-10 rounded-lg bg-white/[0.03] animate-pulse' />
+                                    <div className='w-full h-10 rounded-lg bg-text/3 animate-pulse' />
                                 ) : session ? (
                                     <div className='space-y-3'>
                                         <div className='flex items-center gap-2'>
@@ -352,15 +366,15 @@ export default function Navbar() {
                                                     className='h-8 w-8 rounded-full'
                                                 />
                                             ) : (
-                                                <div className='h-8 w-8 rounded-full bg-[#571b8b] flex items-center justify-center'>
-                                                    <User className='h-4 w-4 text-[#ebe4f1]' />
+                                                <div className='h-8 w-8 rounded-full bg-secondary flex items-center justify-center'>
+                                                    <User className='h-4 w-4 text-text' />
                                                 </div>
                                             )}
                                             <div className='min-w-0'>
-                                                <p className='text-sm font-medium text-[#ebe4f1] truncate'>
+                                                <p className='text-sm font-medium text-text truncate'>
                                                     {session.user.name}
                                                 </p>
-                                                <p className='text-xs text-[#ebe4f1]/50 truncate'>
+                                                <p className='text-xs text-text/50 truncate'>
                                                     {session.user.email}
                                                 </p>
                                             </div>
@@ -370,7 +384,7 @@ export default function Navbar() {
                                                 setMobileMenuOpen(false)
                                                 await authClient.signOut()
                                             }}
-                                            className='w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-white/10 text-sm text-[#ebe4f1]/70 hover:text-[#ebe4f1] hover:bg-white/[0.05] transition-colors'
+                                            className='w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-white/10 text-sm text-text/70 hover:text-text hover:bg-text/5 transition-colors'
                                         >
                                             <LogOut className='h-4 w-4' />
                                             Sign out
@@ -380,17 +394,12 @@ export default function Navbar() {
                                     <div className='space-y-2'>
                                         <Link
                                             href='/login'
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className='block w-full text-center px-3 py-2 rounded-lg border border-white/10 text-sm text-[#ebe4f1] hover:bg-white/[0.05] transition-colors'
+                                            onClick={() =>
+                                                setMobileMenuOpen(false)
+                                            }
+                                            className='block w-full text-center px-3 py-2 rounded-lg border border-white/10 text-sm text-text hover:bg-text/5 transition-colors'
                                         >
-                                            Sign in
-                                        </Link>
-                                        <Link
-                                            href='/signup'
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className='block w-full text-center px-3 py-2 rounded-lg bg-[#eb3779] text-white text-sm font-medium hover:bg-[#eb3779]/90 transition-colors'
-                                        >
-                                            Sign up
+                                            Login
                                         </Link>
                                     </div>
                                 )}

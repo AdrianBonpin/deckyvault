@@ -39,9 +39,10 @@ export default function Landing() {
             <motion.h1
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="font-bold text-3xl md:text-5xl text-center"
+                className="font-bold text-3xl md:text-5xl text-center flex flex-row gap-2 items-center justify-center"
             >
                 DeckyVault
+                <span className="border border-border text-xs md:text-base px-2 py-1 rounded-md bg-primary/10 font-medium">beta</span>
             </motion.h1>
             <motion.h2
                 layout

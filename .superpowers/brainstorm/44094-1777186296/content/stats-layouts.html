@@ -1,0 +1,191 @@
+<h2>Stats Dashboard — Layout Alternatives</h2>
+<p class="subtitle">Three layout options for the statistics section. Click the one that feels best.</p>
+
+<style>
+  .layout-demo { border: 1px solid #3d2d52; border-radius: 10px; padding: 16px; background: #0d0814; }
+  .chart-placeholder { border: 1px dashed #3d2d52; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #4a3a5c; font-size: 11px; text-align: center; padding: 8px; }
+  .chart-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #6b5a7d; margin-bottom: 6px; }
+  .full-badge { display: inline-block; font-size: 8px; background: #eb377920; color: #eb3779; padding: 1px 5px; border-radius: 4px; margin-left: 4px; vertical-align: middle; }
+</style>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- OPTION A: Featured Row + Asymmetric Grid -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="option" data-choice="a" onclick="toggleSelect(this)" style="cursor: pointer; border-color: transparent;">
+  <div class="letter" style="margin-bottom: 12px;">A</div>
+  <h3 style="margin-bottom: 4px;">Featured Row + Asymmetric Grid</h3>
+  <p class="subtitle" style="margin-bottom: 16px;">Top chart gets a larger container with summary stats beside it. Remaining charts in a flowing grid.</p>
+
+  <div class="layout-demo">
+    <!-- Featured: Historical with side stats -->
+    <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+      <div style="flex: 3; border: 1px solid #3d2d52; border-radius: 8px; padding: 12px;">
+        <div class="chart-label">📈 Historical AVG FPS <span class="full-badge">FEATURED</span></div>
+        <div class="chart-placeholder" style="height: 160px;">[Stacked Area Chart — full width of container]</div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+        <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 10px; text-align: center;">
+          <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d;">Overall Avg</div>
+          <div style="font-size: 22px; font-weight: 700; color: #22c55e;">54 FPS</div>
+        </div>
+        <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 10px; text-align: center;">
+          <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d;">Best Device</div>
+          <div style="font-size: 13px; font-weight: 600; color: #ebe4f1;">OLED</div>
+        </div>
+        <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 10px; text-align: center;">
+          <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d;">Entries</div>
+          <div style="font-size: 22px; font-weight: 700; color: #a78bfa;">42</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full-width: Upscaler grouped bar -->
+    <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+      <div class="chart-label">🎮 FPS by Upscaler & Frame Gen <span class="full-badge">FULL</span></div>
+      <div class="chart-placeholder" style="height: 130px;">[Grouped Bar — FSR version × Frame Gen method]</div>
+    </div>
+
+    <!-- 3-column grid -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+      <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 10px;">
+        <div class="chart-label">📊 Boxplot</div>
+        <div class="chart-placeholder" style="height: 100px;">[FPS distribution per device]</div>
+      </div>
+      <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 10px;">
+        <div class="chart-label">📉 FPS Range</div>
+        <div class="chart-placeholder" style="height: 100px;">[Low → High per entry]</div>
+      </div>
+      <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 10px;">
+        <div class="chart-label">🖥️ Devices</div>
+        <div class="chart-placeholder" style="height: 100px;">[Donut: entries per device]</div>
+      </div>
+    </div>
+
+    <!-- Full-width: Community Trust -->
+    <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 12px;">
+      <div class="chart-label">✅ Community Trust <span class="full-badge">FULL</span></div>
+      <div class="chart-placeholder" style="height: 80px;">[Horizontal bar: verified + vote ratio per entry]</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- OPTION B: Dashboard Cards with KPI Strip -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="option" data-choice="b" onclick="toggleSelect(this)" style="cursor: pointer; border-color: transparent; margin-top: 24px;">
+  <div class="letter" style="margin-bottom: 12px;">B</div>
+  <h3 style="margin-bottom: 4px;">Dashboard Cards with KPI Strip</h3>
+  <p class="subtitle" style="margin-bottom: 16px;">Quick-glance KPI numbers at top, then a clean 2×2 grid of charts, with full-width charts breaking the rhythm where needed.</p>
+
+  <div class="layout-demo">
+    <!-- KPI Strip -->
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px;">
+      <div style="background: #22c55e10; border: 1px solid #22c55e30; border-radius: 8px; padding: 10px; text-align: center;">
+        <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d;">Avg FPS</div>
+        <div style="font-size: 20px; font-weight: 700; color: #22c55e;">54</div>
+      </div>
+      <div style="background: #3b82f610; border: 1px solid #3b82f630; border-radius: 8px; padding: 10px; text-align: center;">
+        <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d;">Best</div>
+        <div style="font-size: 20px; font-weight: 700; color: #60a5fa;">71</div>
+      </div>
+      <div style="background: #fb793c10; border: 1px solid #fb793c30; border-radius: 8px; padding: 10px; text-align: center;">
+        <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d;">Worst</div>
+        <div style="font-size: 20px; font-weight: 700; color: #fb793c;">38</div>
+      </div>
+      <div style="background: #a78bfa10; border: 1px solid #a78bfa30; border-radius: 8px; padding: 10px; text-align: center;">
+        <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d;">Std Dev</div>
+        <div style="font-size: 20px; font-weight: 700; color: #a78bfa;">±8</div>
+      </div>
+      <div style="background: #ebe4f108; border: 1px solid #ebe4f115; border-radius: 8px; padding: 10px; text-align: center;">
+        <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d;">Entries</div>
+        <div style="font-size: 20px; font-weight: 700; color: #ebe4f1;">42</div>
+      </div>
+    </div>
+
+    <!-- Full-width: Historical -->
+    <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <div class="chart-label">📈 Historical AVG FPS <span class="full-badge">FULL</span></div>
+      <div class="chart-placeholder" style="height: 150px;">[Stacked Area]</div>
+    </div>
+
+    <!-- 2×2 Grid -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+      <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 10px;">
+        <div class="chart-label">🎮 FPS by Upscaler & Frame Gen</div>
+        <div class="chart-placeholder" style="height: 120px;">[Grouped Bar]</div>
+      </div>
+      <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 10px;">
+        <div class="chart-label">📊 FPS Distribution (Boxplot)</div>
+        <div class="chart-placeholder" style="height: 120px;">[Boxplot per device]</div>
+      </div>
+      <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 10px;">
+        <div class="chart-label">📉 FPS Range</div>
+        <div class="chart-placeholder" style="height: 120px;">[Low → High]</div>
+      </div>
+      <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 10px;">
+        <div class="chart-label">🖥️ Entries per Device</div>
+        <div class="chart-placeholder" style="height: 120px;">[Donut]</div>
+      </div>
+    </div>
+
+    <!-- Full-width: Community Trust -->
+    <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 12px;">
+      <div class="chart-label">✅ Community Trust <span class="full-badge">FULL</span></div>
+      <div class="chart-placeholder" style="height: 80px;">[Horizontal bar]</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- OPTION C: Sectioned with Visual Separator -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="option" data-choice="c" onclick="toggleSelect(this)" style="cursor: pointer; border-color: transparent; margin-top: 24px;">
+  <div class="letter" style="margin-bottom: 12px;">C</div>
+  <h3 style="margin-bottom: 4px;">Sectioned with Visual Separator</h3>
+  <p class="subtitle" style="margin-bottom: 16px;">Divides stats into logical groups with subtle dividers. Each group has a label. Full-width charts anchor each section.</p>
+
+  <div class="layout-demo">
+    <!-- Section: Performance Overview -->
+    <div style="margin-bottom: 16px;">
+      <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: #eb3779; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #eb377920;">Performance Overview</div>
+      <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+        <div class="chart-label">📈 Historical AVG FPS <span class="full-badge">FULL</span></div>
+        <div class="chart-placeholder" style="height: 150px;">[Stacked Area]</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 10px;">
+          <div class="chart-label">📊 FPS Distribution</div>
+          <div class="chart-placeholder" style="height: 110px;">[Boxplot]</div>
+        </div>
+        <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 10px;">
+          <div class="chart-label">📉 FPS Range</div>
+          <div class="chart-placeholder" style="height: 110px;">[Low → High]</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Technology Impact -->
+    <div style="margin-bottom: 16px;">
+      <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: #a78bfa; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #a78bfa20;">Technology Impact</div>
+      <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 12px;">
+        <div class="chart-label">🎮 FPS by Upscaler & Frame Gen <span class="full-badge">FULL</span></div>
+        <div class="chart-placeholder" style="height: 130px;">[Grouped Bar]</div>
+      </div>
+    </div>
+
+    <!-- Section: Data Coverage & Trust -->
+    <div>
+      <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: #22c55e; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #22c55e20;">Data Coverage & Trust</div>
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-bottom: 10px;">
+        <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 10px;">
+          <div class="chart-label">🖥️ Devices</div>
+          <div class="chart-placeholder" style="height: 100px;">[Donut]</div>
+        </div>
+        <div style="border: 1px solid #3d2d52; border-radius: 8px; padding: 10px;">
+          <div class="chart-label">✅ Community Trust <span class="full-badge">FULL</span></div>
+          <div class="chart-placeholder" style="height: 100px;">[Horizontal bar]</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,130 @@
+<h2>Search Card — Final Design</h2>
+<p class="subtitle">Existing layout preserved. Added: Raw Performer badge, real Avg FPS, real Version. No other layout changes.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Local Result — With Raw Performer</div>
+  <div class="mockup-body" style="padding: 0;">
+    <div style="display: flex; gap: 14px; padding: 14px; background: #ebe4f105; border: 1px solid #ebe4f110; border-radius: 12px; margin: 12px;">
+      <!-- Cover (unchanged) -->
+      <div style="width: 80px; height: 120px; border-radius: 8px; background: #2a1f35; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #3d2d52;">
+        <span style="color: #6b5a7d; font-size: 10px;">2:3</span>
+      </div>
+      <!-- Content (unchanged layout) -->
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+        <!-- Title + Raw Performer badge (NEW) -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span style="font-size: 14px; font-weight: 600; color: #ebe4f1;">Baldur's Gate 3</span>
+          <span style="background: linear-gradient(135deg, #22c55e30, #22c55e10); border: 1px solid #22c55e50; padding: 1px 8px; border-radius: 10px; font-size: 9px; color: #4ade80; font-weight: 600;">⚡ RAW PERFORMER</span>
+        </div>
+        <span style="font-size: 11px; color: #8b7a9e;">Larian Studios · Publisher</span>
+        <p style="font-size: 11px; color: #6b5a7d; line-height: 1.4; margin: 0;">Gather your party and return to the Forgotten Realms...</p>
+        <!-- Tags (unchanged) -->
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
+          <span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #ebe4f108; border: 1px solid #ebe4f115; color: #6b5a7d;">RPG</span>
+          <span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #ebe4f108; border: 1px solid #ebe4f115; color: #6b5a7d;">Strategy</span>
+        </div>
+        <!-- Stats (unchanged) -->
+        <div style="display: flex; gap: 12px; margin-top: 4px;">
+          <span style="font-size: 11px; color: #eb3779;">🎮 28 Benchmarks</span>
+          <span style="font-size: 11px; color: #9b6fc7;">⚙️ 5 Presets</span>
+          <span style="font-size: 11px; color: #fb793c;">💬 12 Comments</span>
+        </div>
+      </div>
+      <!-- Right panel (existing, now with real data) -->
+      <div style="display: flex; flex-direction: column; align-items: end; justify-content: center; gap: 10px; min-width: 100px; border-left: 1px solid #ebe4f110; padding-left: 14px;">
+        <div style="text-align: right;">
+          <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d; letter-spacing: 0.5px;">Deck</div>
+          <div style="font-size: 12px; color: #22c55e; font-weight: 500;">Native</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d; letter-spacing: 0.5px;">Best FPS</div>
+          <div style="font-size: 12px; color: #22c55e; font-weight: 600; font-variant-numeric: tabular-nums;">68</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d; letter-spacing: 0.5px;">Version</div>
+          <div style="font-size: 12px; color: #8b7a9e; font-variant-numeric: tabular-nums;">v4.1.1.6</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top: 16px;">
+  <div class="mockup-header">Local Result — Without Raw Performer (for comparison)</div>
+  <div class="mockup-body" style="padding: 0;">
+    <div style="display: flex; gap: 14px; padding: 14px; background: #ebe4f105; border: 1px solid #ebe4f110; border-radius: 12px; margin: 12px;">
+      <div style="width: 80px; height: 120px; border-radius: 8px; background: #2a1f35; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #3d2d52;">
+        <span style="color: #6b5a7d; font-size: 10px;">2:3</span>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+        <!-- Title — no badge -->
+        <span style="font-size: 14px; font-weight: 600; color: #ebe4f1;">Cyberpunk 2077</span>
+        <span style="font-size: 11px; color: #8b7a9e;">CD Projekt Red · Publisher</span>
+        <p style="font-size: 11px; color: #6b5a7d; line-height: 1.4; margin: 0;">An open-world action-adventure story set in Night City...</p>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
+          <span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #ebe4f108; border: 1px solid #ebe4f115; color: #6b5a7d;">RPG</span>
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 4px;">
+          <span style="font-size: 11px; color: #eb3779;">🎮 45 Benchmarks</span>
+          <span style="font-size: 11px; color: #9b6fc7;">⚙️ 12 Presets</span>
+        </div>
+      </div>
+      <!-- Right panel — best FPS lower, no raw performer -->
+      <div style="display: flex; flex-direction: column; align-items: end; justify-content: center; gap: 10px; min-width: 100px; border-left: 1px solid #ebe4f110; padding-left: 14px;">
+        <div style="text-align: right;">
+          <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d; letter-spacing: 0.5px;">Deck</div>
+          <div style="font-size: 12px; color: #3b82f6; font-weight: 500;">Proton</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d; letter-spacing: 0.5px;">Best FPS</div>
+          <div style="font-size: 12px; color: #fb793c; font-weight: 600; font-variant-numeric: tabular-nums;">42</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d; letter-spacing: 0.5px;">Version</div>
+          <div style="font-size: 12px; color: #8b7a9e; font-variant-numeric: tabular-nums;">v2.13</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top: 16px;">
+  <div class="mockup-header">Steam-Only Result (unchanged — no local data)</div>
+  <div class="mockup-body" style="padding: 0;">
+    <div style="display: flex; gap: 14px; padding: 14px; background: #ebe4f105; border: 1px solid #ebe4f110; border-radius: 12px; margin: 12px;">
+      <div style="width: 80px; height: 120px; border-radius: 8px; background: #2a1f35; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #3d2d52;">
+        <span style="color: #6b5a7d; font-size: 10px;">2:3</span>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 14px; font-weight: 600; color: #ebe4f1;">Elden Ring</span>
+        <span style="font-size: 11px; color: #8b7a9e;">FromSoftware · Bandai Namco</span>
+        <p style="font-size: 11px; color: #6b5a7d; line-height: 1.4; margin: 0;">THE NEW FANTASY ACTION RPG...</p>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
+          <span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #ebe4f108; border: 1px solid #ebe4f115; color: #6b5a7d;">RPG</span>
+          <span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #ebe4f108; border: 1px solid #ebe4f115; color: #6b5a7d;">Action</span>
+        </div>
+        <!-- Steam links (unchanged) -->
+        <div style="display: flex; gap: 6px; margin-top: 4px;">
+          <span style="font-size: 10px; padding: 3px 8px; border-radius: 6px; background: #1b2838; border: 1px solid #2a475e; color: #c6d4df;">Steam ↗</span>
+          <span style="font-size: 10px; padding: 3px 8px; border-radius: 6px; background: #7c3aed15; border: 1px solid #7c3aed30; color: #a78bfa;">ProtonDB ↗</span>
+          <span style="font-size: 10px; padding: 3px 8px; border-radius: 6px; background: #3b82f615; border: 1px solid #3b82f630; color: #60a5fa;">SteamDB ↗</span>
+        </div>
+      </div>
+      <!-- Right panel — all dashes (unchanged) -->
+      <div style="display: flex; flex-direction: column; align-items: end; justify-content: center; gap: 10px; min-width: 100px; border-left: 1px solid #ebe4f110; padding-left: 14px;">
+        <div style="text-align: right;">
+          <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d;">Deck</div>
+          <div style="font-size: 12px; color: #6b5a7d;">—</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d;">Best FPS</div>
+          <div style="font-size: 12px; color: #6b5a7d;">—</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 9px; text-transform: uppercase; color: #6b5a7d;">Version</div>
+          <div style="font-size: 12px; color: #6b5a7d;">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
