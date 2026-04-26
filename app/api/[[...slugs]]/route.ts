@@ -9,6 +9,7 @@ import {
   hardwareRoutes,
   performanceRoutes,
   performanceVerifyRoutes,
+  performanceSubmitRoutes,
   presetsRoutes,
   presetUpvoteRoutes,
   presetSettingsRoutes,
@@ -64,6 +65,7 @@ export const app = new Elysia({ prefix: "/api" })
   // Performance
   .use(performanceRoutes)
   .use(performanceVerifyRoutes)
+  .use(performanceSubmitRoutes)
   // Presets
   .use(presetsRoutes)
   .use(presetUpvoteRoutes)
