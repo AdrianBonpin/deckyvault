@@ -9,3 +9,4 @@ export {
   presetSettingsRoutes,
 } from "./presets"
 export { commentsRoutes } from "./comments"
+export { gameStatsRoutes } from "./game-stats"

@@ -17,6 +17,7 @@ import {
 import { steamSearchRoutes } from "@/lib/api/steam-search"
 import { searchUnifiedRoutes } from "@/lib/api/search-unified"
 import { gameStubRoutes } from "@/lib/api/game-stub"
+import { gameStatsRoutes } from "@/lib/api/game-stats"
 
 const betterAuth = new Elysia({ name: "better-auth" })
   .mount(auth.handler)
@@ -74,6 +75,8 @@ export const app = new Elysia({ prefix: "/api" })
   .use(searchUnifiedRoutes)
   // Game stub creation
   .use(gameStubRoutes)
+  // Game stats aggregation
+  .use(gameStatsRoutes)
   // Root
   .get("/", () => ({
     name: "DeckyVault API",
