@@ -11,7 +11,10 @@ import {
   ClockIcon,
   SparklesIcon,
   DatabaseIcon,
+  Plus,
 } from "lucide-react"
+import Link from "next/link"
+import { useSession } from "@/lib/auth-client"
 import { FaSteam } from "react-icons/fa"
 import { motion } from "motion/react"
 
@@ -181,6 +184,7 @@ export function GamePageClient({
   presets,
   gameId,
 }: Props) {
+  const { data: session } = useSession()
   const [imgError, setImgError] = useState(false)
   const [stats, setStats] = useState<StatsResponse | null>(null)
   const [selectedDevices, setSelectedDevices] = useState<string[]>([])
@@ -360,6 +364,15 @@ export function GamePageClient({
                 </span>
               )}
               <BookmarkButton gameId={game.id} />
+              {session && (
+                <Link
+                  href={`/game/${game.id}/submit`}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Benchmark
+                </Link>
+              )}
             </div>
 
             {/* External links */}
