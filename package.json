@@ -21,6 +21,8 @@
     "@better-auth/passkey": "^1.6.9",
     "@elysia/eden": "^1.4.10",
     "@tiptap/core": "^3.22.4",
+    "@tiptap/extension-link": "^3.22.4",
+    "@tiptap/extension-placeholder": "^3.22.4",
     "@tiptap/pm": "^3.22.4",
     "@tiptap/react": "^3.22.4",
     "@tiptap/starter-kit": "^3.22.4",

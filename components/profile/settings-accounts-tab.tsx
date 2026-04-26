@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Loader2, Link as LinkIcon, Unlink, Shield } from "lucide-react"
 import { motion } from "motion/react"
 import { FaGoogle, FaDiscord } from "react-icons/fa"
@@ -33,7 +33,7 @@ export function SettingsAccountsTab() {
   const [unlinking, setUnlinking] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
-  const fetchData = useCallback(async () => {
+  const refreshData = async () => {
     try {
       const [accountsRes, methodsRes] = await Promise.all([
         fetch("/api/auth/list-accounts", { credentials: "include" }),
@@ -49,16 +49,26 @@ export function SettingsAccountsTab() {
         const data = await methodsRes.json()
         setAuthMethods(data)
       }
-    } catch (err) {
-      console.error("Failed to fetch account data:", err)
-    } finally {
-      setLoading(false)
+    } catch {
+      // silently fail
     }
-  }, [])
+  }
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    if (accounts.length > 0 || authMethods !== null) return
+    let cancelled = false
+    Promise.all([
+      fetch("/api/auth/list-accounts", { credentials: "include" }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch("/api/user/me/auth-methods").then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([accountsData, methodsData]) => {
+      if (cancelled) return
+      if (accountsData) setAccounts(Array.isArray(accountsData) ? accountsData : [])
+      if (methodsData) setAuthMethods(methodsData)
+      setLoading(false)
+    })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: fetch only on mount
+  }, [])
 
   const handleLink = async (provider: "google" | "discord") => {
     try {
@@ -81,9 +91,9 @@ export function SettingsAccountsTab() {
       const data = await res.json()
       // If the API returns a URL, redirect to it
       if (data && data.url) {
-        window.location.href = data.url
+        window.location.assign(data.url as string)
       }
-    } catch (err) {
+    } catch {
       setMessage({ type: "error", text: "Failed to initiate account linking" })
     }
   }
@@ -104,7 +114,7 @@ export function SettingsAccountsTab() {
 
       if (res.ok) {
         setMessage({ type: "success", text: `${providerConfig[providerId]?.name || providerId} account unlinked` })
-        await fetchData()
+        await refreshData()
       } else {
         const data = await res.json()
         setMessage({ type: "error", text: data.message || "Failed to unlink account" })

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect } from "react"
 import { authClient } from "@/lib/auth-client"
 import { Loader2, Key, Fingerprint, Plus, Trash2, Pencil, Check, X, Shield } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
@@ -39,42 +39,38 @@ export function SettingsSecurityTab() {
   const [isDeletingPasskey, setIsDeletingPasskey] = useState<string | null>(null)
   const [isAddingPasskey, setIsAddingPasskey] = useState(false)
 
-  const fetchAuthMethods = useCallback(async () => {
-    try {
-      const res = await fetch("/api/user/me/auth-methods", {
-        credentials: "include",
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setAuthMethods(data)
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setIsLoadingAuthMethods(false)
-    }
-  }, [])
-
-  const fetchPasskeys = useCallback(async () => {
-    try {
-      const res = await fetch("/api/auth/passkey/list-user-passkeys", {
-        credentials: "include",
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setPasskeys(Array.isArray(data) ? data : [])
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setIsLoadingPasskeys(false)
-    }
-  }, [])
-
+  const fetchRef = useRef(false)
   useEffect(() => {
-    fetchAuthMethods()
-    fetchPasskeys()
-  }, [fetchAuthMethods, fetchPasskeys])
+    if (fetchRef.current) return
+    fetchRef.current = true
+
+    let cancelled = false
+    Promise.all([
+      fetch("/api/user/me/auth-methods", { credentials: "include" }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch("/api/auth/passkey/list-user-passkeys", { credentials: "include" }).then(r => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([methodsData, passkeyData]) => {
+      if (cancelled) return
+      if (methodsData) setAuthMethods(methodsData)
+      if (passkeyData) setPasskeys(Array.isArray(passkeyData) ? passkeyData : [])
+      setIsLoadingAuthMethods(false)
+      setIsLoadingPasskeys(false)
+    })
+
+    return () => { cancelled = true }
+  }, [])
+
+  const refreshAuthMethods = async () => {
+    const res = await fetch("/api/user/me/auth-methods", { credentials: "include" })
+    if (res.ok) setAuthMethods(await res.json())
+  }
+
+  const refreshPasskeys = async () => {
+    const res = await fetch("/api/auth/passkey/list-user-passkeys", { credentials: "include" })
+    if (res.ok) {
+      const data = await res.json()
+      setPasskeys(Array.isArray(data) ? data : [])
+    }
+  }
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -121,7 +117,7 @@ export function SettingsSecurityTab() {
         setPasswordMessage({ type: "success", text: "Password set successfully" })
         setNewPassword("")
         setConfirmPassword("")
-        await fetchAuthMethods()
+        await refreshAuthMethods()
       }
     }
 
@@ -133,11 +129,10 @@ export function SettingsSecurityTab() {
     try {
       const { error } = await authClient.passkey.addPasskey()
       if (error) {
-        // eslint-disable-next-line no-console
         console.error("Failed to add passkey:", error)
       } else {
-        await fetchPasskeys()
-        await fetchAuthMethods()
+        await refreshPasskeys()
+        await refreshAuthMethods()
       }
     } catch {
       // silently fail
@@ -158,8 +153,8 @@ export function SettingsSecurityTab() {
         credentials: "include",
       })
       if (res.ok) {
-        await fetchPasskeys()
-        await fetchAuthMethods()
+        await refreshPasskeys()
+        await refreshAuthMethods()
       }
     } catch {
       // silently fail
@@ -188,7 +183,7 @@ export function SettingsSecurityTab() {
         credentials: "include",
       })
       if (res.ok) {
-        await fetchPasskeys()
+        await refreshPasskeys()
         setEditingPasskeyId(null)
         setEditingName("")
       }
