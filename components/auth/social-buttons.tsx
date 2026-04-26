@@ -35,12 +35,12 @@ export default function SocialButtons({
     const isLoading = loadingProvider !== null
 
     return (
-        <div className="flex gap-2">
+        <div className="flex gap-3">
             <button
                 type="button"
                 onClick={() => handleSocialLogin("google")}
                 disabled={disabled || isLoading}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-white/10 bg-white/[0.03] text-[#ebe4f1] text-sm font-medium hover:bg-white/[0.06] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm font-medium hover:bg-text/10 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {loadingProvider === "google" ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -71,13 +71,13 @@ export default function SocialButtons({
                 type="button"
                 onClick={() => handleSocialLogin("discord")}
                 disabled={disabled || isLoading}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-white/10 bg-white/[0.03] text-[#ebe4f1] text-sm font-medium hover:bg-white/[0.06] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm font-medium hover:bg-text/10 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {loadingProvider === "discord" ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                     <svg className="h-4 w-4" viewBox="0 0 24 24" fill="#5865F2">
-                        <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z" />
+                        <path d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 00-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 00-4.8 0c-.14-.34-.35-.76-.54-1.09-.01-.01-.04-.03-.07-.03-1.5.26-2.93.71-4.27 1.33-.01 0-.02.01-.03.02-2.72 4.07-3.47 8.03-3.1 11.95 0 .01.01.03.02.04 1.69 1.24 3.33 1.99 4.95 2.49.03.01.06 0 .07-.02.38-.52.72-1.07 1.01-1.65.02-.04 0-.08-.04-.09-.55-.2-1.08-.45-1.59-.73-.04-.02-.04-.08 0-.1.11-.08.22-.17.33-.26.02-.02.05-.02.07-.01 3.44 1.57 7.15 1.57 10.55 0 .02-.01.05-.01.07.01.11.09.22.17.33.26.04.02.04.08 0 .1-.51.28-1.04.53-1.59.73-.04.01-.05.06-.04.09.29.58.64 1.13 1.01 1.65.03.01.06.02.09.01 1.62-.5 3.27-1.25 4.96-2.49.01-.01.02-.03.02-.04.44-4.53-.73-8.46-3.1-11.95-.01-.01-.02-.02-.04-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.83 2.12-1.89 2.12z" />
                     </svg>
                 )}
                 Discord

@@ -107,16 +107,16 @@ export default function OtpInput({
                         onPaste={handlePaste}
                         disabled={disabled}
                         aria-label={`Digit ${i + 1} of ${length}`}
-                        className={`w-11 h-[52px] text-center text-xl font-bold rounded-lg border bg-white/[0.03] text-[#ebe4f1] outline-none transition-colors ${
+                        className={`w-12 h-14 text-center text-xl font-bold rounded-lg border bg-text/5 text-text outline-none transition-colors ${
                             error
                                 ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/50"
-                                : "border-white/10 focus:border-[#eb3779] focus:ring-2 focus:ring-[#eb3779]/50"
+                                : "border-border focus:border-primary focus:ring-2 focus:ring-primary/50"
                         } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
                     />
                 ))}
             </div>
             {error && (
-                <p className="text-red-400 text-xs mt-2 text-center">
+                <p className="text-red-400 text-sm mt-2 text-center">
                     {error}
                 </p>
             )}

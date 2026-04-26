@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
-import { Lock } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
+import logo from "@/app/icon.png"
 
 export const metadata: Metadata = {
     title: "Authentication",
@@ -12,20 +13,24 @@ export default function AuthLayout({
     children: React.ReactNode
 }) {
     return (
-        <div className="flex-1 flex items-center justify-center px-4 py-8 relative overflow-hidden">
+        <div className="min-h-[calc(100vh-3.6rem)] flex items-center justify-center px-4 relative overflow-hidden">
             {/* Background decorative orbs */}
-            <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-[#eb3779]/10 blur-3xl pointer-events-none" />
-            <div className="absolute bottom-16 right-16 w-24 h-24 rounded-full bg-[#571b8b]/15 blur-2xl pointer-events-none" />
+            <div className="absolute top-20 left-10 w-48 h-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+            <div className="absolute bottom-20 right-10 w-36 h-36 rounded-full bg-secondary/15 blur-2xl pointer-events-none" />
 
             {/* Auth card */}
-            <div className="w-full max-w-[400px] bg-white/[0.03] border border-white/[0.08] rounded-xl p-7 backdrop-blur-sm relative z-10">
+            <div className="w-full max-w-md bg-text/5 border border-border rounded-xl p-8 relative z-10">
                 {/* Logo */}
                 <Link
                     href="/"
-                    className="flex items-center justify-center gap-2 mb-6"
+                    className="flex flex-col items-center gap-2 mb-8"
                 >
-                    <Lock className="h-5 w-5 text-[#eb3779]" />
-                    <span className="text-lg font-bold text-[#ebe4f1]">
+                    <Image
+                        src={logo}
+                        alt="DeckyVault Logo"
+                        className="h-10 w-auto"
+                    />
+                    <span className="text-lg font-bold text-text">
                         DeckyVault
                     </span>
                 </Link>

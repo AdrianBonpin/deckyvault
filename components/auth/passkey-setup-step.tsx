@@ -42,36 +42,36 @@ export default function PasskeySetupStep({
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-5">
             <div className="text-center mb-2">
-                <KeyRound className="h-10 w-10 text-[#eb3779] mx-auto mb-3" />
-                <h1 className="text-lg font-bold text-[#ebe4f1]">
+                <KeyRound className="h-10 w-10 text-primary mx-auto mb-3" />
+                <h1 className="text-xl font-bold text-text">
                     Set up a passkey
                 </h1>
-                <p className="text-xs text-[#ebe4f1]/50 mt-1 leading-relaxed">
+                <p className="text-sm text-text/50 mt-2 leading-relaxed">
                     Sign in faster with biometrics or your device&apos;s security
                     key. No password needed.
                 </p>
             </div>
 
             {/* Benefits list */}
-            <div className="bg-white/[0.02] rounded-lg p-3.5 space-y-2">
-                <div className="flex items-center gap-2 text-xs text-[#ebe4f1]/60">
-                    <Check className="h-3.5 w-3.5 text-[#22c55e] shrink-0" />
+            <div className="bg-text/5 rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-3 text-sm text-text/60">
+                    <Check className="h-4 w-4 text-green-400 shrink-0" />
                     Faster sign-in with fingerprint or face
                 </div>
-                <div className="flex items-center gap-2 text-xs text-[#ebe4f1]/60">
-                    <Check className="h-3.5 w-3.5 text-[#22c55e] shrink-0" />
+                <div className="flex items-center gap-3 text-sm text-text/60">
+                    <Check className="h-4 w-4 text-green-400 shrink-0" />
                     More secure than passwords
                 </div>
-                <div className="flex items-center gap-2 text-xs text-[#ebe4f1]/60">
-                    <Check className="h-3.5 w-3.5 text-[#22c55e] shrink-0" />
+                <div className="flex items-center gap-3 text-sm text-text/60">
+                    <Check className="h-4 w-4 text-green-400 shrink-0" />
                     Works across your devices
                 </div>
             </div>
 
             {error && (
-                <div className="text-red-400 text-xs text-center bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                <div className="text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
                     {error}
                 </div>
             )}
@@ -81,7 +81,7 @@ export default function PasskeySetupStep({
                     <button
                         onClick={handleAddPasskey}
                         disabled={isLoading}
-                        className="w-full py-2.5 rounded-lg bg-[#eb3779] text-white text-sm font-semibold hover:bg-[#eb3779]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="w-full py-3 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                         {isLoading ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -92,19 +92,19 @@ export default function PasskeySetupStep({
                     </button>
                     <button
                         onClick={onSkip}
-                        className="w-full py-2.5 rounded-lg border border-white/10 text-[#ebe4f1]/60 text-sm hover:bg-white/[0.03] transition-colors"
+                        className="w-full py-3 rounded-lg border border-border text-text/60 text-sm hover:bg-text/5 transition-colors cursor-pointer"
                     >
                         Skip for now
                     </button>
                 </>
             ) : (
                 <div className="text-center">
-                    <p className="text-xs text-[#ebe4f1]/40 mb-3">
+                    <p className="text-sm text-text/40 mb-4">
                         Passkeys are not supported on this device.
                     </p>
                     <button
                         onClick={onSkip}
-                        className="w-full py-2.5 rounded-lg bg-[#eb3779] text-white text-sm font-semibold hover:bg-[#eb3779]/90 transition-colors"
+                        className="w-full py-3 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
                     >
                         Continue
                     </button>

@@ -88,18 +88,18 @@ export default function ResetPasswordForm({
 
     if (isSuccess) {
         return (
-            <div className="text-center space-y-4">
-                <CheckCircle2 className="h-10 w-10 text-[#22c55e] mx-auto" />
-                <h1 className="text-lg font-bold text-[#ebe4f1]">
+            <div className="text-center space-y-5">
+                <CheckCircle2 className="h-10 w-10 text-green-400 mx-auto" />
+                <h1 className="text-xl font-bold text-text">
                     Password reset successful
                 </h1>
-                <p className="text-xs text-[#ebe4f1]/50">
+                <p className="text-sm text-text/50">
                     Your password has been updated. You can now sign in with
                     your new password.
                 </p>
                 <Link
                     href="/login"
-                    className="inline-block w-full py-2.5 rounded-lg bg-[#eb3779] text-white text-sm font-semibold hover:bg-[#eb3779]/90 transition-colors text-center"
+                    className="inline-block w-full py-3 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors text-center cursor-pointer"
                 >
                     Sign in
                 </Link>
@@ -108,20 +108,20 @@ export default function ResetPasswordForm({
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
             <div className="text-center mb-2">
-                <Mail className="h-10 w-10 text-[#eb3779] mx-auto mb-3" />
-                <h1 className="text-lg font-bold text-[#ebe4f1]">
+                <Mail className="h-10 w-10 text-primary mx-auto mb-3" />
+                <h1 className="text-xl font-bold text-text">
                     Check your email
                 </h1>
-                <p className="text-xs text-[#ebe4f1]/50 mt-1">
+                <p className="text-sm text-text/50 mt-2">
                     We sent a 6-digit code to{" "}
-                    <strong className="text-[#ebe4f1]">{email}</strong>
+                    <strong className="text-text">{email}</strong>
                 </p>
             </div>
 
             <div>
-                <label className="text-xs text-[#ebe4f1]/60 block mb-2 text-center">
+                <label className="text-sm text-text/60 block mb-2 text-center">
                     Verification code
                 </label>
                 <OtpInput
@@ -131,19 +131,19 @@ export default function ResetPasswordForm({
                 />
             </div>
 
-            <div className="text-center text-xs">
+            <div className="text-center text-sm">
                 {canResend ? (
                     <button
                         type="button"
                         onClick={handleResend}
-                        className="text-[#eb3779] hover:underline"
+                        className="text-primary hover:underline"
                     >
                         Resend code
                     </button>
                 ) : (
-                    <span className="text-[#ebe4f1]/40">
+                    <span className="text-text/40">
                         Resend code in{" "}
-                        <span className="text-[#eb3779] font-semibold">
+                        <span className="text-primary font-semibold">
                             {formatTime(resendTimer)}
                         </span>
                     </span>
@@ -151,21 +151,21 @@ export default function ResetPasswordForm({
             </div>
 
             <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-white/[0.08]" />
-                <span className="text-[11px] text-[#ebe4f1]/40">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-text/40">
                     then set new password
                 </span>
-                <div className="flex-1 h-px bg-white/[0.08]" />
+                <div className="flex-1 h-px bg-border" />
             </div>
 
             {error && (
-                <div className="text-red-400 text-xs text-center bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                <div className="text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
                     {error}
                 </div>
             )}
 
             <div>
-                <label className="text-xs text-[#ebe4f1]/60 block mb-1">
+                <label className="text-sm text-text/60 block mb-1.5">
                     New password
                 </label>
                 <input
@@ -173,13 +173,13 @@ export default function ResetPasswordForm({
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Min. 10 characters"
-                    className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-white/[0.03] text-[#ebe4f1] text-sm placeholder:text-[#ebe4f1]/40 outline-none focus:border-[#eb3779] focus:ring-2 focus:ring-[#eb3779]/50 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
                 />
                 <PasswordStrengthMeter password={newPassword} />
             </div>
 
             <div>
-                <label className="text-xs text-[#ebe4f1]/60 block mb-1">
+                <label className="text-sm text-text/60 block mb-1.5">
                     Confirm new password
                 </label>
                 <input
@@ -187,11 +187,11 @@ export default function ResetPasswordForm({
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter password"
-                    className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-white/[0.03] text-[#ebe4f1] text-sm placeholder:text-[#ebe4f1]/40 outline-none focus:border-[#eb3779] focus:ring-2 focus:ring-[#eb3779]/50 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
                 />
                 {confirmPassword &&
                     newPassword !== confirmPassword && (
-                        <p className="text-red-400 text-xs mt-1">
+                        <p className="text-red-400 text-sm mt-1">
                             Passwords do not match
                         </p>
                     )}
@@ -200,7 +200,7 @@ export default function ResetPasswordForm({
             <button
                 type="submit"
                 disabled={isLoading || otp.length !== 6}
-                className="w-full py-2.5 rounded-lg bg-[#eb3779] text-white text-sm font-semibold hover:bg-[#eb3779]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                 Reset password
@@ -208,9 +208,9 @@ export default function ResetPasswordForm({
 
             <Link
                 href="/login"
-                className="flex items-center justify-center gap-1.5 text-xs text-[#ebe4f1]/50 hover:text-[#ebe4f1] transition-colors"
+                className="flex items-center justify-center gap-2 text-sm text-text/50 hover:text-text transition-colors"
             >
-                <ArrowLeft className="h-3 w-3" />
+                <ArrowLeft className="h-4 w-4" />
                 Back to sign in
             </Link>
         </form>

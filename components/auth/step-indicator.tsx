@@ -16,15 +16,15 @@ export default function StepIndicator({
             {Array.from({ length: totalSteps }).map((_, i) => (
                 <motion.div
                     key={i}
-                    className="h-1 w-8 rounded-full"
+                    className="h-1 w-12 rounded-full"
                     initial={false}
                     animate={{
                         backgroundColor:
                             i < currentStep - 1
-                                ? "#22c55e" // completed
+                                ? "#22c55e" // completed - green
                                 : i === currentStep - 1
-                                  ? "#eb3779" // current
-                                  : "rgba(255,255,255,0.1)", // upcoming
+                                  ? "#eb3779" // current - primary
+                                  : "rgba(235,228,241,0.1)", // upcoming - border color
                     }}
                     transition={{ duration: 0.3 }}
                 />

@@ -75,20 +75,20 @@ export default function OtpVerificationStep({
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-5">
             <div className="text-center mb-2">
-                <Mail className="h-10 w-10 text-[#eb3779] mx-auto mb-3" />
-                <h1 className="text-lg font-bold text-[#ebe4f1]">
+                <Mail className="h-10 w-10 text-primary mx-auto mb-3" />
+                <h1 className="text-xl font-bold text-text">
                     Verify your email
                 </h1>
-                <p className="text-xs text-[#ebe4f1]/50 mt-1">
+                <p className="text-sm text-text/50 mt-2">
                     We sent a 6-digit code to{" "}
-                    <strong className="text-[#ebe4f1]">{email}</strong>
+                    <strong className="text-text">{email}</strong>
                 </p>
             </div>
 
             <div>
-                <label className="text-xs text-[#ebe4f1]/60 block mb-2 text-center">
+                <label className="text-sm text-text/60 block mb-2 text-center">
                     Verification code
                 </label>
                 <OtpInput
@@ -104,18 +104,18 @@ export default function OtpVerificationStep({
                 />
             </div>
 
-            <div className="text-center text-xs">
+            <div className="text-center text-sm">
                 {canResend ? (
                     <button
                         onClick={handleResend}
-                        className="text-[#eb3779] hover:underline"
+                        className="text-primary hover:underline"
                     >
                         Resend code
                     </button>
                 ) : (
-                    <span className="text-[#ebe4f1]/40">
+                    <span className="text-text/40">
                         Resend code in{" "}
-                        <span className="text-[#eb3779] font-semibold">
+                        <span className="text-primary font-semibold">
                             {formatTime(resendTimer)}
                         </span>
                     </span>
@@ -125,7 +125,7 @@ export default function OtpVerificationStep({
             <button
                 onClick={() => handleVerify(otp)}
                 disabled={isLoading || otp.length !== 6}
-                className="w-full py-2.5 rounded-lg bg-[#eb3779] text-white text-sm font-semibold hover:bg-[#eb3779]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                 Verify
@@ -133,9 +133,9 @@ export default function OtpVerificationStep({
 
             <button
                 onClick={onBack}
-                className="flex items-center justify-center gap-1.5 w-full text-xs text-[#ebe4f1]/50 hover:text-[#ebe4f1] transition-colors"
+                className="flex items-center justify-center gap-2 w-full text-sm text-text/50 hover:text-text transition-colors"
             >
-                <ArrowLeft className="h-3 w-3" />
+                <ArrowLeft className="h-4 w-4" />
                 Back to signup
             </button>
         </div>

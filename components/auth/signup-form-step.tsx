@@ -57,32 +57,32 @@ export default function SignupFormStep({ onSuccess }: SignupFormStepProps) {
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="text-center mb-2">
-                <h1 className="text-lg font-bold text-[#ebe4f1]">
+                <h1 className="text-xl font-bold text-text">
                     Create your account
                 </h1>
-                <p className="text-xs text-[#ebe4f1]/50 mt-1">
-                    Choose how you&apos;d like to sign up
+                <p className="text-sm text-text/50 mt-1">
+                    Join DeckyVault and start exploring
                 </p>
             </div>
 
             <SocialButtons callbackURL="/signup?step=passkey" />
 
             <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-white/[0.08]" />
-                <span className="text-[11px] text-[#ebe4f1]/40 uppercase">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-text/40 uppercase">
                     or use email
                 </span>
-                <div className="flex-1 h-px bg-white/[0.08]" />
+                <div className="flex-1 h-px bg-border" />
             </div>
 
             {serverError && (
-                <div className="text-red-400 text-xs text-center bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                <div className="text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
                     {serverError}
                 </div>
             )}
 
             <div>
-                <label className="text-xs text-[#ebe4f1]/60 block mb-1">
+                <label className="text-sm text-text/60 block mb-1.5">
                     Name
                 </label>
                 <input
@@ -90,15 +90,15 @@ export default function SignupFormStep({ onSuccess }: SignupFormStepProps) {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
-                    className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-white/[0.03] text-[#ebe4f1] text-sm placeholder:text-[#ebe4f1]/40 outline-none focus:border-[#eb3779] focus:ring-2 focus:ring-[#eb3779]/50 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
                 />
                 {errors.name && (
-                    <p className="text-red-400 text-xs mt-1">{errors.name}</p>
+                    <p className="text-red-400 text-sm mt-1">{errors.name}</p>
                 )}
             </div>
 
             <div>
-                <label className="text-xs text-[#ebe4f1]/60 block mb-1">
+                <label className="text-sm text-text/60 block mb-1.5">
                     Email
                 </label>
                 <input
@@ -106,15 +106,15 @@ export default function SignupFormStep({ onSuccess }: SignupFormStepProps) {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-white/[0.03] text-[#ebe4f1] text-sm placeholder:text-[#ebe4f1]/40 outline-none focus:border-[#eb3779] focus:ring-2 focus:ring-[#eb3779]/50 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
                 />
                 {errors.email && (
-                    <p className="text-red-400 text-xs mt-1">{errors.email}</p>
+                    <p className="text-red-400 text-sm mt-1">{errors.email}</p>
                 )}
             </div>
 
             <div>
-                <label className="text-xs text-[#ebe4f1]/60 block mb-1">
+                <label className="text-sm text-text/60 block mb-1.5">
                     Password
                 </label>
                 <input
@@ -122,10 +122,10 @@ export default function SignupFormStep({ onSuccess }: SignupFormStepProps) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Min. 10 characters"
-                    className="w-full px-3 py-2.5 rounded-lg border border-white/10 bg-white/[0.03] text-[#ebe4f1] text-sm placeholder:text-[#ebe4f1]/40 outline-none focus:border-[#eb3779] focus:ring-2 focus:ring-[#eb3779]/50 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
                 />
                 {errors.password && (
-                    <p className="text-red-400 text-xs mt-1">
+                    <p className="text-red-400 text-sm mt-1">
                         {errors.password}
                     </p>
                 )}
@@ -135,15 +135,15 @@ export default function SignupFormStep({ onSuccess }: SignupFormStepProps) {
             <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2.5 rounded-lg bg-[#eb3779] text-white text-sm font-semibold hover:bg-[#eb3779]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                Continue
+                Create account
             </button>
 
-            <p className="text-center text-xs text-[#ebe4f1]/50">
+            <p className="text-center text-sm text-text/50">
                 Already have an account?{" "}
-                <Link href="/login" className="text-[#eb3779] hover:underline">
+                <Link href="/login" className="text-primary hover:underline">
                     Sign in
                 </Link>
             </p>
