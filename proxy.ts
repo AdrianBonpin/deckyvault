@@ -12,12 +12,14 @@ export function proxy(req: NextRequest) {
     const path = req.nextUrl.pathname
     const isAuthRoute = authRoutes.some((route) => path.startsWith(route))
 
-    // Check for better-auth session cookie (default name: better-auth.session_token)
+    // Check specifically for the session token cookie
+    // (better-auth.session_token or __Secure-better-auth.session_token in HTTPS)
+    // Other better-auth cookies like last_used_login_method persist after logout
     const hasSession = req.cookies
         .getAll()
         .some(
             (cookie) =>
-                cookie.name.startsWith("better-auth.") &&
+                cookie.name.endsWith("better-auth.session_token") &&
                 cookie.value.length > 0,
         )
 
