@@ -22,28 +22,37 @@ interface ProfilePageClientProps {
 
 export function ProfilePageClient({ profile, recentContributions }: ProfilePageClientProps) {
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
-      <ProfileHeader
-        name={profile.name}
-        image={profile.image}
-        role={profile.role}
-        verified={profile.verified}
-        createdAt={profile.createdAt}
-      />
+    <div className="w-full flex flex-col gap-8 pb-16">
+      <div className="px-4 md:px-[10svw]">
+        <div className="max-w-7xl mx-auto">
+          <ProfileHeader
+            name={profile.name}
+            role={profile.role}
+            verified={profile.verified}
+            createdAt={profile.createdAt}
+          />
+        </div>
+      </div>
 
-      <StatsRow
-        contributions={profile.contributions}
-        verifiedEntries={profile.verifiedEntries}
-        reputation={profile.reputation}
-      />
+      <div className="px-4 md:px-[10svw]">
+        <div className="max-w-7xl mx-auto">
+          <StatsRow
+            contributions={profile.contributions}
+            verifiedEntries={profile.verifiedEntries}
+            reputation={profile.reputation}
+          />
+        </div>
+      </div>
 
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Recent Contributions</h2>
-        <ContributionList
-          entries={recentContributions}
-          showViewAll
-          totalCount={profile.contributions}
-        />
+      <div className="px-4 md:px-[10svw]">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-lg font-semibold mb-4">Recent Contributions</h2>
+          <ContributionList
+            entries={recentContributions}
+            showViewAll
+            totalCount={profile.contributions}
+          />
+        </div>
       </div>
     </div>
   )

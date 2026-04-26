@@ -84,61 +84,77 @@ export default function ProfilePage() {
   ]
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <ProfileHeader
-        name={profile.name}
-        image={profile.image}
-        role={profile.role}
-        verified={profile.verified}
-        createdAt={profile.createdAt}
-      />
+    <div className="w-full flex flex-col gap-8 pb-16">
+      {/* Profile header section */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="px-4 md:px-[10svw]">
+        <div className="max-w-7xl mx-auto">
+          <ProfileHeader
+            name={profile.name}
+            email={profile.email}
+            role={profile.role}
+            verified={profile.verified}
+            createdAt={profile.createdAt}
+          />
+        </div>
+      </motion.div>
 
-      <StatsRow
-        contributions={profile.contributions}
-        verifiedEntries={profile.verifiedEntries}
-        reputation={profile.reputation}
-      />
+      {/* Stats section */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="px-4 md:px-[10svw]">
+        <div className="max-w-7xl mx-auto">
+          <StatsRow
+            contributions={profile.contributions}
+            verifiedEntries={profile.verifiedEntries}
+            reputation={profile.reputation}
+          />
+        </div>
+      </motion.div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 border-b border-border">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
-              activeTab === tab.id
-                ? "border-primary text-primary"
-                : "border-transparent text-text/50 hover:text-text/70"
-            }`}
+      {/* Tabs + content section */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }} className="px-4 md:px-[10svw]">
+        <div className="max-w-7xl mx-auto">
+          {/* Tabs */}
+          <div className="flex gap-1 border-b border-border">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                  activeTab === tab.id
+                    ? "border-primary text-primary"
+                    : "border-transparent text-text/50 hover:text-text/70"
+                }`}
+              >
+                <tab.icon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab Content */}
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="pt-6"
           >
-            <tab.icon className="h-4 w-4" />
-            {tab.label}
-          </button>
-        ))}
-      </div>
+            {activeTab === "overview" && (
+              <div>
+                <h2 className="text-lg font-semibold mb-4">Recent Contributions</h2>
+                <ContributionList entries={contributions} />
+              </div>
+            )}
 
-      {/* Tab Content */}
-      <motion.div
-        key={activeTab}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-      >
-        {activeTab === "overview" && (
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Recent Contributions</h2>
-            <ContributionList entries={contributions} />
-          </div>
-        )}
+            {activeTab === "saved" && <SavedGamesGrid />}
 
-        {activeTab === "saved" && <SavedGamesGrid />}
-
-        {activeTab === "settings" && (
-          <div className="text-center py-12 text-text/40">
-            <Settings className="h-8 w-8 mx-auto mb-2" />
-            <p>Account settings will appear here</p>
-          </div>
-        )}
+            {activeTab === "settings" && (
+              <div className="text-center py-12 text-text/40">
+                <Settings className="h-8 w-8 mx-auto mb-2" />
+                <p>Account settings will appear here</p>
+              </div>
+            )}
+          </motion.div>
+        </div>
       </motion.div>
     </div>
   )
