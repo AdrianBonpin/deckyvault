@@ -1,12 +1,11 @@
 import { Elysia, t } from "elysia"
-import { auth } from "@/lib/auth"
 import { db } from "@/lib/db/index"
 import {
   performanceEntries,
   gameVersions,
   hardware,
 } from "@/lib/db/schema"
-import { eq, sql, and } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { requireRole } from "@/lib/auth/guard"
 
 export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })

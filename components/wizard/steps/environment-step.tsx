@@ -54,12 +54,10 @@ function AutocompleteInput({
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
-  const [inputValue, setInputValue] = useState(value)
+  const [localValue, setLocalValue] = useState("")
+  const [isFocused, setIsFocused] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    setInputValue(value)
-  }, [value])
+  const inputValue = isFocused ? localValue : (value ?? "")
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -93,19 +91,21 @@ function AutocompleteInput({
   )
 
   const handleFocus = () => {
+    setLocalValue(value ?? "")
+    setIsFocused(true)
     setOpen(true)
-    fetchSuggestions(inputValue)
+    fetchSuggestions(value ?? "")
   }
 
   const handleChange = (val: string) => {
-    setInputValue(val)
+    setLocalValue(val)
     onChange(val)
     fetchSuggestions(val)
     setOpen(true)
   }
 
   const handleSelect = (val: string) => {
-    setInputValue(val)
+    setLocalValue(val)
     onChange(val)
     setOpen(false)
   }
@@ -119,6 +119,7 @@ function AutocompleteInput({
           value={inputValue}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={handleFocus}
+          onBlur={() => setIsFocused(false)}
           placeholder={placeholder}
           className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
         />
