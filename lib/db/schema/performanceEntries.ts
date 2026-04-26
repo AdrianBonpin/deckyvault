@@ -26,6 +26,11 @@ export const frameGenMethodEnum = pgEnum("frame_gen_method", [
   "dlss_fg",
 ])
 
+export type GameSettingCategory = {
+  category: string
+  settings: { title: string; value: string | number | boolean }[]
+}
+
 export const performanceEntries = pgTable(
   "performance_entries",
   {
@@ -61,8 +66,11 @@ export const performanceEntries = pgTable(
     loadTimeSsd: real("load_time_ssd"),
     loadTimeSd: real("load_time_sd"),
 
+    // Launch options (Steam launch options string)
+    launchOptions: text("launch_options"),
+
     // Settings & notes
-    settingsJson: jsonb("settings_json").$type<Record<string, unknown>>(),
+    settingsJson: jsonb("settings_json").$type<GameSettingCategory[]>(),
     userNotes: text("user_notes"),
 
     // Moderation
