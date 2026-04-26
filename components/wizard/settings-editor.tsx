@@ -58,6 +58,7 @@ export function SettingsEditor({
   )
   const [newCategoryName, setNewCategoryName] = useState("")
   const [newSettingNames, setNewSettingNames] = useState<Record<string, string>>({})
+  const [newSettingTypes, setNewSettingTypes] = useState<Record<string, string>>({})
 
   const toggleCategory = (category: string) => {
     setCollapsedCategories((prev) => {
@@ -92,18 +93,61 @@ export function SettingsEditor({
   const addSetting = (category: string) => {
     const name = (newSettingNames[category] || "").trim()
     if (!name) return
-
+    const type = newSettingTypes[category] || "text"
+    const defaultValue = type === "boolean" ? false : type === "number" ? 0 : ""
     onChange(
       value.map((c) => {
         if (c.category !== category) return c
         if (c.settings.some((s) => s.title === name)) return c
         return {
           ...c,
-          settings: [...c.settings, { title: name, value: "" }],
+          settings: [...c.settings, { title: name, value: defaultValue }],
         }
       })
     )
     setNewSettingNames((prev) => ({ ...prev, [category]: "" }))
+  }
+
+  const moveCategoryUp = (category: string) => {
+    const idx = value.findIndex((c) => c.category === category)
+    if (idx <= 0) return
+    const next = [...value]
+    ;[next[idx - 1], next[idx]] = [next[idx], next[idx - 1]]
+    onChange(next)
+  }
+
+  const moveCategoryDown = (category: string) => {
+    const idx = value.findIndex((c) => c.category === category)
+    if (idx >= value.length - 1) return
+    const next = [...value]
+    ;[next[idx], next[idx + 1]] = [next[idx + 1], next[idx]]
+    onChange(next)
+  }
+
+  const moveSettingUp = (category: string, settingTitle: string) => {
+    onChange(
+      value.map((c) => {
+        if (c.category !== category) return c
+        const idx = c.settings.findIndex((s) => s.title === settingTitle)
+        if (idx <= 0) return c
+        const next = [...c.settings]
+        ;[next[idx - 1], next[idx]] = [next[idx], next[idx - 1]]
+        return { ...c, settings: next }
+      })
+    )
+  }
+
+  const moveSettingDown = (category: string, settingTitle: string) => {
+    onChange(
+      value.map((c) => {
+        if (c.category !== category) return c
+        const idx = c.settings.findIndex((s) => s.title === settingTitle)
+        if (idx >= c.settings.length - 1) return c
+        const next = [...c.settings]
+        ;[next[idx], next[idx + 1]] = [next[idx + 1], next[idx]]
+        return { ...c, settings: next }
+      })
+    )
   }
 
   const removeSetting = (category: string, settingTitle: string) => {
@@ -148,17 +192,28 @@ export function SettingsEditor({
       {isEmpty && (
         <div className="flex flex-col items-center justify-center py-10 border border-dashed border-border rounded-lg bg-text/5">
           <p className="text-sm text-text/50 mb-4">No settings configured</p>
-          <button
-            onClick={loadDefaults}
-            className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
-          >
-            Load defaults
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={loadDefaults}
+              className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
+            >
+              Load defaults
+            </button>
+            <button
+              onClick={() => {
+                setNewCategoryName("Custom")
+                setTimeout(() => addCategory(), 0)
+              }}
+              className="px-4 py-2 rounded-lg border border-border text-text text-sm font-semibold hover:bg-text/5 transition-colors cursor-pointer"
+            >
+              Create custom
+            </button>
+          </div>
         </div>
       )}
 
       <AnimatePresence initial={false}>
-        {value.map((cat) => {
+        {value.map((cat, index) => {
           const isCollapsed = collapsedCategories.has(cat.category)
           return (
             <motion.div
@@ -184,13 +239,31 @@ export function SettingsEditor({
                     ({cat.settings.length})
                   </span>
                 </button>
-                <button
-                  onClick={() => removeCategory(cat.category)}
-                  className="p-1 rounded-md text-text/40 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                  title="Remove category"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => moveCategoryUp(cat.category)}
+                    disabled={index === 0}
+                    className="p-1 rounded-md text-text/30 hover:text-text/60 hover:bg-text/5 transition-colors cursor-pointer disabled:opacity-20"
+                    title="Move up"
+                  >
+                    <ChevronUp className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => moveCategoryDown(cat.category)}
+                    disabled={index === value.length - 1}
+                    className="p-1 rounded-md text-text/30 hover:text-text/60 hover:bg-text/5 transition-colors cursor-pointer disabled:opacity-20"
+                    title="Move down"
+                  >
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={() => removeCategory(cat.category)}
+                    className="p-1 rounded-md text-text/40 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    title="Remove category"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
               <AnimatePresence initial={false}>
@@ -257,20 +330,50 @@ export function SettingsEditor({
                               />
                             )}
 
-                            <button
-                              onClick={() =>
-                                removeSetting(cat.category, setting.title)
-                              }
-                              className="p-1 rounded-md text-text/30 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer flex-shrink-0"
-                              title="Remove setting"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </button>
+                            <div className="flex items-center gap-0.5">
+                              <button
+                                onClick={() => moveSettingUp(cat.category, setting.title)}
+                                className="p-0.5 rounded text-text/20 hover:text-text/50 hover:bg-text/5 transition-colors cursor-pointer"
+                                title="Move up"
+                              >
+                                <ChevronUp className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={() => moveSettingDown(cat.category, setting.title)}
+                                className="p-0.5 rounded text-text/20 hover:text-text/50 hover:bg-text/5 transition-colors cursor-pointer"
+                                title="Move down"
+                              >
+                                <ChevronDown className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  removeSetting(cat.category, setting.title)
+                                }
+                                className="p-1 rounded-md text-text/30 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer flex-shrink-0"
+                                title="Remove setting"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
                           </motion.div>
                         ))}
                       </AnimatePresence>
 
                       <div className="flex items-center gap-2 pt-1">
+                        <select
+                          value={newSettingTypes[cat.category] || "text"}
+                          onChange={(e) =>
+                            setNewSettingTypes((prev) => ({
+                              ...prev,
+                              [cat.category]: e.target.value,
+                            }))
+                          }
+                          className="text-xs px-2 py-1.5 rounded-md border border-border bg-text/5 text-text/60 outline-none focus:border-primary"
+                        >
+                          <option value="text">Text</option>
+                          <option value="number">Number</option>
+                          <option value="boolean">Boolean</option>
+                        </select>
                         <input
                           type="text"
                           value={newSettingNames[cat.category] || ""}
