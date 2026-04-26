@@ -23,7 +23,7 @@ export const auth = betterAuth({
         passkey({
             rpID: process.env.RP_ID ?? 'localhost',
             rpName: 'DeckyVault',
-            origin: process.env.BETTER_AUTH_URL ?? 'http://localhost:3000',
+            origin: process.env.BETTER_AUTH_URL ?? 'https://localhost:3000',
         }),
         lastLoginMethod({
             storeInDatabase: true,
