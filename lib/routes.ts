@@ -27,3 +27,16 @@ export const routes = [
     //     href: "/about",
     // }
 ]
+
+export const authRoutes = [
+    {
+        title: "Profile",
+        href: "/profile",
+        icon: "User",
+    },
+    {
+        title: "Saved Games",
+        href: "/profile?tab=saved",
+        icon: "Bookmark",
+    },
+]
