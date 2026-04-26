@@ -6,6 +6,7 @@ import { useSession } from "@/lib/auth-client"
 import { ProfileHeader } from "@/components/profile/profile-header"
 import { StatsRow } from "@/components/profile/stats-row"
 import { ContributionList } from "@/components/profile/contribution-list"
+import { SavedGamesGrid } from "@/components/saved-games/saved-games-grid"
 import { Bookmark, Settings, Loader2 } from "lucide-react"
 import { motion } from "motion/react"
 import type { ContributionEntry } from "@/types/api"
@@ -130,13 +131,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {activeTab === "saved" && (
-          <div className="text-center py-12 text-text/40">
-            <Bookmark className="h-8 w-8 mx-auto mb-2" />
-            <p>Saved games will appear here</p>
-            <p className="text-xs mt-1">Feature coming in the next update</p>
-          </div>
-        )}
+        {activeTab === "saved" && <SavedGamesGrid />}
 
         {activeTab === "settings" && (
           <div className="text-center py-12 text-text/40">
