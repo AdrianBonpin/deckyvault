@@ -52,6 +52,7 @@ export function PerformanceStep({ value, onChange }: PerformanceStepProps) {
               placeholder="e.g. 45"
               className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
             />
+            <p className="text-[10px] text-text/30">Required — average framerate during gameplay</p>
           </div>
 
           <div className="space-y-1.5">

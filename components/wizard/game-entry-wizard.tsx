@@ -173,6 +173,10 @@ export function GameEntryWizard({ gameId, gameVersionId }: GameEntryWizardProps)
         onStepClick={handleStepClick}
       />
 
+      <div className="flex items-center gap-1 text-xs text-text/40">
+        <span className="text-red-400">*</span> Required fields
+      </div>
+
       {/* Step Content */}
       <AnimatePresence mode="wait">
         <motion.div

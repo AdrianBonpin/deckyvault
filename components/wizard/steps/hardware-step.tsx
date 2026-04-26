@@ -81,9 +81,12 @@ export function HardwareStep({ value, onChange }: HardwareStepProps) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-text/60">
-        Select the hardware device you used to test this game.
-      </p>
+      <div className="flex items-center gap-2">
+        <p className="text-sm text-text/60">
+          Select the hardware device you used to test this game.
+        </p>
+        <span className="text-red-400 text-xs">*</span>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {devices.map((device) => {
