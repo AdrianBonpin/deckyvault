@@ -40,6 +40,7 @@ interface UnifiedResult {
   platforms?: { windows: boolean; mac: boolean; linux: boolean } | null
   controllerSupport?: string | null
   isRawPerformer?: boolean
+  isPoorPerformance?: boolean
   bestFps?: number | null
   latestVersion?: string | null
 }
@@ -254,6 +255,11 @@ function SearchResultCard({
                 {result.isRawPerformer && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-semibold shrink-0">
                     ⚡ RAW PERFORMER
+                  </span>
+                )}
+                {result.isPoorPerformance && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-semibold shrink-0">
+                    ⚠ POOR PERFORMANCE
                   </span>
                 )}
               </div>
