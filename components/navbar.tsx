@@ -379,31 +379,19 @@ export default function Navbar() {
                                 {isSessionLoading ? (
                                     <div className='w-full h-10 rounded-lg bg-text/3 animate-pulse' />
                                 ) : session ? (
-                                    <div className='space-y-3'>
-                                        <div className='flex items-center gap-2'>
-                                            {session.user.image ? (
-                                                <Image
-                                                    src={session.user.image}
-                                                    alt=''
-                                                    width={32}
-                                                    height={32}
-                                                    unoptimized
-                                                    className='h-8 w-8 rounded-full'
-                                                />
-                                            ) : (
-                                                <div className='h-8 w-8 rounded-full bg-secondary flex items-center justify-center'>
-                                                    <User className='h-4 w-4 text-text' />
-                                                </div>
-                                            )}
-                                            <div className='min-w-0'>
-                                                <p className='text-sm font-medium text-text truncate'>
-                                                    {session.user.name}
-                                                </p>
-                                                <p className='text-xs text-text/50 truncate'>
-                                                    {session.user.email}
-                                                </p>
-                                            </div>
-                                        </div>
+                                    <div className='space-y-2'>
+                                        {authRoutes.map((route) => (
+                                            <Link
+                                                key={route.href}
+                                                href={route.href}
+                                                onClick={() => setMobileMenuOpen(false)}
+                                                className='flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-text/70 hover:text-text hover:bg-text/5 transition-colors'
+                                            >
+                                                {route.icon === "User" && <User className='h-4 w-4' />}
+                                                {route.icon === "Bookmark" && <Bookmark className='h-4 w-4' />}
+                                                {route.title}
+                                            </Link>
+                                        ))}
                                         <button
                                             onClick={async () => {
                                                 setMobileMenuOpen(false)
@@ -419,9 +407,7 @@ export default function Navbar() {
                                     <div className='space-y-2'>
                                         <Link
                                             href='/login'
-                                            onClick={() =>
-                                                setMobileMenuOpen(false)
-                                            }
+                                            onClick={() => setMobileMenuOpen(false)}
                                             className='block w-full text-center px-3 py-2 rounded-lg border border-white/10 text-sm text-text hover:bg-text/5 transition-colors'
                                         >
                                             Login
