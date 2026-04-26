@@ -10,7 +10,8 @@ import { routes } from "@/lib/routes"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useDebounce } from "@/lib/hooks/useDebounce"
 import { authClient, useSession } from "@/lib/auth-client"
-import { LogOut, User } from "lucide-react"
+import { LogOut, User, Bookmark } from "lucide-react"
+import { authRoutes } from "@/lib/routes"
 
 export default function Navbar() {
     const pathname = usePathname()
@@ -237,16 +238,14 @@ export default function Navbar() {
                                 />
                             ) : session ? (
                                 <motion.li
-                                    key='dashboard-link'
+                                    key='profile-menu'
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
                                     className='relative'
                                 >
                                     <button
-                                        onClick={() =>
-                                            setUserMenuOpen(!userMenuOpen)
-                                        }
+                                        onClick={() => setUserMenuOpen(!userMenuOpen)}
                                         className='flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors uppercase'
                                     >
                                         {session.user.image ? (
@@ -263,19 +262,28 @@ export default function Navbar() {
                                                 <User className='h-3 w-3 text-text' />
                                             </div>
                                         )}
-                                        <span className='max-w-25 truncate'>
-                                            {session.user.name}
-                                        </span>
+                                        <span>Profile</span>
                                     </button>
                                     {userMenuOpen && (
                                         <>
                                             <div
                                                 className='fixed inset-0 z-40'
-                                                onClick={() =>
-                                                    setUserMenuOpen(false)
-                                                }
+                                                onClick={() => setUserMenuOpen(false)}
                                             />
                                             <div className='absolute right-0 top-full mt-1 w-48 bg-[#1a1020] border border-white/10 rounded-lg shadow-lg z-50 py-1'>
+                                                {authRoutes.map((route) => (
+                                                    <Link
+                                                        key={route.href}
+                                                        href={route.href}
+                                                        onClick={() => setUserMenuOpen(false)}
+                                                        className='w-full flex items-center gap-2 px-3 py-2 text-sm text-text/70 hover:text-text hover:bg-text/5 transition-colors'
+                                                    >
+                                                        {route.icon === "User" && <User className='h-4 w-4' />}
+                                                        {route.icon === "Bookmark" && <Bookmark className='h-4 w-4' />}
+                                                        {route.title}
+                                                    </Link>
+                                                ))}
+                                                <div className='my-1 border-t border-white/10' />
                                                 <button
                                                     onClick={async () => {
                                                         setUserMenuOpen(false)
