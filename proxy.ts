@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { auth } from "@/lib/auth"
 
 const authRoutes = [
     "/login",
@@ -8,23 +9,21 @@ const authRoutes = [
     "/reset-password",
 ]
 
-export function proxy(req: NextRequest) {
+export async function proxy(req: NextRequest) {
     const path = req.nextUrl.pathname
     const isAuthRoute = authRoutes.some((route) => path.startsWith(route))
 
-    // Check specifically for the session token cookie
-    // (better-auth.session_token or __Secure-better-auth.session_token in HTTPS)
-    // Other better-auth cookies like last_used_login_method persist after logout
-    const hasSession = req.cookies
-        .getAll()
-        .some(
-            (cookie) =>
-                cookie.name.endsWith("better-auth.session_token") &&
-                cookie.value.length > 0,
-        )
+    if (!isAuthRoute) {
+        return NextResponse.next()
+    }
 
-    // Redirect authenticated users away from auth pages
-    if (isAuthRoute && hasSession) {
+    // Validate session server-side instead of just checking cookie existence.
+    // This prevents stale cookies from causing redirect loops.
+    const session = await auth.api.getSession({
+        headers: req.headers,
+    })
+
+    if (session) {
         return NextResponse.redirect(new URL("/", req.url))
     }
 
