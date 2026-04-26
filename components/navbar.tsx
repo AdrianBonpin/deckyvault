@@ -5,12 +5,11 @@ import logo from "@/app/icon.png"
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { CircleXIcon, Gamepad2Icon, MenuIcon, XIcon } from "lucide-react"
+import { Bookmark, CircleXIcon, Gamepad2Icon, LogOut, MenuIcon, User, XIcon } from "lucide-react"
 import { routes } from "@/lib/routes"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useDebounce } from "@/lib/hooks/useDebounce"
 import { authClient, useSession } from "@/lib/auth-client"
-import { LogOut, User, Bookmark } from "lucide-react"
 import { authRoutes } from "@/lib/routes"
 
 export default function Navbar() {
