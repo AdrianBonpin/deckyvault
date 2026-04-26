@@ -15,6 +15,8 @@ import {
 import { FaSteam } from "react-icons/fa"
 import { motion } from "motion/react"
 
+import { BookmarkButton } from "@/components/saved-games/bookmark-button"
+
 // Chart imports
 import { HistoricalAreaChart } from "@/components/charts/HistoricalAreaChart"
 import { UpscalerBarChart } from "@/components/charts/UpscalerBarChart"
@@ -357,6 +359,7 @@ export function GamePageClient({
                   ★ {game.metascore}
                 </span>
               )}
+              <BookmarkButton gameId={game.id} />
             </div>
 
             {/* External links */}
