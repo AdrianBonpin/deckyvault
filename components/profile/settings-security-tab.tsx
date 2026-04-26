@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { authClient } from "@/lib/auth-client"
 import { Loader2, Key, Fingerprint, Plus, Trash2, Pencil, Check, X, Shield } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
@@ -19,11 +19,16 @@ interface AuthMethods {
   totalAuthMethods: number
 }
 
-export function SettingsSecurityTab() {
-  const [authMethods, setAuthMethods] = useState<AuthMethods | null>(null)
+interface SettingsSecurityTabProps {
+  authMethods: AuthMethods | null
+  isLoadingAuthMethods: boolean
+  onRefreshAuthMethods: () => Promise<void>
+}
+
+export function SettingsSecurityTab({ authMethods, isLoadingAuthMethods, onRefreshAuthMethods }: SettingsSecurityTabProps) {
   const [passkeys, setPasskeys] = useState<Passkey[]>([])
-  const [isLoadingAuthMethods, setIsLoadingAuthMethods] = useState(true)
   const [isLoadingPasskeys, setIsLoadingPasskeys] = useState(true)
+  const [passkeysError, setPasskeysError] = useState<string | null>(null)
   const [passwordMessage, setPasswordMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false)
 
@@ -32,43 +37,48 @@ export function SettingsSecurityTab() {
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
 
-  // Passkey editing state
+  // Passkey state
   const [editingPasskeyId, setEditingPasskeyId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState("")
   const [isUpdatingPasskey, setIsUpdatingPasskey] = useState(false)
   const [isDeletingPasskey, setIsDeletingPasskey] = useState<string | null>(null)
   const [isAddingPasskey, setIsAddingPasskey] = useState(false)
+  const [passkeyMessage, setPasskeyMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
-  const fetchRef = useRef(false)
   useEffect(() => {
-    if (fetchRef.current) return
-    fetchRef.current = true
-
-    let cancelled = false
-    Promise.all([
-      fetch("/api/user/me/auth-methods", { credentials: "include" }).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch("/api/auth/passkey/list", { credentials: "include" }).then(r => r.ok ? r.json() : []).catch(() => []),
-    ]).then(([methodsData, passkeyData]) => {
-      if (cancelled) return
-      if (methodsData) setAuthMethods(methodsData)
-      if (passkeyData) setPasskeys(Array.isArray(passkeyData) ? passkeyData : [])
-      setIsLoadingAuthMethods(false)
-      setIsLoadingPasskeys(false)
-    })
-
-    return () => { cancelled = true }
+    fetchPasskeys()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const refreshAuthMethods = async () => {
-    const res = await fetch("/api/user/me/auth-methods", { credentials: "include" })
-    if (res.ok) setAuthMethods(await res.json())
+  async function fetchPasskeys() {
+    try {
+      const res = await fetch("/api/auth/passkey/list-user-passkeys", { credentials: "include" })
+      if (!res.ok) {
+        setPasskeysError("Failed to load passkeys")
+        setPasskeys([])
+      } else {
+        const data = await res.json()
+        setPasskeys(Array.isArray(data) ? data : [])
+        setPasskeysError(null)
+      }
+    } catch {
+      setPasskeysError("Failed to load passkeys. Please try again.")
+      setPasskeys([])
+    } finally {
+      setIsLoadingPasskeys(false)
+    }
   }
 
   const refreshPasskeys = async () => {
-    const res = await fetch("/api/auth/passkey/list", { credentials: "include" })
-    if (res.ok) {
-      const data = await res.json()
-      setPasskeys(Array.isArray(data) ? data : [])
+    try {
+      const res = await fetch("/api/auth/passkey/list-user-passkeys", { credentials: "include" })
+      if (res.ok) {
+        const data = await res.json()
+        setPasskeys(Array.isArray(data) ? data : [])
+        setPasskeysError(null)
+      }
+    } catch {
+      // silently fail on refresh
     }
   }
 
@@ -88,54 +98,61 @@ export function SettingsSecurityTab() {
 
     setIsPasswordSubmitting(true)
 
-    if (authMethods?.hasPassword) {
-      const { error } = await authClient.changePassword({
-        currentPassword,
-        newPassword,
-      })
+    try {
+      if (authMethods?.hasPassword) {
+        const { error } = await authClient.changePassword({
+          currentPassword,
+          newPassword,
+        })
 
-      if (error) {
-        setPasswordMessage({ type: "error", text: error.message || "Failed to change password" })
+        if (error) {
+          setPasswordMessage({ type: "error", text: error.message || "Failed to change password" })
+        } else {
+          setPasswordMessage({ type: "success", text: "Password changed successfully" })
+          setCurrentPassword("")
+          setNewPassword("")
+          setConfirmPassword("")
+          await onRefreshAuthMethods()
+        }
       } else {
-        setPasswordMessage({ type: "success", text: "Password changed successfully" })
-        setCurrentPassword("")
-        setNewPassword("")
-        setConfirmPassword("")
-      }
-    } else {
-      const res = await fetch("/api/user/me/set-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newPassword }),
-        credentials: "include",
-      })
+        const res = await fetch("/api/user/me/set-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ newPassword }),
+          credentials: "include",
+        })
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({ error: "Failed to set password" }))
-        setPasswordMessage({ type: "error", text: data.error || "Failed to set password" })
-      } else {
-        setPasswordMessage({ type: "success", text: "Password set successfully" })
-        setNewPassword("")
-        setConfirmPassword("")
-        await refreshAuthMethods()
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({ error: "Failed to set password" }))
+          setPasswordMessage({ type: "error", text: data.error || "Failed to set password" })
+        } else {
+          setPasswordMessage({ type: "success", text: "Password set successfully" })
+          setNewPassword("")
+          setConfirmPassword("")
+          await onRefreshAuthMethods()
+        }
       }
+    } catch {
+      setPasswordMessage({ type: "error", text: "An unexpected error occurred" })
+    } finally {
+      setIsPasswordSubmitting(false)
     }
-
-    setIsPasswordSubmitting(false)
   }
 
   const handleAddPasskey = async () => {
     setIsAddingPasskey(true)
+    setPasskeyMessage(null)
     try {
       const { error } = await authClient.passkey.addPasskey()
       if (error) {
-        console.error("Failed to add passkey:", error)
+        setPasskeyMessage({ type: "error", text: error.message || "Failed to add passkey" })
       } else {
+        setPasskeyMessage({ type: "success", text: "Passkey added successfully" })
         await refreshPasskeys()
-        await refreshAuthMethods()
+        await onRefreshAuthMethods()
       }
     } catch {
-      // silently fail
+      setPasskeyMessage({ type: "error", text: "Failed to add passkey. Please try again." })
     } finally {
       setIsAddingPasskey(false)
     }
@@ -145,21 +162,54 @@ export function SettingsSecurityTab() {
     if (authMethods && authMethods.totalAuthMethods <= 1) return
 
     setIsDeletingPasskey(id)
+    setPasskeyMessage(null)
     try {
-      const res = await fetch("/api/user/me/passkey/delete", {
+      const res = await fetch("/api/auth/passkey/delete-passkey", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
         credentials: "include",
+        body: JSON.stringify({ id }),
       })
-      if (res.ok) {
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ message: "Failed to delete passkey" }))
+        setPasskeyMessage({ type: "error", text: data.message || "Failed to delete passkey" })
+      } else {
+        setPasskeyMessage({ type: "success", text: "Passkey deleted" })
         await refreshPasskeys()
-        await refreshAuthMethods()
+        await onRefreshAuthMethods()
       }
     } catch {
-      // silently fail
+      setPasskeyMessage({ type: "error", text: "Failed to delete passkey. Please try again." })
     } finally {
       setIsDeletingPasskey(null)
+    }
+  }
+
+  const handleRenamePasskey = async (id: string) => {
+    setIsUpdatingPasskey(true)
+    setPasskeyMessage(null)
+    try {
+      const res = await fetch("/api/auth/passkey/update-passkey", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ id, name: editingName }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ message: "Failed to rename passkey" }))
+        setPasskeyMessage({ type: "error", text: data.message || "Failed to rename passkey" })
+      } else {
+        setPasskeyMessage({ type: "success", text: "Passkey renamed" })
+        await refreshPasskeys()
+        setEditingPasskeyId(null)
+        setEditingName("")
+      }
+    } catch {
+      setPasskeyMessage({ type: "error", text: "Failed to rename passkey. Please try again." })
+    } finally {
+      setIsUpdatingPasskey(false)
     }
   }
 
@@ -171,27 +221,6 @@ export function SettingsSecurityTab() {
   const cancelEditingPasskey = () => {
     setEditingPasskeyId(null)
     setEditingName("")
-  }
-
-  const handleRenamePasskey = async (id: string) => {
-    setIsUpdatingPasskey(true)
-    try {
-      const res = await fetch("/api/user/me/passkey/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, name: editingName }),
-        credentials: "include",
-      })
-      if (res.ok) {
-        await refreshPasskeys()
-        setEditingPasskeyId(null)
-        setEditingName("")
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setIsUpdatingPasskey(false)
-    }
   }
 
   const isSingleAuthMethod = authMethods && authMethods.totalAuthMethods <= 1
@@ -314,7 +343,27 @@ export function SettingsSecurityTab() {
           </button>
         </div>
 
-        {isLoadingPasskeys ? (
+        {passkeyMessage && (
+          <div className={`mb-3 text-sm ${passkeyMessage.type === "success" ? "text-green-400" : "text-red-400"}`}>
+            {passkeyMessage.text}
+          </div>
+        )}
+
+        {passkeysError ? (
+          <div className="text-center py-4">
+            <p className="text-sm text-red-400 mb-2">{passkeysError}</p>
+            <button
+              onClick={() => {
+                setPasskeysError(null)
+                setIsLoadingPasskeys(true)
+                fetchPasskeys()
+              }}
+              className="text-sm text-primary hover:underline cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        ) : isLoadingPasskeys ? (
           <div className="flex items-center gap-2 text-sm text-text/50">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading passkeys...
