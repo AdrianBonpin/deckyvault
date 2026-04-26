@@ -49,7 +49,7 @@ export const auth = betterAuth({
             clientSecret: process.env.DISCORD_CLIENT_SECRET || "",
         },
     },
-    trustedOrigins: [process.env.NEXT_PUBLIC_BASE_URL || "https://localhost:3000"],
+    trustedOrigins: [process.env.NEXT_PUBLIC_SITE_URL || "https://localhost:3000"],
     rateLimit: {
         enabled: true,
         window: 60,
