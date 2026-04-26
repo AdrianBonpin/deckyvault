@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "motion/react"
 import logo from "@/app/icon.png"
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { CircleXIcon, Gamepad2Icon, MenuIcon, XIcon } from "lucide-react"
 import { routes } from "@/lib/routes"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
@@ -26,19 +26,35 @@ export default function Navbar() {
     const [forceFocusStyles, setForceFocusStyles] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
 
+    // When syncing state from the URL (e.g. after navigating from the landing
+    // page), skip the next URL-write cycle so the stale/empty debounced value
+    // doesn't overwrite the URL params before it catches up.
+    const skipNextUrlWrite = useRef(false)
+
     const { data: session, isPending: isSessionLoading } =
         useSession()
     const [userMenuOpen, setUserMenuOpen] = useState(false)
 
     // Sync search query with URL ?q= param
-    useEffect(() => {
+    useLayoutEffect(() => {
         const q = searchParams.get("q") || ""
-        const timeout = setTimeout(() => setSearchQuery(q), 0)
-        return () => clearTimeout(timeout)
+        // If the URL has a different value than our state, we're syncing after
+        // a navigation — skip the next URL-write to avoid clearing the param
+        if (q !== searchQuery) {
+            skipNextUrlWrite.current = true
+        }
+        setSearchQuery(q)
     }, [searchParams])
 
     // Update URL when debounced query changes (skip if already matches)
     useEffect(() => {
+        // Skip one cycle after syncing from URL so the stale/empty debounced
+        // value doesn't overwrite the URL params before it catches up
+        if (skipNextUrlWrite.current) {
+            skipNextUrlWrite.current = false
+            return
+        }
+
         if (isLanding) return
         const currentQ = searchParams.get("q") || ""
         if (debouncedQuery === currentQ) return

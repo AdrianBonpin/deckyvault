@@ -7,7 +7,7 @@ const authRoutes = [
     "/reset-password",
 ]
 
-export default async function middleware(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
     const path = req.nextUrl.pathname
     const isAuthRoute = authRoutes.some((route) => path.startsWith(route))
 
