@@ -43,7 +43,7 @@ export function GameEntryWizard({ gameId, gameVersionId }: GameEntryWizardProps)
 
   // Step 4: Environment
   const [environment, setEnvironment] = useState<EnvironmentData>({
-    fsrVersion: "none",
+    upscalerType: "none",
     frameGenMethod: "none",
   })
 
@@ -122,9 +122,12 @@ export function GameEntryWizard({ gameId, gameVersionId }: GameEntryWizardProps)
           loadTimeSd: performance.loadTimeSd !== undefined ? Number(performance.loadTimeSd) : null,
           protonVersion: environment.protonVersion || null,
           osVersion: environment.osVersion || null,
-          fsrVersion: environment.fsrVersion ?? "none",
+          upscalerType: environment.upscalerType ?? "none",
+          upscalerVersion: environment.upscalerVersion || null,
           frameGenMethod: environment.frameGenMethod ?? "none",
           launchOptions: environment.launchOptions || null,
+          estimatedBatteryMin: environment.estimatedBatteryMin ?? null,
+          customSystem: environment.customSystem ?? false,
           settingsJson: settingsJson.length > 0 ? settingsJson : null,
           userNotes: userNotes || null,
         }),

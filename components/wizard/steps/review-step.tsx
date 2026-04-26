@@ -6,6 +6,7 @@ import { TiptapEditor } from "@/components/tiptap-editor"
 import type { SettingCategory } from "@/components/wizard/settings-editor"
 import type { PerformanceData } from "./performance-step"
 import type { EnvironmentData } from "./environment-step"
+import { UPSCALER_TYPE_OPTIONS, FRAME_GEN_OPTIONS } from "./environment-step"
 
 export interface ReviewData {
   hardwareSlug: string
@@ -57,25 +58,18 @@ export function ReviewStep({
 }: ReviewStepProps) {
   const { hardwareName, performance, environment, settings } = data
 
-  const fsrLabel =
-    environment.fsrVersion === "none"
-      ? "None"
-      : environment.fsrVersion === "fsr1"
-      ? "FSR 1"
-      : environment.fsrVersion === "fsr2"
-      ? "FSR 2"
-      : environment.fsrVersion === "fsr3"
-      ? "FSR 3"
-      : "Not set"
+  const upscalerLabel = (() => {
+    if (!data.environment.upscalerType || data.environment.upscalerType === "none") return "None"
+    const opt = UPSCALER_TYPE_OPTIONS.find(o => o.value === data.environment.upscalerType)
+    const base = opt?.label ?? data.environment.upscalerType
+    return data.environment.upscalerVersion ? `${base} ${data.environment.upscalerVersion}` : base
+  })()
 
-  const frameGenLabel =
-    environment.frameGenMethod === "none"
-      ? "None"
-      : environment.frameGenMethod === "fsr_fg"
-      ? "FSR Frame Generation"
-      : environment.frameGenMethod === "dlss_fg"
-      ? "DLSS Frame Generation"
-      : "Not set"
+  const frameGenLabel = (() => {
+    if (!environment.frameGenMethod || environment.frameGenMethod === "none") return "None"
+    const opt = FRAME_GEN_OPTIONS.find(o => o.value === environment.frameGenMethod)
+    return opt?.label ?? environment.frameGenMethod
+  })()
 
   return (
     <div className="space-y-6">
@@ -112,8 +106,10 @@ export function ReviewStep({
           <SectionHeader icon={Terminal} label="Environment" />
           <SummaryRow label="Proton Version" value={environment.protonVersion || "Not set"} />
           <SummaryRow label="OS Version" value={environment.osVersion || "Not set"} />
-          <SummaryRow label="FSR Version" value={fsrLabel} />
+          <SummaryRow label="Upscaler" value={upscalerLabel} />
           <SummaryRow label="Frame Gen" value={frameGenLabel} />
+          <SummaryRow label="Estimated Battery" value={environment.estimatedBatteryMin ? `${environment.estimatedBatteryMin} min` : "Not set"} />
+          <SummaryRow label="Custom System" value={environment.customSystem ? "Yes" : "No"} />
           {environment.launchOptions && (
             <SummaryRow
               label="Launch Options"

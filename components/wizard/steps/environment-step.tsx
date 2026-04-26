@@ -2,28 +2,35 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 import { motion, AnimatePresence } from "motion/react"
-import { Terminal, ChevronDown, Loader2 } from "lucide-react"
+import { Terminal, ChevronDown, Loader2, ToggleLeft, ToggleRight } from "lucide-react"
 import { api } from "@/lib/eden"
 
-const FSR_OPTIONS = [
+export const UPSCALER_TYPE_OPTIONS = [
   { value: "none", label: "None" },
-  { value: "fsr1", label: "FSR 1" },
-  { value: "fsr2", label: "FSR 2" },
-  { value: "fsr3", label: "FSR 3" },
+  { value: "fsr", label: "AMD FSR" },
+  { value: "dlss", label: "NVIDIA DLSS" },
+  { value: "xess", label: "Intel XeSS" },
+  { value: "lsfg", label: "Lossless Scaling FG" },
+  { value: "other", label: "Other" },
 ] as const
 
-const FRAME_GEN_OPTIONS = [
+export const FRAME_GEN_OPTIONS = [
   { value: "none", label: "None" },
   { value: "fsr_fg", label: "FSR Frame Generation" },
   { value: "dlss_fg", label: "DLSS Frame Generation" },
+  { value: "lsfg", label: "Lossless Scaling FG" },
+  { value: "other", label: "Other" },
 ] as const
 
 export interface EnvironmentData {
   protonVersion?: string
   osVersion?: string
-  fsrVersion?: string
+  upscalerType?: string
+  upscalerVersion?: string
   frameGenMethod?: string
   launchOptions?: string
+  estimatedBatteryMin?: number
+  customSystem?: boolean
 }
 
 interface EnvironmentStepProps {
@@ -184,14 +191,14 @@ export function EnvironmentStep({ value, onChange }: EnvironmentStepProps) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-text/60">FSR Version</label>
+          <label className="text-xs font-medium text-text/60">Upscaler Type</label>
           <div className="relative">
             <select
-              value={value.fsrVersion ?? "none"}
-              onChange={(e) => update("fsrVersion", e.target.value)}
+              value={value.upscalerType ?? "none"}
+              onChange={(e) => update("upscalerType", e.target.value)}
               className="w-full appearance-none px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors cursor-pointer"
             >
-              {FSR_OPTIONS.map((opt) => (
+              {UPSCALER_TYPE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
@@ -201,6 +208,21 @@ export function EnvironmentStep({ value, onChange }: EnvironmentStepProps) {
           </div>
         </div>
 
+        {value.upscalerType && value.upscalerType !== "none" && (
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-text/60">Upscaler Version</label>
+            <input
+              type="text"
+              value={value.upscalerVersion ?? ""}
+              onChange={(e) => update("upscalerVersion", e.target.value)}
+              placeholder="e.g. 3.1"
+              className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-text/60">Frame Gen Method</label>
           <div className="relative">
@@ -232,6 +254,57 @@ export function EnvironmentStep({ value, onChange }: EnvironmentStepProps) {
         <p className="text-xs text-text/40">
           Steam launch options or environment variables used.
         </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-text/60">
+            Estimated Battery Life (minutes)
+          </label>
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={value.estimatedBatteryMin ?? ""}
+            onChange={(e) => {
+              const val = e.target.value
+              onChange({
+                ...value,
+                estimatedBatteryMin: val === "" ? undefined : Number(val),
+              })
+            }}
+            placeholder="e.g. 90"
+            className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
+          />
+          <p className="text-xs text-text/40">
+            Approximate battery life in minutes while playing this game.
+          </p>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-text/60">
+            Custom / Modified System
+          </label>
+          <div className="flex items-center gap-3 py-3">
+            <button
+              type="button"
+              onClick={() => onChange({ ...value, customSystem: !value.customSystem })}
+              className={`flex items-center gap-2 text-sm cursor-pointer transition-colors ${
+                value.customSystem ? "text-primary" : "text-text/40"
+              }`}
+            >
+              {value.customSystem ? (
+                <ToggleRight className="h-5 w-5" />
+              ) : (
+                <ToggleLeft className="h-5 w-5" />
+              )}
+              {value.customSystem ? "Yes" : "No"}
+            </button>
+            <span className="text-xs text-text/40">
+              Check if using custom firmware, OS, or mods that affect performance.
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   )
