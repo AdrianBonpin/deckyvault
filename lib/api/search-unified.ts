@@ -147,8 +147,8 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
     }
 
     // ── 2b. Raw Performer + best FPS ────────────────────────────────
-    let rawPerformerMap = new Map<string, boolean>()
-    let bestFpsMap = new Map<string, number>()
+    const rawPerformerMap = new Map<string, boolean>()
+    const bestFpsMap = new Map<string, number>()
 
     if (localGameIds.length > 0) {
       const perfStats = await db
@@ -181,7 +181,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
     }
 
     // ── 2c. Latest version ──────────────────────────────────────────
-    let latestVersionMap = new Map<string, string>()
+    const latestVersionMap = new Map<string, string>()
 
     if (localGameIds.length > 0) {
       const versionRows = await db

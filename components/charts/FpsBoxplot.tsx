@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { EChartWrapper, CHART_THEME, getDeviceColor } from "./EChartWrapper"
+import { EChartWrapper, CHART_THEME } from "./EChartWrapper"
 import type { EChartsOption } from "echarts"
 
 interface BoxplotEntry {

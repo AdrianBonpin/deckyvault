@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "motion/react"
 import logo from "@/app/icon.png"
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { CircleXIcon, Gamepad2Icon, MenuIcon, XIcon } from "lucide-react"
 import { routes } from "@/lib/routes"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
@@ -37,14 +37,19 @@ export default function Navbar() {
     const [userMenuOpen, setUserMenuOpen] = useState(false)
 
     // Sync search query with URL ?q= param
-    useLayoutEffect(() => {
+    const searchQueryRef = useRef(searchQuery)
+    useEffect(() => {
+        searchQueryRef.current = searchQuery
+    }, [searchQuery])
+
+    useEffect(() => {
         const q = searchParams.get("q") || ""
+        if (q === searchQueryRef.current) return
         // If the URL has a different value than our state, we're syncing after
         // a navigation — skip the next URL-write to avoid clearing the param
-        if (q !== searchQuery) {
-            skipNextUrlWrite.current = true
-        }
-        setSearchQuery(q)
+        skipNextUrlWrite.current = true
+        const id = setTimeout(() => setSearchQuery(q), 0)
+        return () => clearTimeout(id)
     }, [searchParams])
 
     // Update URL when debounced query changes (skip if already matches)

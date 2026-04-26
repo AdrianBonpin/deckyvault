@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState, useEffect, useMemo } from "react"
+import { useCallback, useState, useEffect, useMemo, useRef } from "react"
 import Image from "next/image"
 import {
   Gamepad2Icon,
@@ -215,11 +215,14 @@ export function GamePageClient({
   }, [gameId])
 
   // Initialize selected devices when stats load
+  const didInitDevices = useRef(false)
   useEffect(() => {
-    if (stats && selectedDevices.length === 0) {
-      setSelectedDevices(stats.deviceBreakdown.map((d) => d.hardwareSlug))
+    if (stats && !didInitDevices.current) {
+      didInitDevices.current = true
+      const slugs = stats.deviceBreakdown.map((d) => d.hardwareSlug)
+      queueMicrotask(() => setSelectedDevices(slugs))
     }
-  }, [stats, selectedDevices.length])
+  }, [stats])
 
   // Filtered stats
   const filteredStats = useMemo(() => {
