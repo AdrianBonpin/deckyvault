@@ -4,13 +4,16 @@ import { useState, useEffect } from "react"
 import { Loader2, Link as LinkIcon, Unlink, Shield } from "lucide-react"
 import { motion } from "motion/react"
 import { FaGoogle, FaDiscord } from "react-icons/fa"
-
+import { authClient } from "@/lib/auth-client"
 
 interface LinkedAccount {
   id: string
   providerId: string
   accountId: string
-  createdAt: string
+  createdAt: Date
+  updatedAt: Date
+  userId: string
+  scopes: string[]
 }
 
 interface AuthMethods {
@@ -26,72 +29,76 @@ const providerConfig: Record<string, { name: string; icon: React.ComponentType<{
   credential: { name: "Password", icon: null, color: "text-text/60", bgColor: "bg-text/5 border-border" },
 }
 
-export function SettingsAccountsTab() {
+interface SettingsAccountsTabProps {
+  authMethods: AuthMethods | null
+  isLoadingAuthMethods: boolean
+  onRefreshAuthMethods: () => Promise<void>
+}
+
+export function SettingsAccountsTab({ authMethods, isLoadingAuthMethods, onRefreshAuthMethods }: SettingsAccountsTabProps) {
   const [accounts, setAccounts] = useState<LinkedAccount[]>([])
-  const [loading, setLoading] = useState(true)
-  const [authMethods, setAuthMethods] = useState<AuthMethods | null>(null)
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
+  const [accountsError, setAccountsError] = useState<string | null>(null)
   const [unlinking, setUnlinking] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
-  const refreshData = async () => {
+  useEffect(() => {
+    fetchAccounts()
+    // Check for OAuth callback success
+    const params = new URLSearchParams(window.location.search)
+    if (params.has("linked")) {
+      setMessage({ type: "success", text: "Account linked successfully!" })
+      window.history.replaceState({}, "", window.location.pathname)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function fetchAccounts() {
     try {
-      const [accountsRes, methodsRes] = await Promise.all([
-        fetch("/api/auth/list-accounts", { credentials: "include" }),
-        fetch("/api/user/me/auth-methods"),
-      ])
-
-      if (accountsRes.ok) {
-        const data = await accountsRes.json()
+      const { data, error } = await authClient.listAccounts()
+      if (error || !data) {
+        setAccountsError("Failed to load linked accounts")
+        setAccounts([])
+      } else {
         setAccounts(Array.isArray(data) ? data : [])
-      }
-
-      if (methodsRes.ok) {
-        const data = await methodsRes.json()
-        setAuthMethods(data)
+        setAccountsError(null)
       }
     } catch {
-      // silently fail
+      setAccountsError("Failed to load linked accounts. Please try again.")
+      setAccounts([])
+    } finally {
+      setIsLoadingAccounts(false)
     }
   }
 
-  useEffect(() => {
-    if (accounts.length > 0 || authMethods !== null) return
-    let cancelled = false
-    Promise.all([
-      fetch("/api/auth/list-accounts", { credentials: "include" }).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch("/api/user/me/auth-methods").then(r => r.ok ? r.json() : null).catch(() => null),
-    ]).then(([accountsData, methodsData]) => {
-      if (cancelled) return
-      if (accountsData) setAccounts(Array.isArray(accountsData) ? accountsData : [])
-      if (methodsData) setAuthMethods(methodsData)
-      setLoading(false)
-    })
-    return () => { cancelled = true }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: fetch only on mount
-  }, [])
+  const refreshAccounts = async () => {
+    try {
+      const { data } = await authClient.listAccounts()
+      if (data) setAccounts(Array.isArray(data) ? data : accounts)
+    } catch {
+      // silently fail on refresh
+    }
+  }
+
+  const refreshData = async () => {
+    await Promise.all([refreshAccounts(), onRefreshAuthMethods()])
+  }
 
   const handleLink = async (provider: "google" | "discord") => {
+    setMessage(null)
     try {
-      const res = await fetch("/api/auth/link-social", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          provider,
-          callbackURL: window.location.href,
-        }),
+      const { data, error } = await authClient.linkSocial({
+        provider,
+        callbackURL: window.location.origin + "/profile?linked=true",
       })
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        setMessage({ type: "error", text: data.message || "Failed to link account" })
+      if (error) {
+        setMessage({ type: "error", text: error.message || "Failed to link account" })
         return
       }
 
-      const data = await res.json()
-      // If the API returns a URL, redirect to it
-      if (data && data.url) {
-        window.location.assign(data.url as string)
+      if (data?.url) {
+        window.location.assign(data.url)
       }
     } catch {
       setMessage({ type: "error", text: "Failed to initiate account linking" })
@@ -105,19 +112,15 @@ export function SettingsAccountsTab() {
     setMessage(null)
 
     try {
-      const res = await fetch("/api/auth/unlink-account", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ providerId }),
+      const { error } = await authClient.unlinkAccount({
+        providerId,
       })
 
-      if (res.ok) {
+      if (error) {
+        setMessage({ type: "error", text: error.message || "Failed to unlink account" })
+      } else {
         setMessage({ type: "success", text: `${providerConfig[providerId]?.name || providerId} account unlinked` })
         await refreshData()
-      } else {
-        const data = await res.json()
-        setMessage({ type: "error", text: data.message || "Failed to unlink account" })
       }
     } catch {
       setMessage({ type: "error", text: "Failed to unlink account" })
@@ -137,7 +140,7 @@ export function SettingsAccountsTab() {
       className="space-y-6"
     >
       {/* Warning if only one auth method */}
-      {isOnlyAuthMethod && (
+      {isOnlyAuthMethod && !isLoadingAuthMethods && (
         <div className="flex items-start gap-3 p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/5">
           <Shield className="h-5 w-5 text-yellow-400 shrink-0 mt-0.5" />
           <div>
@@ -162,7 +165,21 @@ export function SettingsAccountsTab() {
           Linked Accounts
         </h3>
 
-        {loading ? (
+        {accountsError ? (
+          <div className="text-center py-4">
+            <p className="text-sm text-red-400 mb-2">{accountsError}</p>
+            <button
+              onClick={() => {
+                setAccountsError(null)
+                setIsLoadingAccounts(true)
+                fetchAccounts()
+              }}
+              className="text-sm text-primary hover:underline cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        ) : isLoadingAccounts ? (
           <div className="flex items-center justify-center py-4">
             <Loader2 className="h-5 w-5 animate-spin text-text/40" />
           </div>
