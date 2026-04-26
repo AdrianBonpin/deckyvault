@@ -227,7 +227,7 @@ export const userRoutes = new Elysia({ prefix: "/user" })
     },
     {
       body: t.Object({
-        newPassword: t.String({ minLength: 8 }),
+        newPassword: t.String({ minLength: 10 }),
       }),
     },
   )

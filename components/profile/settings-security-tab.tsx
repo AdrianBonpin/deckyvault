@@ -81,8 +81,8 @@ export function SettingsSecurityTab() {
       return
     }
 
-    if (newPassword.length < 8) {
-      setPasswordMessage({ type: "error", text: "Password must be at least 8 characters" })
+    if (newPassword.length < 10) {
+      setPasswordMessage({ type: "error", text: "Password must be at least 10 characters" })
       return
     }
 
