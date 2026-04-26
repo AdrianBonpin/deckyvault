@@ -47,7 +47,6 @@ export function SettingsSecurityTab({ authMethods, isLoadingAuthMethods, onRefre
 
   useEffect(() => {
     fetchPasskeys()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function fetchPasskeys() {

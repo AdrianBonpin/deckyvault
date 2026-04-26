@@ -40,17 +40,20 @@ export function SettingsAccountsTab({ authMethods, isLoadingAuthMethods, onRefre
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
   const [accountsError, setAccountsError] = useState<string | null>(null)
   const [unlinking, setUnlinking] = useState<string | null>(null)
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(() => {
+    // Check for OAuth callback success on initial render
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      if (params.has("linked")) {
+        window.history.replaceState({}, "", window.location.pathname)
+        return { type: "success", text: "Account linked successfully!" }
+      }
+    }
+    return null
+  })
 
   useEffect(() => {
     fetchAccounts()
-    // Check for OAuth callback success
-    const params = new URLSearchParams(window.location.search)
-    if (params.has("linked")) {
-      setMessage({ type: "success", text: "Account linked successfully!" })
-      window.history.replaceState({}, "", window.location.pathname)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function fetchAccounts() {
