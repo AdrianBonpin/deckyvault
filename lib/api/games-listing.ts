@@ -59,6 +59,14 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
 
     const where = conditions.length > 0 ? and(...conditions) : undefined
 
+    // Subquery for benchmark count — referenced in both SELECT and ORDER BY
+    const benchmarkCountSql = sql<number>`(
+      SELECT count(*)::int FROM ${performanceEntries}
+      INNER JOIN ${gameVersions} ON ${performanceEntries.versionId} = ${gameVersions.id}
+      WHERE ${gameVersions.gameId} = ${games.id}
+      AND ${performanceEntries.isRemoved} = false
+    )`
+
     // Determine sort order
     let orderBy
     switch (sort) {
@@ -66,7 +74,7 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
         orderBy = asc(games.title)
         break
       case "benchmarks":
-        orderBy = desc(sql`benchmark_count`)
+        orderBy = desc(benchmarkCountSql)
         break
       case "recent":
       default:
@@ -86,16 +94,11 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
         genres: games.genres,
         source: games.source,
         createdAt: games.createdAt,
-        benchmarkCount: sql<number>`(
-          SELECT count(*)::int FROM ${performanceEntries}
-          INNER JOIN ${gameVersions} ON ${performanceEntries.versionId} = ${gameVersions.id}
-          WHERE ${gameVersions.gameId} = ${games.id}
-          AND ${performanceEntries.isRemoved} = false
-        )`,
+        benchmarkCount: benchmarkCountSql,
       })
       .from(games)
       .where(where)
-      .orderBy(sort === "benchmarks" ? desc(sql`benchmark_count`) : orderBy)
+      .orderBy(orderBy)
       .limit(limit)
       .offset(offset)
 
@@ -129,19 +132,25 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
     const [data, countResult] = await Promise.all([gamesQuery, countQuery])
 
     // Fetch platform support for the returned games
+    // Prioritise Steam Deck entries (slug starts with "steamdeck") for deckStatus.
+    // If no Steam Deck entry exists, fall back to the first available device.
     const gameIds = data.map((g) => g.id)
     let platformMap = new Map<string, string>()
     if (gameIds.length > 0) {
       const platformRows = await db
         .select({
           gameId: gamePlatformSupport.gameId,
+          hardwareSlug: gamePlatformSupport.hardwareSlug,
           protonStatus: gamePlatformSupport.protonStatus,
         })
         .from(gamePlatformSupport)
         .where(inArray(gamePlatformSupport.gameId, gameIds))
 
       for (const row of platformRows) {
-        if (!platformMap.has(row.gameId)) {
+        const isSteamDeck = row.hardwareSlug.startsWith("steamdeck")
+        const existing = platformMap.get(row.gameId)
+        // Prefer Steam Deck entries; if we already have a non-Deck entry, replace it
+        if (!existing || (!existing.startsWith("steamdeck") && isSteamDeck)) {
           platformMap.set(row.gameId, row.protonStatus)
         }
       }
