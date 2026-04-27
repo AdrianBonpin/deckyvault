@@ -5,12 +5,11 @@ import {
     games,
     gameVersions,
     performanceEntries,
-    communityPresets,
     gameComments,
     gamePlatformSupport,
     hardware,
 } from "@/lib/db/schema"
-import { eq, sql } from "drizzle-orm"
+import { and, desc, eq, sql } from "drizzle-orm"
 import { isSyncStale, syncSteamGame } from "@/lib/steam/sync"
 import { GamePageClient } from "./game-page-client"
 
@@ -149,8 +148,15 @@ export default async function GamePage({
             .then((r) => r[0]?.count ?? 0),
         db
             .select({ count: sql<number>`count(*)::int` })
-            .from(communityPresets)
-            .where(eq(communityPresets.gameId, game.id))
+            .from(performanceEntries)
+            .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+            .where(
+                and(
+                    eq(gameVersions.gameId, game.id),
+                    eq(performanceEntries.isRemoved, false),
+                    sql`${performanceEntries.settingsJson} IS NOT NULL`,
+                ),
+            )
             .then((r) => r[0]?.count ?? 0),
         db
             .select({ count: sql<number>`count(*)::int` })
@@ -164,14 +170,11 @@ export default async function GamePage({
             .then((r) => r),
         db
             .select({
-                id: communityPresets.id,
-                name: communityPresets.name,
-                description: communityPresets.description,
-                hardwareSlug: communityPresets.hardwareSlug,
+                id: performanceEntries.id,
+                hardwareSlug: performanceEntries.hardwareSlug,
                 hardwareName: hardware.name,
-                upvotes: communityPresets.upvotes,
-                settingsJson: communityPresets.settingsJson,
-                createdAt: communityPresets.createdAt,
+                upvotes: performanceEntries.upvotes,
+                settingsJson: performanceEntries.settingsJson,
                 fpsAvg: performanceEntries.fpsAvg,
                 fpsLow: performanceEntries.fpsLow,
                 fpsHigh: performanceEntries.fpsHigh,
@@ -180,18 +183,19 @@ export default async function GamePage({
                 frameGenMethod: performanceEntries.frameGenMethod,
                 protonVersion: performanceEntries.protonVersion,
                 osVersion: performanceEntries.osVersion,
+                createdAt: performanceEntries.createdAt,
             })
-            .from(communityPresets)
-            .leftJoin(
-                performanceEntries,
-                eq(communityPresets.performanceEntryId, performanceEntries.id),
+            .from(performanceEntries)
+            .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+            .innerJoin(hardware, eq(performanceEntries.hardwareSlug, hardware.slug))
+            .where(
+                and(
+                    eq(gameVersions.gameId, game.id),
+                    eq(performanceEntries.isRemoved, false),
+                    sql`${performanceEntries.settingsJson} IS NOT NULL`,
+                ),
             )
-            .innerJoin(
-                hardware,
-                eq(communityPresets.hardwareSlug, hardware.slug),
-            )
-            .where(eq(communityPresets.gameId, game.id))
-            .orderBy(sql`${communityPresets.upvotes} DESC`),
+            .orderBy(desc(performanceEntries.upvotes)),
     ])
 
     // ── Sync logic: force or stale-while-revalidate ─────────────────
@@ -226,8 +230,6 @@ export default async function GamePage({
 
     const serializedPresets = presetRows.map((p) => ({
         id: p.id,
-        name: p.name,
-        description: p.description,
         hardwareSlug: p.hardwareSlug,
         hardwareName: p.hardwareName,
         upvotes: p.upvotes,

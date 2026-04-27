@@ -64,8 +64,6 @@ interface PlatformSupport {
 
 interface Preset {
     id: string
-    name: string
-    description: string | null
     hardwareSlug: string
     hardwareName: string
     upvotes: number
@@ -183,6 +181,12 @@ function getFpsColor(preset: Preset): string {
     if (preset.upscalerType && preset.upscalerType !== "none")
         return "text-orange-400"
     return "text-text/60"
+}
+
+function generatePresetName(preset: Preset): string {
+    const parts = [preset.hardwareName]
+    if (preset.fpsAvg !== null) parts.push(`${Math.round(preset.fpsAvg)}fps`)
+    return parts.join(" · ")
 }
 
 export function GamePageClient({
@@ -833,7 +837,7 @@ export function GamePageClient({
                                             <div className='min-w-0'>
                                                 <div className='flex items-center gap-2'>
                                                     <h3 className='font-semibold text-sm truncate'>
-                                                        {preset.name}
+                                                        {generatePresetName(preset)}
                                                     </h3>
                                                     {raw && (
                                                         <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-semibold'>
