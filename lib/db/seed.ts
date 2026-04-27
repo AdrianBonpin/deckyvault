@@ -17,13 +17,13 @@ async function seed() {
     {
       slug: "steamdeck-oled",
       name: "Steam Deck OLED",
-      deviceType: "handled" as const,
+      deviceType: "handheld" as const,
       sortOrder: 0,
     },
     {
       slug: "steamdeck-lcd",
       name: "Steam Deck LCD",
-      deviceType: "handled" as const,
+      deviceType: "handheld" as const,
       sortOrder: 1,
     },
     {
