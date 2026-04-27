@@ -7,11 +7,10 @@ export const routes = [
         title: "Search",
         href: "/search",
     },
-    // TODO: Add back when games page is implemented
-    // {
-    //     title: "Games",
-    //     href: "/games",
-    // },
+    {
+        title: "Games",
+        href: "/games",
+    },
     // TODO: Add back when compare page is implemented
     // {
     //     title: "Compare",

@@ -9,11 +9,14 @@ const authRoutes = [
     "/reset-password",
 ]
 
+const adminRoutes = ["/admin"]
+
 export async function proxy(req: NextRequest) {
     const path = req.nextUrl.pathname
     const isAuthRoute = authRoutes.some((route) => path.startsWith(route))
+    const isAdminRoute = adminRoutes.some((route) => path.startsWith(route))
 
-    if (!isAuthRoute) {
+    if (!isAuthRoute && !isAdminRoute) {
         return NextResponse.next()
     }
 
@@ -33,6 +36,15 @@ export async function proxy(req: NextRequest) {
         headers: req.headers,
     })
 
+    // Admin routes: require an admin session
+    if (isAdminRoute) {
+        if (!session || session.user.role !== "admin") {
+            return NextResponse.redirect(new URL("/", req.url))
+        }
+        return NextResponse.next()
+    }
+
+    // Auth routes: redirect authenticated users away
     if (session) {
         return NextResponse.redirect(new URL("/", req.url))
     }
