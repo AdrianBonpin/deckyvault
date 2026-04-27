@@ -20,6 +20,10 @@ export const routes = [
         title: "Devices",
         href: "/devices",
     },
+    {
+        title: "Contact",
+        href: "/contact",
+    },
     // TODO: Add back when about page is implemented
     // {
     //     title: "About",
