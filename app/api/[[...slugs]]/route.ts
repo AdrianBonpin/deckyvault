@@ -15,6 +15,7 @@ import {
   savedGamesRoutes,
   reportRoutes,
   contactRoutes,
+  adminReportRoutes,
 } from "@/lib/api"
 import { steamSearchRoutes } from "@/lib/api/steam-search"
 import { searchUnifiedRoutes } from "@/lib/api/search-unified"
@@ -70,6 +71,7 @@ export const app = new Elysia({ prefix: "/api" })
   .use(performanceVerifyRoutes)
   .use(performanceSubmitRoutes)
   .use(reportRoutes)
+  .use(adminReportRoutes)
   // Comments
   .use(commentsRoutes)
   // Steam search proxy
