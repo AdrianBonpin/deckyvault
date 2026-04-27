@@ -14,6 +14,7 @@ import {
   commentsRoutes,
   savedGamesRoutes,
   reportRoutes,
+  contactRoutes,
 } from "@/lib/api"
 import { steamSearchRoutes } from "@/lib/api/steam-search"
 import { searchUnifiedRoutes } from "@/lib/api/search-unified"
@@ -81,6 +82,8 @@ export const app = new Elysia({ prefix: "/api" })
   .use(gameStatsRoutes)
   // Saved games
   .use(savedGamesRoutes)
+  // Contact form
+  .use(contactRoutes)
   // Root
   .get("/", () => ({
     name: "DeckyVault API",
