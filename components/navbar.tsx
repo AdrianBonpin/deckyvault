@@ -11,6 +11,7 @@ import {
     Gamepad2Icon,
     LogOut,
     MenuIcon,
+    ShieldIcon,
     User,
     XIcon,
 } from "lucide-react"
@@ -302,6 +303,19 @@ export default function Navbar() {
                                                         {route.title}
                                                     </Link>
                                                 ))}
+                                                {session.user.role === "admin" && (
+                                                    <>
+                                                        <div className='my-1 border-t border-white/10' />
+                                                        <Link
+                                                            href="/admin"
+                                                            onClick={() => setUserMenuOpen(false)}
+                                                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary/80 hover:text-primary hover:bg-primary/5 transition-colors cursor-pointer"
+                                                        >
+                                                            <ShieldIcon className="h-4 w-4" />
+                                                            Admin
+                                                        </Link>
+                                                    </>
+                                                )}
                                                 <div className='my-1 border-t border-white/10' />
                                                 <button
                                                     onClick={async () => {
@@ -419,6 +433,16 @@ export default function Navbar() {
                                                 {route.title}
                                             </Link>
                                         ))}
+                                        {session.user.role === "admin" && (
+                                            <Link
+                                                href="/admin"
+                                                onClick={() => setMobileMenuOpen(false)}
+                                                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-primary/80 hover:text-primary hover:bg-primary/5 transition-colors cursor-pointer"
+                                            >
+                                                <ShieldIcon className="h-4 w-4" />
+                                                Admin
+                                            </Link>
+                                        )}
                                         <button
                                             onClick={async () => {
                                                 setMobileMenuOpen(false)

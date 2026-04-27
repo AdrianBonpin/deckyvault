@@ -40,3 +40,21 @@ export const authRoutes = [
         icon: "Bookmark",
     },
 ]
+
+export const adminRoutes = [
+    {
+        title: "Users",
+        href: "/admin/users",
+        icon: "Users",
+    },
+    {
+        title: "Hardware",
+        href: "/admin/hardware",
+        icon: "Cpu",
+    },
+    {
+        title: "Games",
+        href: "/admin/games",
+        icon: "Gamepad2",
+    },
+]
