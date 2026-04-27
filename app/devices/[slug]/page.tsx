@@ -17,6 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${device.name} — DeckyVault`,
     description: `Benchmark data and performance stats for ${device.name} on DeckyVault`,
+    alternates: { canonical: `https://deckyvault.xyz/devices/${slug}` },
   }
 }
 
@@ -37,5 +38,18 @@ export default async function DevicePage({ params }: { params: Promise<{ slug: s
     notFound()
   }
 
-  return <DeviceDetailClient device={device} />
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: device.name,
+    category: device.deviceType,
+    url: `https://deckyvault.xyz/devices/${device.slug}`,
+  }
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <DeviceDetailClient device={device} />
+    </>
+  )
 }

@@ -116,6 +116,23 @@ export default function Landing() {
                     Github.
                 </Link>
             </motion.small>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "WebSite",
+                        name: "DeckyVault",
+                        url: "https://deckyvault.xyz",
+                        description: "Steam Deck benchmarks, settings, and performance guides",
+                        potentialAction: {
+                            "@type": "SearchAction",
+                            target: "https://deckyvault.xyz/search?q={search_term_string}",
+                            "query-input": "required name=search_term_string",
+                        },
+                    }),
+                }}
+            />
         </section>
     )
 }
