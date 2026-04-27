@@ -12,8 +12,8 @@ import {
     SparklesIcon,
     DatabaseIcon,
     Plus,
-    ChevronLeftIcon,
-    ChevronRightIcon,
+    ThumbsUpIcon,
+    ThumbsDownIcon,
 } from "lucide-react"
 import Link from "next/link"
 import { useSession } from "@/lib/auth-client"
@@ -383,7 +383,8 @@ export function GamePageClient({
                             <Image
                                 src={coverImage}
                                 alt={game.title}
-                                fill
+                                width={600}
+                                height={900}
                                 className='object-cover'
                                 priority
                                 onError={handleImgError}
@@ -745,21 +746,11 @@ export function GamePageClient({
                             </p>
                         </div>
                     ) : (
-                        <div className="relative group/presets">
-                            {/* Left scroll button */}
-                            <button
-                                onClick={() => presetsRef.current?.scrollBy({ left: -300, behavior: "smooth" })}
-                                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center h-10 w-10 rounded-full bg-background/80 border border-border hover:bg-text/5 opacity-0 group-hover/presets:opacity-100 transition-opacity"
-                            >
-                                <ChevronLeftIcon className="h-5 w-5" />
-                            </button>
-                            {/* Right scroll button */}
-                            <button
-                                onClick={() => presetsRef.current?.scrollBy({ left: 300, behavior: "smooth" })}
-                                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center h-10 w-10 rounded-full bg-background/80 border border-border hover:bg-text/5 opacity-0 group-hover/presets:opacity-100 transition-opacity"
-                            >
-                                <ChevronRightIcon className="h-5 w-5" />
-                            </button>
+                        <div className="relative">
+                            {/* Left fade edge */}
+                            <div className="pointer-events-none absolute left-0 top-0 bottom-4 w-12 z-10 bg-gradient-to-r from-background to-transparent" />
+                            {/* Right fade edge */}
+                            <div className="pointer-events-none absolute right-0 top-0 bottom-4 w-12 z-10 bg-gradient-to-l from-background to-transparent" />
                             <div
                                 ref={presetsRef}
                                 className="flex gap-4 overflow-x-auto scrollbar-hide pb-4"
@@ -774,7 +765,7 @@ export function GamePageClient({
                                                 key={preset.id}
                                                 layoutId={preset.id}
                                                 onClick={() => setSelectedPresetId(preset.id)}
-                                                className={`flex-shrink-0 w-72 flex flex-col gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-primary/30 ${
+                                                className={`shrink-0 w-72 flex flex-col gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-primary/30 ${
                                                     raw
                                                         ? "border-green-500/30 bg-green-500/5"
                                                         : "border-border bg-text/3"
@@ -803,9 +794,15 @@ export function GamePageClient({
                                                             {preset.hardwareName}
                                                         </p>
                                                     </div>
-                                                    <div className='flex items-center gap-1 text-xs text-text/60 shrink-0'>
-                                                        <TrendingUpIcon className='h-3 w-3' />
-                                                        {preset.upvotes}
+                                                    <div className='flex items-center gap-2 text-xs text-text/60 shrink-0'>
+                                                        <span className='flex items-center gap-0.5'>
+                                                            <ThumbsUpIcon className='h-3 w-3' />
+                                                            {preset.upvotes}
+                                                        </span>
+                                                        <span className='flex items-center gap-0.5'>
+                                                            <ThumbsDownIcon className='h-3 w-3' />
+                                                            {preset.downvotes}
+                                                        </span>
                                                     </div>
                                                 </div>
 

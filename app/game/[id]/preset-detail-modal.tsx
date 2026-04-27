@@ -6,15 +6,17 @@ import { AnimatePresence, motion } from "motion/react"
 import { useSession } from "@/lib/auth-client"
 import type { GameSettingCategory } from "@/lib/db/schema/performanceEntries"
 import {
-    TrendingUpIcon,
-    TrendingDownIcon,
+    ThumbsUpIcon,
+    ThumbsDownIcon,
     FlagIcon,
     TrashIcon,
-    ChevronDownIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
     ShieldCheckIcon,
     XIcon,
     UserIcon,
 } from "lucide-react"
+import { TiptapRenderer } from "@/components/tiptap-renderer"
 
 interface Preset {
     id: string
@@ -72,9 +74,7 @@ export function PresetDetailModal({
 }: PresetDetailModalProps) {
     const { data: session } = useSession()
 
-    const [openCategories, setOpenCategories] = useState<Set<number>>(
-        new Set(),
-    )
+    const [activeCategoryIndex, setActiveCategoryIndex] = useState(0)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showReportForm, setShowReportForm] = useState(false)
     const [reportReason, setReportReason] = useState<
@@ -82,19 +82,52 @@ export function PresetDetailModal({
     >("inaccurate")
     const [reportDetails, setReportDetails] = useState("")
 
+    const [userVote, setUserVote] = useState<"up" | "down" | null>(null)
+    const [localUpvotes, setLocalUpvotes] = useState(preset.upvotes)
+    const [localDownvotes, setLocalDownvotes] = useState(preset.downvotes)
+
     const isOwner = session?.user?.id === preset.userId
     const isAdmin = session?.user?.role === "admin"
+    const isAuthenticated = !!session?.user
 
-    const toggleCategory = (index: number) => {
-        setOpenCategories((prev) => {
-            const next = new Set(prev)
-            if (next.has(index)) {
-                next.delete(index)
-            } else {
-                next.add(index)
+    const categories = preset.settingsJson ?? []
+    const hasCategories = categories.length > 0
+    const currentCategory = hasCategories ? categories[activeCategoryIndex] : null
+
+    const goPrevCategory = () => {
+        setActiveCategoryIndex((prev) => (prev > 0 ? prev - 1 : categories.length - 1))
+    }
+
+    const goNextCategory = () => {
+        setActiveCategoryIndex((prev) => (prev < categories.length - 1 ? prev + 1 : 0))
+    }
+
+    const handleUpvote = async () => {
+        if (!isAuthenticated || userVote === "up") return
+        try {
+            const res = await fetch(`/api/performance/${preset.id}/upvote`, { method: "POST" })
+            if (res.ok) {
+                if (userVote === "down") setLocalDownvotes((d) => d - 1)
+                setLocalUpvotes((u) => u + 1)
+                setUserVote("up")
             }
-            return next
-        })
+        } catch (err) {
+            console.error("Failed to upvote:", err)
+        }
+    }
+
+    const handleDownvote = async () => {
+        if (!isAuthenticated || userVote === "down") return
+        try {
+            const res = await fetch(`/api/performance/${preset.id}/downvote`, { method: "POST" })
+            if (res.ok) {
+                if (userVote === "up") setLocalUpvotes((u) => u - 1)
+                setLocalDownvotes((d) => d + 1)
+                setUserVote("down")
+            }
+        } catch (err) {
+            console.error("Failed to downvote:", err)
+        }
     }
 
     const handleReportSubmit = () => {
@@ -132,7 +165,7 @@ export function PresetDetailModal({
                     {/* Modal card */}
                     <motion.div
                         layoutId={preset.id}
-                        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-border bg-background"
+                        className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-xl border border-border bg-background flex flex-col"
                         initial={{ scale: 0.95, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.95, opacity: 0 }}
@@ -144,41 +177,11 @@ export function PresetDetailModal({
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="flex items-start justify-between p-5 border-b border-border">
+                        <div className="flex items-start justify-between p-5 border-b border-border shrink-0">
                             <div className="flex items-center gap-3 min-w-0">
-                                <div className="h-10 w-10 rounded-full bg-text/10 overflow-hidden flex items-center justify-center shrink-0">
-                                    {preset.userImage ? (
-                                        <Image
-                                            src={preset.userImage}
-                                            alt={
-                                                preset.userName || "User"
-                                            }
-                                            width={40}
-                                            height={40}
-                                            className="object-cover"
-                                        />
-                                    ) : (
-                                        <UserIcon className="h-5 w-5 text-text/50" />
-                                    )}
-                                </div>
-                                <div className="min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-semibold text-sm text-text truncate">
-                                            {preset.userName || "Anonymous"}
-                                        </span>
-                                        {preset.verifiedAt && (
-                                            <span
-                                                className="inline-flex items-center gap-0.5 text-green-400"
-                                                title="Verified"
-                                            >
-                                                <ShieldCheckIcon className="h-3.5 w-3.5" />
-                                            </span>
-                                        )}
-                                    </div>
-                                    <span className="text-xs text-text/50">
-                                        {formatDate(preset.createdAt)}
-                                    </span>
-                                </div>
+                                <h2 className="text-base font-semibold text-text truncate">
+                                    {preset.hardwareName}
+                                </h2>
                             </div>
                             <button
                                 onClick={onClose}
@@ -189,311 +192,315 @@ export function PresetDetailModal({
                             </button>
                         </div>
 
-                        {/* Stats Row */}
-                        <div className="grid grid-cols-3 gap-4 p-5 border-b border-border">
-                            <div className="flex flex-col gap-1">
-                                <span className="text-xs text-text/50 uppercase tracking-wider">
-                                    Upvotes
-                                </span>
-                                <div className="flex items-center gap-1.5 text-sm text-text">
-                                    <TrendingUpIcon className="h-4 w-4 text-green-400" />
-                                    <span className="font-semibold">
-                                        {preset.upvotes}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <span className="text-xs text-text/50 uppercase tracking-wider">
-                                    Downvotes
-                                </span>
-                                <div className="flex items-center gap-1.5 text-sm text-text">
-                                    <TrendingDownIcon className="h-4 w-4 text-red-400" />
-                                    <span className="font-semibold">
-                                        {preset.downvotes}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="flex flex-col gap-1">
-                                <span className="text-xs text-text/50 uppercase tracking-wider">
-                                    Avg FPS
-                                </span>
-                                <div className="text-sm text-text">
-                                    <span className="font-semibold tabular-nums">
-                                        {preset.fpsAvg ?? "—"}
-                                    </span>
-                                    {preset.fpsAvg !== null &&
-                                        preset.fpsLow !== null &&
-                                        preset.fpsHigh !== null && (
-                                            <span className="text-text/50 ml-1">
-                                                ({Math.round(preset.fpsLow)}
-                                                –
-                                                {Math.round(preset.fpsHigh)})
-                                            </span>
-                                        )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Metadata Grid */}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-5 border-b border-border">
-                            <MetaItem
-                                label="Proton"
-                                value={preset.protonVersion}
-                            />
-                            <MetaItem
-                                label="SteamOS"
-                                value={preset.osVersion}
-                            />
-                            <MetaItem
-                                label="Upscaler"
-                                value={
-                                    preset.upscalerType &&
-                                    preset.upscalerType !== "none"
-                                        ? `${preset.upscalerType.toUpperCase()}${preset.upscalerVersion ? ` ${preset.upscalerVersion}` : ""}`
-                                        : null
-                                }
-                            />
-                            <MetaItem
-                                label="Frame Gen"
-                                value={
-                                    preset.frameGenMethod &&
-                                    preset.frameGenMethod !== "none"
-                                        ? preset.frameGenMethod === "fsr_fg"
-                                            ? "FSR FG"
-                                            : preset.frameGenMethod ===
-                                                "dlss_fg"
-                                              ? "DLSS FG"
-                                              : preset.frameGenMethod
-                                        : null
-                                }
-                            />
-                            <MetaItem
-                                label="Launch Options"
-                                value={preset.launchOptions}
-                                className="col-span-2 sm:col-span-3"
-                            />
-                        </div>
-
-                        {/* Settings Table */}
-                        {preset.settingsJson &&
-                            preset.settingsJson.length > 0 && (
-                                <div className="p-5 border-b border-border">
-                                    <h3 className="text-sm font-medium text-text/80 mb-3">
-                                        Settings ({preset.settingsCount})
-                                    </h3>
-                                    <div className="flex flex-col gap-2">
-                                        {preset.settingsJson.map(
-                                            (category, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    className="rounded-lg border border-border overflow-hidden"
-                                                >
-                                                    <button
-                                                        onClick={() =>
-                                                            toggleCategory(idx)
-                                                        }
-                                                        className="w-full flex items-center justify-between px-3 py-2.5 bg-text/3 hover:bg-text/5 transition-colors cursor-pointer"
-                                                    >
-                                                        <span className="text-xs font-semibold uppercase tracking-wider text-text/70">
-                                                            {category.category}
-                                                        </span>
-                                                        <ChevronDownIcon
-                                                            className={`h-4 w-4 text-text/50 transition-transform duration-200 ${openCategories.has(idx) ? "rotate-180" : ""}`}
-                                                        />
-                                                    </button>
-                                                    <AnimatePresence>
-                                                        {openCategories.has(
-                                                            idx,
-                                                        ) && (
-                                                            <motion.div
-                                                                initial={{
-                                                                    height: 0,
-                                                                    opacity: 0,
-                                                                }}
-                                                                animate={{
-                                                                    height: "auto",
-                                                                    opacity: 1,
-                                                                }}
-                                                                exit={{
-                                                                    height: 0,
-                                                                    opacity: 0,
-                                                                }}
-                                                                transition={{
-                                                                    duration: 0.2,
-                                                                }}
-                                                                className="overflow-hidden"
-                                                            >
-                                                                <div className="flex flex-col">
-                                                                    {category.settings.map(
-                                                                        (
-                                                                            setting,
-                                                                            sIdx,
-                                                                        ) => (
-                                                                            <div
-                                                                                key={
-                                                                                    sIdx
-                                                                                }
-                                                                                className="flex items-center justify-between px-3 py-2 border-t border-border text-sm"
-                                                                            >
-                                                                                <span className="text-text/70">
-                                                                                    {
-                                                                                        setting.title
-                                                                                    }
-                                                                                </span>
-                                                                                <span className="font-medium text-text">
-                                                                                    {formatValue(
-                                                                                        setting.value,
-                                                                                    )}
-                                                                                </span>
-                                                                            </div>
-                                                                        ),
-                                                                    )}
-                                                                </div>
-                                                            </motion.div>
-                                                        )}
-                                                    </AnimatePresence>
-                                                </div>
-                                            ),
+                        {/* Two-column body */}
+                        <div className="flex flex-col md:flex-row overflow-hidden flex-1">
+                            {/* Left panel */}
+                            <div className="w-full md:w-1/3 md:min-w-[240px] flex flex-col gap-4 p-5 border-b md:border-b-0 md:border-r border-border overflow-y-auto">
+                                {/* User info */}
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-full bg-text/10 overflow-hidden flex items-center justify-center shrink-0">
+                                        {preset.userImage ? (
+                                            <Image
+                                                src={preset.userImage}
+                                                alt={preset.userName || "User"}
+                                                width={40}
+                                                height={40}
+                                                className="object-cover"
+                                            />
+                                        ) : (
+                                            <UserIcon className="h-5 w-5 text-text/50" />
                                         )}
                                     </div>
-                                </div>
-                            )}
-
-                        {/* User Notes */}
-                        {preset.userNotes && (
-                            <div className="p-5 border-b border-border">
-                                <h3 className="text-sm font-medium text-text/80 mb-2">
-                                    Notes
-                                </h3>
-                                <p className="text-sm text-text/70 whitespace-pre-line leading-relaxed">
-                                    {preset.userNotes}
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Actions */}
-                        <div className="flex flex-wrap items-center gap-3 p-5">
-                            {(isOwner || isAdmin) && (
-                                <>
-                                    {!showDeleteConfirm ? (
-                                        <button
-                                            onClick={() =>
-                                                setShowDeleteConfirm(true)
-                                            }
-                                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-red-400 border border-red-500/20 hover:bg-red-500/10 transition-colors cursor-pointer"
-                                        >
-                                            <TrashIcon className="h-4 w-4" />
-                                            Delete
-                                        </button>
-                                    ) : (
+                                    <div className="min-w-0">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-text/50">
-                                                Are you sure?
+                                            <span className="font-medium text-sm text-text truncate">
+                                                {preset.userName || "Anonymous"}
                                             </span>
-                                            <button
-                                                onClick={() => {
-                                                    onDelete(preset.id)
-                                                    setShowDeleteConfirm(
-                                                        false,
-                                                    )
-                                                }}
-                                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-red-400 border border-red-500/20 hover:bg-red-500/10 transition-colors cursor-pointer"
-                                            >
-                                                Confirm
-                                            </button>
-                                            <button
-                                                onClick={() =>
-                                                    setShowDeleteConfirm(false)
-                                                }
-                                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-text/50 border border-border hover:bg-text/5 transition-colors cursor-pointer"
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-
-                            {session && !hasReported && (
-                                <>
-                                    {!showReportForm ? (
-                                        <button
-                                            onClick={() =>
-                                                setShowReportForm(true)
-                                            }
-                                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-text/50 border border-border hover:bg-text/5 transition-colors cursor-pointer"
-                                        >
-                                            <FlagIcon className="h-4 w-4" />
-                                            Report
-                                        </button>
-                                    ) : (
-                                        <div className="flex flex-col gap-2 w-full">
-                                            <select
-                                                value={reportReason}
-                                                onChange={(e) =>
-                                                    setReportReason(
-                                                        e.target
-                                                            .value as typeof reportReason,
-                                                    )
-                                                }
-                                                className="text-sm bg-background border border-border rounded-md px-2 py-1.5 text-text/80 focus:outline-none focus:border-primary w-full max-w-xs"
-                                            >
-                                                <option value="inaccurate">
-                                                    Inaccurate data
-                                                </option>
-                                                <option value="spam">
-                                                    Spam
-                                                </option>
-                                                <option value="inappropriate">
-                                                    Inappropriate
-                                                </option>
-                                                <option value="other">
-                                                    Other
-                                                </option>
-                                            </select>
-                                            <textarea
-                                                value={reportDetails}
-                                                onChange={(e) =>
-                                                    setReportDetails(
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                placeholder="Additional details (optional)"
-                                                rows={3}
-                                                className="text-sm bg-background border border-border rounded-md px-2 py-1.5 text-text/80 focus:outline-none focus:border-primary w-full resize-none"
-                                            />
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={
-                                                        handleReportSubmit
-                                                    }
-                                                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-primary border border-primary/20 hover:bg-primary/10 transition-colors cursor-pointer"
+                                            {preset.verifiedAt && (
+                                                <span
+                                                    className="inline-flex items-center gap-0.5 text-green-400"
+                                                    title="Verified"
                                                 >
-                                                    Submit Report
-                                                </button>
+                                                    <ShieldCheckIcon className="h-3.5 w-3.5" />
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className="text-xs text-text/50">
+                                            {formatDate(preset.createdAt)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="h-px bg-border" />
+
+                                {/* Vote buttons */}
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={handleUpvote}
+                                        disabled={!isAuthenticated || userVote === "up"}
+                                        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
+                                            userVote === "up"
+                                                ? "bg-green-500/10 border-green-500/30 text-green-400"
+                                                : "border-border text-text/70 hover:bg-text/5"
+                                        } ${!isAuthenticated ? "opacity-50 cursor-not-allowed" : ""}`}
+                                        title={!isAuthenticated ? "Sign in to vote" : undefined}
+                                    >
+                                        <ThumbsUpIcon className="h-4 w-4" />
+                                        {localUpvotes}
+                                    </button>
+                                    <button
+                                        onClick={handleDownvote}
+                                        disabled={!isAuthenticated || userVote === "down"}
+                                        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
+                                            userVote === "down"
+                                                ? "bg-red-500/10 border-red-500/30 text-red-400"
+                                                : "border-border text-text/70 hover:bg-text/5"
+                                        } ${!isAuthenticated ? "opacity-50 cursor-not-allowed" : ""}`}
+                                        title={!isAuthenticated ? "Sign in to vote" : undefined}
+                                    >
+                                        <ThumbsDownIcon className="h-4 w-4" />
+                                        {localDownvotes}
+                                    </button>
+                                </div>
+
+                                {/* FPS */}
+                                {preset.fpsAvg !== null && (
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-xs text-text/50 uppercase tracking-wider">
+                                            Avg FPS
+                                        </span>
+                                        <div className="text-sm text-text">
+                                            <span className="font-semibold tabular-nums">
+                                                {preset.fpsAvg}
+                                            </span>
+                                            {preset.fpsLow !== null && preset.fpsHigh !== null && (
+                                                <span className="text-text/50 ml-1">
+                                                    ({Math.round(preset.fpsLow)}–{Math.round(preset.fpsHigh)})
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="h-px bg-border" />
+
+                                {/* Metadata */}
+                                <div className="flex flex-col gap-3">
+                                    <MetaItem label="Proton" value={preset.protonVersion} />
+                                    <MetaItem label="SteamOS" value={preset.osVersion} />
+                                    <MetaItem
+                                        label="Upscaler"
+                                        value={
+                                            preset.upscalerType && preset.upscalerType !== "none"
+                                                ? `${preset.upscalerType.toUpperCase()}${preset.upscalerVersion ? ` ${preset.upscalerVersion}` : ""}`
+                                                : null
+                                        }
+                                    />
+                                    <MetaItem
+                                        label="Frame Gen"
+                                        value={
+                                            preset.frameGenMethod && preset.frameGenMethod !== "none"
+                                                ? preset.frameGenMethod === "fsr_fg"
+                                                    ? "FSR FG"
+                                                    : preset.frameGenMethod === "dlss_fg"
+                                                      ? "DLSS FG"
+                                                      : preset.frameGenMethod
+                                                : null
+                                        }
+                                    />
+                                    <MetaItem label="Launch Options" value={preset.launchOptions} />
+                                </div>
+
+                                <div className="h-px bg-border" />
+
+                                {/* Actions */}
+                                <div className="flex flex-wrap items-center gap-2 mt-auto">
+                                    {(isOwner || isAdmin) && (
+                                        <>
+                                            {!showDeleteConfirm ? (
                                                 <button
-                                                    onClick={() => {
-                                                        setShowReportForm(
-                                                            false,
-                                                        )
-                                                        setReportDetails("")
-                                                    }}
+                                                    onClick={() => setShowDeleteConfirm(true)}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-red-400 border border-red-500/20 hover:bg-red-500/10 transition-colors cursor-pointer"
+                                                >
+                                                    <TrashIcon className="h-4 w-4" />
+                                                    Delete
+                                                </button>
+                                            ) : (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-text/50">
+                                                        Are you sure?
+                                                    </span>
+                                                    <button
+                                                        onClick={() => {
+                                                            onDelete(preset.id)
+                                                            setShowDeleteConfirm(false)
+                                                        }}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-red-400 border border-red-500/20 hover:bg-red-500/10 transition-colors cursor-pointer"
+                                                    >
+                                                        Confirm
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setShowDeleteConfirm(false)}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-text/50 border border-border hover:bg-text/5 transition-colors cursor-pointer"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+
+                                    {session && !hasReported && (
+                                        <>
+                                            {!showReportForm ? (
+                                                <button
+                                                    onClick={() => setShowReportForm(true)}
                                                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-text/50 border border-border hover:bg-text/5 transition-colors cursor-pointer"
                                                 >
-                                                    Cancel
+                                                    <FlagIcon className="h-4 w-4" />
+                                                    Report
                                                 </button>
-                                            </div>
-                                        </div>
+                                            ) : (
+                                                <div className="flex flex-col gap-2 w-full">
+                                                    <select
+                                                        value={reportReason}
+                                                        onChange={(e) =>
+                                                            setReportReason(
+                                                                e.target.value as typeof reportReason,
+                                                            )
+                                                        }
+                                                        className="text-sm bg-background border border-border rounded-md px-2 py-1.5 text-text/80 focus:outline-none focus:border-primary w-full max-w-xs"
+                                                    >
+                                                        <option value="inaccurate">
+                                                            Inaccurate data
+                                                        </option>
+                                                        <option value="spam">
+                                                            Spam
+                                                        </option>
+                                                        <option value="inappropriate">
+                                                            Inappropriate
+                                                        </option>
+                                                        <option value="other">
+                                                            Other
+                                                        </option>
+                                                    </select>
+                                                    <textarea
+                                                        value={reportDetails}
+                                                        onChange={(e) =>
+                                                            setReportDetails(e.target.value)
+                                                        }
+                                                        placeholder="Additional details (optional)"
+                                                        rows={3}
+                                                        className="text-sm bg-background border border-border rounded-md px-2 py-1.5 text-text/80 focus:outline-none focus:border-primary w-full resize-none"
+                                                    />
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={handleReportSubmit}
+                                                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-primary border border-primary/20 hover:bg-primary/10 transition-colors cursor-pointer"
+                                                        >
+                                                            Submit Report
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowReportForm(false)
+                                                                setReportDetails("")
+                                                            }}
+                                                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-text/50 border border-border hover:bg-text/5 transition-colors cursor-pointer"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
-                                </>
-                            )}
 
-                            {hasReported && (
-                                <span className="inline-flex items-center gap-1.5 text-sm text-text/50">
-                                    <FlagIcon className="h-4 w-4" />
-                                    Reported
-                                </span>
-                            )}
+                                    {hasReported && (
+                                        <span className="inline-flex items-center gap-1.5 text-sm text-text/50">
+                                            <FlagIcon className="h-4 w-4" />
+                                            Reported
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Right panel */}
+                            <div className="flex-1 overflow-y-auto p-5">
+                                {hasCategories ? (
+                                    <div className="flex flex-col gap-4">
+                                        {/* Category navigation */}
+                                        <div className="flex items-center justify-between">
+                                            <button
+                                                onClick={goPrevCategory}
+                                                className="p-1.5 rounded-md hover:bg-text/5 transition-colors cursor-pointer"
+                                                aria-label="Previous category"
+                                            >
+                                                <ChevronLeftIcon className="h-4 w-4 text-text/50" />
+                                            </button>
+                                            <span className="text-sm font-medium text-text/80">
+                                                {currentCategory?.category}{" "}
+                                                <span className="text-text/40">
+                                                    ({activeCategoryIndex + 1}/{categories.length})
+                                                </span>
+                                            </span>
+                                            <button
+                                                onClick={goNextCategory}
+                                                className="p-1.5 rounded-md hover:bg-text/5 transition-colors cursor-pointer"
+                                                aria-label="Next category"
+                                            >
+                                                <ChevronRightIcon className="h-4 w-4 text-text/50" />
+                                            </button>
+                                        </div>
+
+                                        {/* Settings table */}
+                                        <div className="rounded-lg border border-border overflow-hidden">
+                                            <table className="w-full text-sm">
+                                                <thead className="bg-text/3">
+                                                    <tr>
+                                                        <th className="text-left px-3 py-2 text-xs font-medium uppercase tracking-wider text-text/50">
+                                                            Setting
+                                                        </th>
+                                                        <th className="text-right px-3 py-2 text-xs font-medium uppercase tracking-wider text-text/50">
+                                                            Value
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {currentCategory?.settings.map((setting, sIdx) => (
+                                                        <tr
+                                                            key={sIdx}
+                                                            className="border-t border-border"
+                                                        >
+                                                            <td className="px-3 py-2 text-text/70">
+                                                                {setting.title}
+                                                            </td>
+                                                            <td className="px-3 py-2 text-right font-medium text-text">
+                                                                {formatValue(setting.value)}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-lg border border-border bg-text/2">
+                                        <p className="text-sm text-text/40">
+                                            No settings data
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Notes */}
+                                {preset.userNotes && (
+                                    <div className="mt-4 pt-4 border-t border-border">
+                                        <h3 className="text-sm font-medium text-text/80 mb-2">
+                                            Notes
+                                        </h3>
+                                        <TiptapRenderer content={preset.userNotes} />
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </motion.div>
                 </motion.div>
