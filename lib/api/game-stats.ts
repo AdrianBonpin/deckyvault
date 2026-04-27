@@ -74,7 +74,6 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
         upscalerStats: [],
         fpsRange: [],
         deviceBreakdown: [],
-        trust: [],
         filterOptions: { protonVersions: [], osVersions: [] },
       }
     }
@@ -239,18 +238,7 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
       }),
     )
 
-    // ── 9. Community trust ────────────────────────────────────────
-    const trust = entries.map((e) => ({
-      id: e.id,
-      hardwareSlug: e.hardwareSlug,
-      upvotes: e.upvotes,
-      downvotes: e.downvotes,
-      verifiedAt: e.verifiedAt ? e.verifiedAt.toISOString() : null,
-      userNotes: e.userNotes,
-      createdAt: e.createdAt.toISOString(),
-    }))
-
-    // ── 10. Filter options ────────────────────────────────────────
+    // ── 9. Filter options ────────────────────────────────────────
     const protonVersions = [
       ...new Set(entries.map((e) => e.protonVersion).filter(Boolean)),
     ] as string[]
@@ -273,7 +261,6 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
       upscalerStats,
       fpsRange,
       deviceBreakdown,
-      trust,
       filterOptions: { protonVersions, osVersions },
     }
   },

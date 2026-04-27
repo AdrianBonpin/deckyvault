@@ -31,7 +31,6 @@ import { UpscalerBarChart } from "@/components/charts/UpscalerBarChart"
 import { FpsBoxplot } from "@/components/charts/FpsBoxplot"
 import { FpsRangeChart } from "@/components/charts/FpsRangeChart"
 import { DeviceDonut } from "@/components/charts/DeviceDonut"
-import { TrustBar } from "@/components/charts/TrustBar"
 
 // Types
 interface Game {
@@ -139,15 +138,6 @@ interface StatsResponse {
         hardwareSlug: string
         hardwareName: string
         count: number
-    }>
-    trust: Array<{
-        id: string
-        hardwareSlug: string
-        upvotes: number
-        downvotes: number
-        verifiedAt: string | null
-        userNotes: string | null
-        createdAt: string
     }>
     filterOptions: {
         protonVersions: string[]
@@ -323,7 +313,6 @@ export function GamePageClient({
             upscalerStats: filterUpscaler(stats.upscalerStats),
             fpsRange: filterByDevice(stats.fpsRange),
             deviceBreakdown: filterByDevice(stats.deviceBreakdown),
-            trust: filterByDevice(stats.trust),
         }
     }, [stats, selectedDevices, filters])
 
@@ -388,6 +377,7 @@ export function GamePageClient({
                                 className='object-cover'
                                 priority
                                 onError={handleImgError}
+                                loading="eager"
                             />
                         ) : (
                             <div className='w-full h-full flex items-center justify-center'>
@@ -990,15 +980,6 @@ export function GamePageClient({
                         </div>
                     )}
 
-                    {/* Row 4 — Trust Bar */}
-                    {filteredStats && filteredStats.trust.length > 0 && (
-                        <div className='rounded-xl border border-border bg-text/3 p-4'>
-                            <h3 className='text-sm font-medium text-text/80 mb-2'>
-                                Community Trust
-                            </h3>
-                            <TrustBar data={filteredStats.trust} />
-                        </div>
-                    )}
                 </div>
             </motion.div>
         </section>
