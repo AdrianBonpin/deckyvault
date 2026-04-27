@@ -1,0 +1,1 @@
+DROP TABLE "community_presets" CASCADE;

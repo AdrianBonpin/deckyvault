@@ -57,6 +57,13 @@
       "when": 1777267706280,
       "tag": "0007_mighty_electro",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777271387867,
+      "tag": "0008_slim_jubilee",
+      "breakpoints": true
     }
   ]
 }
