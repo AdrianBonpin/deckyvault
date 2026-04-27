@@ -132,7 +132,7 @@ export const savedGamesRoutes = new Elysia({ prefix: "/user/me/saved-games" })
   )
   .get(
     "/check/:gameId",
-    async ({ request, params, set }) => {
+    async ({ request, params }) => {
       const session = await auth.api.getSession({
         headers: request.headers,
       })

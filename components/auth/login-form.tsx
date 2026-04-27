@@ -42,6 +42,7 @@ export default function LoginForm() {
     const [password, setPassword] = useState("")
     const [error, setError] = useState("")
     const [isLoading, setIsLoading] = useState(false)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [emailChecked, setEmailChecked] = useState(false)
     const mountedRef = useRef(true)
     const passkeyInitiatedRef = useRef(false)

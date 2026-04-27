@@ -13,14 +13,11 @@ interface BookmarkButtonProps {
 export function BookmarkButton({ gameId, className = "" }: BookmarkButtonProps) {
   const { data: session } = useSession()
   const [isSaved, setIsSaved] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(() => !session)
   const [isToggling, setIsToggling] = useState(false)
 
   useEffect(() => {
-    if (!session) {
-      setIsLoading(false)
-      return
-    }
+    if (!session) return
 
     async function checkSaved() {
       try {
