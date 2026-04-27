@@ -7,7 +7,7 @@ const BASE_URL = "https://deckyvault.xyz"
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const [allGames, allDevices] = await Promise.all([
         db.select({ id: games.id, updatedAt: games.updatedAt }).from(games),
-        db.select({ slug: hardware.slug, updatedAt: hardware.updatedAt }).from(hardware),
+        db.select({ slug: hardware.slug, createdAt: hardware.createdAt }).from(hardware),
     ])
 
     const gameEntries: MetadataRoute.Sitemap = allGames.map((game) => ({
@@ -19,7 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const deviceEntries: MetadataRoute.Sitemap = allDevices.map((device) => ({
         url: `${BASE_URL}/devices/${device.slug}`,
-        lastModified: device.updatedAt,
+        lastModified: device.createdAt,
         changeFrequency: "monthly",
         priority: 0.6,
     }))
