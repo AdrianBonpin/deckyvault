@@ -104,8 +104,9 @@ export function DeviceDetailClient({ device }: { device: DeviceInfo }) {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchStats()
-  }, [device.slug])
+  }, [device.slug]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const historicalOption = useMemo<EChartsOption>(() => {
     if (!stats || stats.historical.length === 0) return {}

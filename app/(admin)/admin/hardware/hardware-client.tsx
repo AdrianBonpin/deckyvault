@@ -66,6 +66,7 @@ export function HardwareClient() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDevices()
   }, [])
 

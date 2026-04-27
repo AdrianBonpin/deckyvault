@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Image from "next/image"
 import { authClient } from "@/lib/auth-client"
 import { Loader2, SearchIcon, BanIcon, UserCheckIcon } from "lucide-react"
 
@@ -60,7 +61,7 @@ export function UsersClient() {
   const handleRoleChange = async (userId: string, newRole: Role) => {
     setActionLoading((prev) => ({ ...prev, [userId]: true }))
     try {
-      await authClient.admin.setRole({ userId, role: newRole })
+      await authClient.admin.setRole({ userId, role: newRole as "user" | "admin" })
       setUsers((prev) =>
         prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
       )
@@ -151,9 +152,11 @@ export function UsersClient() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {user.image ? (
-                        <img
+                        <Image
                           src={user.image}
                           alt=""
+                          width={32}
+                          height={32}
                           className="h-8 w-8 rounded-full object-cover"
                         />
                       ) : (
