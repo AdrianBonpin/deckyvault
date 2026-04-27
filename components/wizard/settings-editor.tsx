@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Plus, X, ChevronDown, ChevronUp, ToggleLeft, ToggleRight } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 
@@ -186,10 +186,18 @@ export function SettingsEditor({
   }
 
   const isEmpty = value.length === 0
+  const [showCustomInput, setShowCustomInput] = useState(false)
+  const customInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (showCustomInput && customInputRef.current) {
+      customInputRef.current.focus()
+    }
+  }, [showCustomInput])
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {isEmpty && (
+      {isEmpty && !showCustomInput && (
         <div className="flex flex-col items-center justify-center py-10 border border-dashed border-border rounded-lg bg-text/5">
           <p className="text-sm text-text/50 mb-4">No settings configured</p>
           <div className="flex items-center gap-2">
@@ -200,13 +208,55 @@ export function SettingsEditor({
               Load defaults
             </button>
             <button
-              onClick={() => {
-                setNewCategoryName("Custom")
-                setTimeout(() => addCategory(), 0)
-              }}
+              onClick={() => setShowCustomInput(true)}
               className="px-4 py-2 rounded-lg border border-border text-text text-sm font-semibold hover:bg-text/5 transition-colors cursor-pointer"
             >
               Create custom
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isEmpty && showCustomInput && (
+        <div className="rounded-lg border border-dashed border-primary/50 bg-text/5 p-4">
+          <label className="text-xs font-medium text-text/60 mb-2 block">Category name</label>
+          <div className="flex items-center gap-2">
+            <input
+              ref={customInputRef}
+              type="text"
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault()
+                  if (newCategoryName.trim()) {
+                    addCategory()
+                    setShowCustomInput(false)
+                  }
+                }
+              }}
+              placeholder="e.g. Graphics, Audio, Display..."
+              className="flex-1 px-4 py-2.5 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
+            />
+            <button
+              onClick={() => {
+                if (newCategoryName.trim()) {
+                  addCategory()
+                  setShowCustomInput(false)
+                }
+              }}
+              className="px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
+            >
+              Add
+            </button>
+            <button
+              onClick={() => {
+                setNewCategoryName("")
+                setShowCustomInput(false)
+              }}
+              className="px-4 py-2.5 rounded-lg border border-border text-text/70 text-sm font-semibold hover:bg-text/5 transition-colors cursor-pointer"
+            >
+              Cancel
             </button>
           </div>
         </div>
