@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "motion/react"
 import logo from "@/app/icon.png"
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useSyncExternalStore, useRef, useState } from "react"
 import {
     Bookmark,
     CircleXIcon,
@@ -51,8 +51,9 @@ export default function Navbar() {
     // Prevent hydration mismatch: useSession resolves differently on
     // server (isPending=true) vs client. We delay rendering the
     // auth-dependent UI until after the first client paint.
-    const [mounted, setMounted] = useState(false)
-    useEffect(() => setMounted(true), [])
+    // useSyncExternalStore avoids the React lint warning about setState in effects.
+    const subscribe = () => () => {}
+    const mounted = useSyncExternalStore(subscribe, () => true, () => false)
     const showAuth = mounted && !isSessionLoading
 
     // Sync search query with URL ?q= param
