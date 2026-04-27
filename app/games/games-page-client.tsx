@@ -8,7 +8,6 @@ import {
   Gamepad2Icon,
   SearchIcon,
   TrendingUpIcon,
-  ChevronDownIcon,
   XIcon,
   Loader2Icon,
 } from "lucide-react"
@@ -108,10 +107,10 @@ export function GamesPageClient({
   // Full reload when filters/sort change
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
-    setError(null)
 
     async function fetchGames() {
+      setLoading(true)
+      setError(null)
       try {
         const url = buildUrl(0)
         const res = await fetch(url)

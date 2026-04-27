@@ -33,14 +33,7 @@ export const metadata: Metadata = {
 }
 
 export default async function GamesPage() {
-  // Fetch initial 24 games with benchmark counts
-  const benchmarkCountSql = sql<number>`(
-    SELECT count(*)::int FROM ${performanceEntries}
-    INNER JOIN ${gameVersions} ON ${performanceEntries.versionId} = ${gameVersions.id}
-    WHERE ${gameVersions.gameId} = ${games.id}
-    AND ${performanceEntries.isRemoved} = false
-  )`
-
+  // Fetch initial 24 games
   const gamesData = await db
     .select({
       id: games.id,
@@ -52,7 +45,6 @@ export default async function GamesPage() {
       genres: games.genres,
       source: games.source,
       createdAt: games.createdAt,
-      benchmarkCount: benchmarkCountSql,
     })
     .from(games)
     .orderBy(desc(games.createdAt))
@@ -63,8 +55,32 @@ export default async function GamesPage() {
     .select({ count: sql<number>`count(*)::int` })
     .from(games)
 
-  // Fetch platform support for initial games (prioritise Steam Deck)
+  // Get benchmark counts for the initial games
   const gameIds = gamesData.map((g) => g.id)
+
+  const benchmarkCounts = gameIds.length > 0
+    ? await db
+        .select({
+          gameId: gameVersions.gameId,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(performanceEntries)
+        .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+        .where(
+          and(
+            inArray(gameVersions.gameId, gameIds),
+            eq(performanceEntries.isRemoved, false),
+          ),
+        )
+        .groupBy(gameVersions.gameId)
+    : []
+
+  const benchmarkMap = new Map<string, number>()
+  for (const row of benchmarkCounts) {
+    benchmarkMap.set(row.gameId, row.count)
+  }
+
+  // Fetch platform support for initial games (prioritise Steam Deck)
   const platformRows = gameIds.length > 0
     ? await db
         .select({
@@ -116,7 +132,7 @@ export default async function GamesPage() {
     headerImage: g.headerImage,
     genres: g.genres,
     source: g.source,
-    benchmarkCount: g.benchmarkCount,
+    benchmarkCount: benchmarkMap.get(g.id) ?? 0,
     deckStatus: platformMap.get(g.id) ?? null,
   }))
 

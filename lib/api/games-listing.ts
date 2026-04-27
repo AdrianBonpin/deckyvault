@@ -14,7 +14,7 @@ const PAGE_SIZE = 24
 
 export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
   "/",
-  async ({ query, set }) => {
+  async ({ query }) => {
     const offset = Math.min(Number(query.offset) || 0, MAX_OFFSET)
     const limit = Math.min(Number(query.limit) || PAGE_SIZE, 100)
     const search = query.search || ""
@@ -59,55 +59,6 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
 
     const where = conditions.length > 0 ? and(...conditions) : undefined
 
-    // Subquery for benchmark count — referenced in both SELECT and ORDER BY
-    const benchmarkCountSql = sql<number>`(
-      SELECT count(*)::int FROM ${performanceEntries}
-      INNER JOIN ${gameVersions} ON ${performanceEntries.versionId} = ${gameVersions.id}
-      WHERE ${gameVersions.gameId} = ${games.id}
-      AND ${performanceEntries.isRemoved} = false
-    )`
-
-    // Determine sort order
-    let orderBy
-    switch (sort) {
-      case "name":
-        orderBy = asc(games.title)
-        break
-      case "benchmarks":
-        orderBy = desc(benchmarkCountSql)
-        break
-      case "recent":
-      default:
-        orderBy = desc(games.createdAt)
-        break
-    }
-
-    // Fetch games with benchmark counts
-    const gamesQuery = db
-      .select({
-        id: games.id,
-        steamAppId: games.steamAppId,
-        title: games.title,
-        developer: games.developer,
-        capsuleImage: games.capsuleImage,
-        headerImage: games.headerImage,
-        genres: games.genres,
-        source: games.source,
-        createdAt: games.createdAt,
-        benchmarkCount: benchmarkCountSql,
-      })
-      .from(games)
-      .where(where)
-      .orderBy(orderBy)
-      .limit(limit)
-      .offset(offset)
-
-    // Count total
-    const countQuery = db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(games)
-      .where(where)
-
     // Fetch all genres (for filter options)
     const genreRows = await db
       .select({ genres: games.genres })
@@ -129,13 +80,71 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
       .from(hardware)
       .orderBy(hardware.sortOrder)
 
-    const [data, countResult] = await Promise.all([gamesQuery, countQuery])
+    // Count total games matching filters
+    const countQuery = db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(games)
+      .where(where)
 
-    // Fetch platform support for the returned games
-    // Prioritise Steam Deck entries (slug starts with "steamdeck") for deckStatus.
-    // If no Steam Deck entry exists, fall back to the first available device.
+    // Determine sort order
+    let orderBy
+    switch (sort) {
+      case "name":
+        orderBy = asc(games.title)
+        break
+      case "benchmarks":
+      case "recent":
+      default:
+        orderBy = desc(games.createdAt)
+        break
+    }
+
+    // Fetch games page
+    const data = await db
+      .select({
+        id: games.id,
+        steamAppId: games.steamAppId,
+        title: games.title,
+        developer: games.developer,
+        capsuleImage: games.capsuleImage,
+        headerImage: games.headerImage,
+        genres: games.genres,
+        source: games.source,
+        createdAt: games.createdAt,
+      })
+      .from(games)
+      .where(where)
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset(offset)
+
     const gameIds = data.map((g) => g.id)
-    let platformMap = new Map<string, string>()
+
+    // Fetch benchmark counts for the returned games (separate query to avoid subquery ambiguity)
+    const benchmarkCounts = gameIds.length > 0
+      ? await db
+          .select({
+            gameId: gameVersions.gameId,
+            count: sql<number>`count(*)::int`,
+          })
+          .from(performanceEntries)
+          .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+          .where(
+            and(
+              inArray(gameVersions.gameId, gameIds),
+              eq(performanceEntries.isRemoved, false),
+            ),
+          )
+          .groupBy(gameVersions.gameId)
+      : []
+
+    const benchmarkMap = new Map<string, number>()
+    for (const row of benchmarkCounts) {
+      benchmarkMap.set(row.gameId, row.count)
+    }
+
+    // Fetch platform support for the returned games (prioritise Steam Deck)
+    const platformMap = new Map<string, string>()
     if (gameIds.length > 0) {
       const platformRows = await db
         .select({
@@ -149,7 +158,6 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
       for (const row of platformRows) {
         const isSteamDeck = row.hardwareSlug.startsWith("steamdeck")
         const existing = platformMap.get(row.gameId)
-        // Prefer Steam Deck entries; if we already have a non-Deck entry, replace it
         if (!existing || (!existing.startsWith("steamdeck") && isSteamDeck)) {
           platformMap.set(row.gameId, row.protonStatus)
         }
@@ -165,13 +173,20 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
       headerImage: g.headerImage,
       genres: g.genres,
       source: g.source,
-      benchmarkCount: g.benchmarkCount,
+      benchmarkCount: benchmarkMap.get(g.id) ?? 0,
       deckStatus: platformMap.get(g.id) ?? null,
     }))
 
+    // If sorting by benchmarks, re-sort the enriched data
+    if (sort === "benchmarks") {
+      enrichedData.sort((a, b) => b.benchmarkCount - a.benchmarkCount)
+    }
+
+    const [{ count: total }] = await countQuery
+
     return {
       data: enrichedData,
-      total: countResult[0]?.count ?? 0,
+      total,
       limit,
       offset,
       genres: Array.from(genreSet).sort(),

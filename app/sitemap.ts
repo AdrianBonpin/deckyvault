@@ -15,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: game.updatedAt,
         changeFrequency: "weekly" as const,
         priority: 0.8,
-        images: game.capsuleImage ? [{ url: game.capsuleImage }] : undefined,
+        images: game.capsuleImage ? [game.capsuleImage] : undefined,
     }))
 
     const deviceEntries: MetadataRoute.Sitemap = allDevices.map((device) => ({
