@@ -2,15 +2,37 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { motion } from "motion/react"
-import { Gamepad2Icon, TrendingUpIcon, DatabaseIcon, CheckCircleIcon, ArrowRightIcon, Loader2 } from "lucide-react"
-import { EChartWrapper, CHART_THEME, getDeviceColor } from "@/components/charts/EChartWrapper"
+import {
+  Gamepad2Icon,
+  TrendingUpIcon,
+  DatabaseIcon,
+  CheckCircleIcon,
+  ArrowRightIcon,
+  Loader2,
+  RefreshCwIcon,
+  MonitorIcon,
+} from "lucide-react"
+import {
+  EChartWrapper,
+  CHART_THEME,
+  getDeviceColor,
+} from "@/components/charts/EChartWrapper"
 import type { EChartsOption } from "echarts"
 
 interface DeviceInfo {
   slug: string
   name: string
   deviceType: string
+  image: string | null
+  colorIndex: number
+}
+
+interface UpscalerEntry {
+  upscalerType: string
+  count: number
+  avgFps: number
 }
 
 interface DeviceStats {
@@ -45,40 +67,46 @@ interface DeviceStats {
   }>
   genreBreakdown: Array<{ genre: string; count: number }>
   protonBreakdown: Array<{ version: string; count: number }>
-  fsrBreakdown: Array<{ version: string; count: number; avgFps: number }>
+  upscalerBreakdown: UpscalerEntry[]
 }
 
 const deviceTypeLabel: Record<string, string> = {
-  handled: "Handheld",
+  handheld: "Handheld",
   console: "Console",
+}
+
+const deviceTypeColor: Record<string, string> = {
+  handheld: "text-primary bg-primary/10 border-primary/20",
+  console: "text-secondary bg-secondary/10 border-secondary/20",
 }
 
 export function DeviceDetailClient({ device }: { device: DeviceInfo }) {
   const [stats, setStats] = useState<DeviceStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const deviceColor = getDeviceColor(device.colorIndex)
+
+  async function fetchStats() {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/hardware/${device.slug}/stats`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setStats(data)
+    } catch (err) {
+      console.error("Failed to fetch device stats:", err)
+      setError("Failed to load device statistics. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    let cancelled = false
-    async function fetchStats() {
-      setLoading(true)
-      try {
-        const res = await fetch(`/api/hardware/${device.slug}/stats`)
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const data = await res.json()
-        if (!cancelled) setStats(data)
-      } catch (err) {
-        console.error("Failed to fetch device stats:", err)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
     fetchStats()
-    return () => { cancelled = true }
   }, [device.slug])
 
-  const deviceColor = getDeviceColor(0)
-
-  // ── Chart Options ──────────────────────────────────────────
   const historicalOption = useMemo<EChartsOption>(() => {
     if (!stats || stats.historical.length === 0) return {}
     return {
@@ -164,7 +192,7 @@ export function DeviceDetailClient({ device }: { device: DeviceInfo }) {
     return {
       tooltip: {
         trigger: "item",
-        backgroundColor: "#1a1020",
+        backgroundColor: "#1a1025",
         borderColor: CHART_THEME.border,
         textStyle: { color: CHART_THEME.text },
       },
@@ -176,12 +204,11 @@ export function DeviceDetailClient({ device }: { device: DeviceInfo }) {
           data: stats.genreBreakdown.map((g, i) => ({
             name: g.genre,
             value: g.count,
-            itemStyle: { color: CHART_THEME.deviceColors[i % CHART_THEME.deviceColors.length] },
+            itemStyle: {
+              color: CHART_THEME.deviceColors[i % CHART_THEME.deviceColors.length],
+            },
           })),
-          label: {
-            color: CHART_THEME.textMuted,
-            fontSize: 10,
-          },
+          label: { color: CHART_THEME.textMuted, fontSize: 10 },
           emphasis: {
             itemStyle: { shadowBlur: 10, shadowColor: "rgba(0,0,0,0.5)" },
           },
@@ -192,7 +219,7 @@ export function DeviceDetailClient({ device }: { device: DeviceInfo }) {
 
   return (
     <section className="w-full flex flex-col gap-8 pb-16">
-      {/* ── Hero Header ──────────────────────────────────── */}
+      {/* Hero Header */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -200,21 +227,49 @@ export function DeviceDetailClient({ device }: { device: DeviceInfo }) {
         className="px-4 md:px-[10svw]"
       >
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-wrap items-center gap-3 mb-2">
-            <h1 className="text-2xl sm:text-3xl font-bold">{device.name}</h1>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-secondary/20 text-secondary border border-secondary/30 capitalize">
-              <Gamepad2Icon className="h-3 w-3" />
-              {deviceTypeLabel[device.deviceType] || device.deviceType}
-            </span>
+          <div className="flex items-center gap-4 mb-2">
+            <div
+              className="flex items-center justify-center h-14 w-14 rounded-xl shrink-0"
+              style={{ background: `${deviceColor}15` }}
+            >
+              {device.image ? (
+                <Image
+                  src={device.image}
+                  alt={device.name}
+                  width={56}
+                  height={56}
+                  className="object-contain"
+                />
+              ) : (
+                <Gamepad2Icon className="h-7 w-7" style={{ color: deviceColor }} />
+              )}
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold">{device.name}</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border capitalize ${
+                    deviceTypeColor[device.deviceType] || "text-text/50 bg-text/5 border-border"
+                  }`}
+                >
+                  <Gamepad2Icon className="h-3 w-3" />
+                  {deviceTypeLabel[device.deviceType] || device.deviceType}
+                </span>
+                {stats && stats.verifiedCount > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                    <CheckCircleIcon className="h-3 w-3" />
+                    {stats.verifiedCount} verified
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-          <p className="text-sm text-text/60">
-            Performance benchmarks and statistics
-          </p>
+          <p className="text-sm text-text/60">Performance benchmarks and statistics</p>
         </div>
       </motion.div>
 
-      {/* ── Overview Stats ────────────────────────────────── */}
-      {stats && (
+      {/* Overview Stats */}
+      {stats && !loading && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -224,21 +279,38 @@ export function DeviceDetailClient({ device }: { device: DeviceInfo }) {
           <div className="max-w-7xl mx-auto flex flex-wrap gap-4">
             <StatCard icon={DatabaseIcon} label="Total Benchmarks" value={String(stats.totalBenchmarks)} />
             <StatCard icon={TrendingUpIcon} label="Average FPS" value={stats.avgFps !== null ? String(stats.avgFps) : "—"} />
-            <StatCard icon={Gamepad2Icon} label="Games Tested" value={String(stats.gameCount)} />
+            <StatCard icon={MonitorIcon} label="Games Tested" value={String(stats.gameCount)} />
             <StatCard icon={CheckCircleIcon} label="Verified" value={String(stats.verifiedCount)} />
           </div>
         </motion.div>
       )}
 
-      {/* ── Loading State ─────────────────────────────────── */}
+      {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       )}
 
-      {/* ── Charts Section ────────────────────────────────── */}
-      {stats && !loading && (
+      {/* Error State */}
+      {error && !loading && (
+        <div className="px-4 md:px-[10svw]">
+          <div className="max-w-7xl mx-auto text-center py-16 text-text/40">
+            <Gamepad2Icon className="h-10 w-10 mx-auto mb-3" />
+            <p className="text-text/60 mb-4">{error}</p>
+            <button
+              onClick={fetchStats}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors cursor-pointer"
+            >
+              <RefreshCwIcon className="h-4 w-4" />
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Charts */}
+      {stats && !loading && !error && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -246,7 +318,6 @@ export function DeviceDetailClient({ device }: { device: DeviceInfo }) {
           className="px-4 md:px-[10svw]"
         >
           <div className="max-w-7xl mx-auto flex flex-col gap-6">
-            {/* Row 1: Historical FPS */}
             {stats.historical.length > 0 && (
               <div className="rounded-xl border border-border bg-text/[0.03] p-4">
                 <h3 className="text-sm font-medium text-text/80 mb-2">Historical Performance</h3>
@@ -254,7 +325,6 @@ export function DeviceDetailClient({ device }: { device: DeviceInfo }) {
               </div>
             )}
 
-            {/* Row 2: FPS Distribution + Genre Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {stats.boxplot.length > 0 && (
                 <div className="rounded-xl border border-border bg-text/[0.03] p-4">
@@ -270,8 +340,7 @@ export function DeviceDetailClient({ device }: { device: DeviceInfo }) {
               )}
             </div>
 
-            {/* Row 3: Proton & FSR Breakdown */}
-            {(stats.protonBreakdown.length > 0 || stats.fsrBreakdown.length > 0) && (
+            {(stats.protonBreakdown.length > 0 || stats.upscalerBreakdown.length > 0) && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {stats.protonBreakdown.length > 0 && (
                   <div className="rounded-xl border border-border bg-text/[0.03] p-4">
@@ -294,13 +363,15 @@ export function DeviceDetailClient({ device }: { device: DeviceInfo }) {
                     </div>
                   </div>
                 )}
-                {stats.fsrBreakdown.length > 0 && (
+                {stats.upscalerBreakdown.length > 0 && (
                   <div className="rounded-xl border border-border bg-text/[0.03] p-4">
-                    <h3 className="text-sm font-medium text-text/80 mb-3">FSR Version Performance</h3>
+                    <h3 className="text-sm font-medium text-text/80 mb-3">Upscaler Performance</h3>
                     <div className="space-y-2">
-                      {stats.fsrBreakdown.map((f) => (
-                        <div key={f.version} className="flex items-center justify-between text-sm">
-                          <span className="text-text/70 capitalize">{f.version === "none" ? "Native" : f.version.toUpperCase()}</span>
+                      {stats.upscalerBreakdown.map((f) => (
+                        <div key={f.upscalerType} className="flex items-center justify-between text-sm">
+                          <span className="text-text/70 capitalize">
+                            {f.upscalerType === "none" ? "Native" : f.upscalerType.toUpperCase()}
+                          </span>
                           <div className="flex items-center gap-2">
                             <span className="text-text/80 font-medium tabular-nums">{f.avgFps} FPS</span>
                             <span className="text-text/40 text-xs">({f.count})</span>
@@ -313,7 +384,6 @@ export function DeviceDetailClient({ device }: { device: DeviceInfo }) {
               </div>
             )}
 
-            {/* Row 4: Top Games */}
             {stats.topGames.length > 0 && (
               <div className="rounded-xl border border-border bg-text/[0.03] p-4">
                 <h3 className="text-sm font-medium text-text/80 mb-3">Top Games by Average FPS</h3>
@@ -324,9 +394,13 @@ export function DeviceDetailClient({ device }: { device: DeviceInfo }) {
                       href={`/game/${game.gameId}`}
                       className="flex items-center gap-3 p-3 rounded-lg bg-text/5 border border-border hover:border-primary/30 transition-colors group"
                     >
-                      <div className="text-lg font-bold text-text/20 tabular-nums w-6">{i + 1}</div>
+                      <div className="text-lg font-bold tabular-nums w-6" style={{ color: deviceColor }}>
+                        {i + 1}
+                      </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">{game.gameTitle}</p>
+                        <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                          {game.gameTitle}
+                        </p>
                         <div className="flex items-center gap-2 text-xs text-text/50">
                           <span className="text-green-400 font-medium">{game.avgFps} FPS</span>
                           <span>{game.benchmarkCount} runs</span>
@@ -342,8 +416,8 @@ export function DeviceDetailClient({ device }: { device: DeviceInfo }) {
         </motion.div>
       )}
 
-      {/* ── Empty state ──────────────────────────────────── */}
-      {stats && !loading && stats.totalBenchmarks === 0 && (
+      {/* Empty state */}
+      {stats && !loading && !error && stats.totalBenchmarks === 0 && (
         <div className="max-w-7xl mx-auto px-4 md:px-[10svw]">
           <div className="text-center py-16 text-text/40">
             <Gamepad2Icon className="h-10 w-10 mx-auto mb-2" />
