@@ -1581,3 +1581,413 @@ git commit -m "feat: add per-device OG image generator for device detail pages
 - Uses Edge runtime for fast generation
 - References OG image in device detail page metadata"
 ```
+---
+
+### Task 7: Admin Layout, Sidebar & Auth Guard
+
+**Files:**
+- Create: `app/(admin)/layout.tsx`
+- Create: `app/(admin)/admin/page.tsx`
+- Create: `components/admin/admin-sidebar.tsx`
+- Modify: `components/navbar.tsx`
+- Modify: `lib/routes.ts`
+
+- [ ] **Step 1: Create the admin sidebar component**
+
+Create `components/admin/admin-sidebar.tsx`:
+
+```tsx
+"use client"
+
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { UsersIcon, CpuIcon, Gamepad2Icon } from "lucide-react"
+
+const adminNavItems = [
+  { href: "/admin/users", label: "Users", icon: UsersIcon },
+  { href: "/admin/hardware", label: "Hardware", icon: CpuIcon },
+  { href: "/admin/games", label: "Games", icon: Gamepad2Icon },
+]
+
+export function AdminSidebar() {
+  const pathname = usePathname()
+
+  return (
+    <nav className="md:w-48 shrink-0">
+      <div className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 md:border-r md:border-border">
+        {adminNavItems.map((item) => {
+          const isActive =
+            pathname === item.href || pathname.startsWith(item.href + "/")
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors whitespace-nowrap rounded-lg md:rounded-none md:border-l-2 md:border-r-0 md:border-transparent ${
+                isActive
+                  ? "bg-primary/10 text-primary md:border-l-primary"
+                  : "text-text/50 hover:text-text/70 hover:bg-text/5"
+              }`}
+            >
+              <item.icon className="h-4 w-4 shrink-0" />
+              {item.label}
+            </Link>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
+```
+
+- [ ] **Step 2: Create the admin layout with server-side auth guard**
+
+Create `app/(admin)/layout.tsx`:
+
+```tsx
+import { redirect } from "next/navigation"
+import { headers } from "next/headers"
+import { auth } from "@/lib/auth"
+import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: { template: "%s | Admin — DeckyVault", default: "Admin — DeckyVault" },
+  robots: { index: false, follow: false },
+}
+
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
+
+  if (!session || session.user.role !== "admin") {
+    redirect("/")
+  }
+
+  return (
+    <section className="w-full flex flex-col gap-8 pb-16">
+      {/* Header */}
+      <div className="px-4 md:px-[10svw]">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-2xl sm:text-3xl font-bold">Admin</h1>
+          <p className="text-sm text-text/60 mt-1">
+            Manage users, hardware, and games
+          </p>
+        </div>
+      </div>
+
+      {/* Sidebar + Content */}
+      <div className="px-4 md:px-[10svw]">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-6">
+          <AdminSidebar />
+          <div className="flex-1 min-w-0">{children}</div>
+        </div>
+      </div>
+    </section>
+  )
+}
+```
+
+- [ ] **Step 3: Create the admin redirect page**
+
+Create `app/(admin)/admin/page.tsx`:
+
+```tsx
+import { redirect } from "next/navigation"
+
+export default function AdminPage() {
+  redirect("/admin/users")
+}
+```
+
+- [ ] **Step 4: Add admin link to navbar profile dropdown**
+
+In `components/navbar.tsx`:
+
+1. Add `ShieldIcon` to the lucide imports:
+```tsx
+import {
+  Bookmark,
+  CircleXIcon,
+  Gamepad2Icon,
+  LogOut,
+  MenuIcon,
+  ShieldIcon,
+  User,
+  XIcon,
+} from "lucide-react"
+```
+
+2. In the **desktop profile dropdown** — right after the `{authRoutes.map(...)}` block and before the `<div className='my-1 border-t border-white/10' />` sign-out divider, add:
+```tsx
+{session.user.role === "admin" && (
+  <>
+    <div className="my-1 border-t border-white/10" />
+    <Link
+      href="/admin"
+      onClick={() => setUserMenuOpen(false)}
+      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary/80 hover:text-primary hover:bg-primary/5 transition-colors cursor-pointer"
+    >
+      <ShieldIcon className="h-4 w-4" />
+      Admin
+    </Link>
+  </>
+)}
+```
+
+3. In the **mobile sidebar** — after `{authRoutes.map(...)}` in the mobile auth section, add:
+```tsx
+{session.user.role === "admin" && (
+  <Link
+    href="/admin"
+    onClick={() => setMobileMenuOpen(false)}
+    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-primary/80 hover:text-primary hover:bg-primary/5 transition-colors cursor-pointer"
+  >
+    <ShieldIcon className="h-4 w-4" />
+    Admin
+  </Link>
+)}
+```
+
+- [ ] **Step 5: Add admin routes to routes file**
+
+In `lib/routes.ts`, append an `adminRoutes` export (not in the main `routes` nav — admin link only appears in the profile dropdown):
+
+```ts
+export const adminRoutes = [
+  {
+    title: "Users",
+    href: "/admin/users",
+    icon: "Users",
+  },
+  {
+    title: "Hardware",
+    href: "/admin/hardware",
+    icon: "Cpu",
+  },
+  {
+    title: "Games",
+    href: "/admin/games",
+    icon: "Gamepad2",
+  },
+]
+```
+
+- [ ] **Step 6: Build to verify**
+
+Run: `cd /Users/adrianbonpin/Documents/Code/personal/deckyvault && bun run build --no-lint 2>&1 | tail -20`
+Expected: Build succeeds.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add app/(admin)/ components/admin/admin-sidebar.tsx components/navbar.tsx lib/routes.ts
+git commit -m "feat: add admin layout with sidebar, auth guard, and navbar link
+
+- Admin layout with server-side auth guard (redirects non-admins)
+- Reusable sidebar component with active state detection
+- Navbar profile dropdown shows admin link for admin users
+- Admin routes are noindexed (robots: false)
+- /admin redirects to /admin/users"
+```
+
+---
+
+### Task 8: Admin Users Page
+
+**Files:**
+- Create: `app/(admin)/admin/users/page.tsx`
+- Create: `app/(admin)/admin/users/users-client.tsx`
+
+- [ ] **Step 1: Create the users server component**
+
+Create `app/(admin)/admin/users/page.tsx`:
+
+```tsx
+import type { Metadata } from "next"
+import { UsersClient } from "./users-client"
+
+export const metadata: Metadata = {
+  title: "Users",
+}
+
+export default function UsersPage() {
+  return <UsersClient />
+}
+```
+
+- [ ] **Step 2: Create the users client component**
+
+Create `app/(admin)/admin/users/users-client.tsx` — a full user management table with search, role changing (user/contributor/admin), and ban/unban functionality using better-auth's admin plugin client methods (`authClient.admin.listUsers`, `authClient.admin.setRole`, `authClient.admin.banUser`/`unbanUser`). The component should:
+
+- Fetch users on mount via `authClient.admin.listUsers({ query: { limit: 100 } })`
+- Filter users client-side based on a search input
+- Render a table with columns: User (avatar initial + name + email), Role (dropdown select), Status (active/banned dot), Actions (ban/unban button)
+- Role dropdown uses `handleRoleChange` calling `authClient.admin.setRole({ userId, role })`
+- Ban button calls `authClient.admin.banUser({ userId })` / `authClient.admin.unbanUser({ userId })`
+- Style: rounded-xl border, table with text-sm, header row `bg-text/[0.03]`, status dots (green/red), role select with colored borders
+
+Use the same Tailwind patterns as the rest of the app: `px-4 py-2.5`, `rounded-lg border border-border bg-text/5`, `text-text/50`, focus rings, etc.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add app/(admin)/admin/users/
+git commit -m "feat: add admin users management page
+
+- User list with search by name/email
+- Change role (user/contributor/admin) via dropdown
+- Ban/unban users with status indicators
+- Uses better-auth admin plugin client methods"
+```
+
+---
+
+### Task 9: Admin Hardware Page
+
+**Files:**
+- Create: `app/(admin)/admin/hardware/page.tsx`
+- Create: `app/(admin)/admin/hardware/hardware-client.tsx`
+
+- [ ] **Step 1: Create the hardware server component**
+
+Create `app/(admin)/admin/hardware/page.tsx`:
+
+```tsx
+import type { Metadata } from "next"
+import { HardwareClient } from "./hardware-client"
+
+export const metadata: Metadata = {
+  title: "Hardware",
+}
+
+export default function HardwarePage() {
+  return <HardwareClient />
+}
+```
+
+- [ ] **Step 2: Create the hardware client component with CRUD**
+
+Create `app/(admin)/admin/hardware/hardware-client.tsx` — a hardware management page with:
+
+- **List**: Fetches from `/api/hardware/stats`, renders device cards (icon + name + slug + type badge + benchmark count) with edit/delete buttons
+- **Add Device** button at top opens a modal form
+- **Edit modal**: Pre-filled form for name, slug (readonly on edit), device type (select handheld/console), sort order, image URL
+- **Delete**: Confirmation via `confirm()`, calls `DELETE /api/hardware/:slug`
+- **Create**: Modal form, calls `POST /api/hardware` with body `{ slug, name, deviceType, image, sortOrder }`
+- **Update**: Modal form, calls `PATCH /api/hardware/:slug` with body `{ name, deviceType, image, sortOrder }`
+- Card grid uses same pattern as devices list page
+- Modal styled: `fixed inset-0 z-50`, backdrop `bg-black/50`, form `bg-background border border-border rounded-xl p-6 max-w-md`
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add app/(admin)/admin/hardware/
+git commit -m "feat: add admin hardware management page with CRUD
+
+- Device list fetched from /api/hardware/stats
+- Create/edit devices via modal form
+- Delete with confirmation dialog
+- Uses existing hardware CRUD API endpoints"
+```
+
+---
+
+### Task 10: Admin Games Page
+
+**Files:**
+- Create: `app/(admin)/admin/games/page.tsx`
+- Create: `app/(admin)/admin/games/games-client.tsx`
+
+- [ ] **Step 1: Create the games server component**
+
+Create `app/(admin)/admin/games/page.tsx`:
+
+```tsx
+import type { Metadata } from "next"
+import { GamesClient } from "./games-client"
+
+export const metadata: Metadata = {
+  title: "Games",
+}
+
+export default function GamesPage() {
+  return <GamesClient />
+}
+```
+
+- [ ] **Step 2: Create the games client component**
+
+Create `app/(admin)/admin/games/games-client.tsx` — a games management page with:
+
+- **List**: Fetches from `/api/games?limit=50` (existing CRUD endpoint with search support), renders a table
+- **Search**: Debounced input, passes `?search=query` to the API
+- **Table columns**: Cover image (small thumbnail via `next/image`), Title, Developer, Source (Steam/manual badge), Sync Status (badge), Actions
+- **Actions**: "View" link to `/game/:id` (external-link icon), "Delete" button (admin only, calls `DELETE /api/games/:gameId`)
+- **Pagination**: "Load more" button or offset-based pagination controls (`?offset=N&limit=50`)
+- Style: same table pattern as users page
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add app/(admin)/admin/games/
+git commit -m "feat: add admin games management page
+
+- Game list with search and pagination
+- Source and sync status badges
+- View on site link and delete action
+- Uses existing games CRUD API"
+```
+
+---
+
+### Task 11: Sitemap Update & Final SEO
+
+**Files:**
+- Modify: `app/sitemap.ts`
+
+- [ ] **Step 1: Remove /search from sitemap since it's noindexed**
+
+In `app/sitemap.ts`, find and remove any entry for `/search` (it's noindexed in its layout metadata, so including it in the sitemap is contradictory).
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add app/sitemap.ts
+git commit -m "fix: remove noindexed /search page from sitemap"
+```
+
+---
+
+### Task 12: Build, Lint & Cleanup
+
+**Files:** All modified/created files
+
+- [ ] **Step 1: Run full build**
+
+Run: `cd /Users/adrianbonpin/Documents/Code/personal/deckyvault && bun run build 2>&1`
+Expected: Build succeeds with zero errors.
+
+- [ ] **Step 2: Fix any build errors**
+
+If the build fails, read the error messages, fix them, and re-run.
+
+- [ ] **Step 3: Run linter**
+
+Run: `cd /Users/adrianbonpin/Documents/Code/personal/deckyvault && bun run lint 2>&1`
+Expected: No errors.
+
+- [ ] **Step 4: Fix any lint warnings**
+
+If lint issues exist, fix them and re-run.
+
+- [ ] **Step 5: Final commit**
+
+```bash
+git add -A
+git commit -m "chore: fix build errors and lint warnings from devices/admin implementation"
+```
