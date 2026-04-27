@@ -50,6 +50,13 @@
       "when": 1777300000000,
       "tag": "0006_upscaler_battery_custom_system",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1777267706280,
+      "tag": "0007_mighty_electro",
+      "breakpoints": true
     }
   ]
 }

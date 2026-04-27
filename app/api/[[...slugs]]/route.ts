@@ -11,9 +11,6 @@ import {
   performanceRoutes,
   performanceVerifyRoutes,
   performanceSubmitRoutes,
-  presetsRoutes,
-  presetUpvoteRoutes,
-  presetSettingsRoutes,
   commentsRoutes,
   savedGamesRoutes,
 } from "@/lib/api"
@@ -68,10 +65,6 @@ export const app = new Elysia({ prefix: "/api" })
   .use(performanceRoutes)
   .use(performanceVerifyRoutes)
   .use(performanceSubmitRoutes)
-  // Presets
-  .use(presetsRoutes)
-  .use(presetUpvoteRoutes)
-  .use(presetSettingsRoutes)
   // Comments
   .use(commentsRoutes)
   // Steam search proxy

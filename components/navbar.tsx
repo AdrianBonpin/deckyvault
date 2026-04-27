@@ -48,6 +48,13 @@ export default function Navbar() {
     const { data: session, isPending: isSessionLoading } = useSession()
     const [userMenuOpen, setUserMenuOpen] = useState(false)
 
+    // Prevent hydration mismatch: useSession resolves differently on
+    // server (isPending=true) vs client. We delay rendering the
+    // auth-dependent UI until after the first client paint.
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => setMounted(true), [])
+    const showAuth = mounted && !isSessionLoading
+
     // Sync search query with URL ?q= param
     const searchQueryRef = useRef(searchQuery)
     useEffect(() => {
@@ -239,7 +246,7 @@ export default function Navbar() {
                             mode='popLayout'
                             initial={false}
                         >
-                            {isSessionLoading ? (
+                            {!showAuth ? (
                                 <motion.li
                                     key='loading-placeholder'
                                     initial={{ opacity: 0 }}
@@ -389,7 +396,7 @@ export default function Navbar() {
                             </nav>
                             {/* Mobile Auth Controls */}
                             <div className='mt-auto p-4 border-t border-text/8'>
-                                {isSessionLoading ? (
+                                {!showAuth ? (
                                     <div className='w-full h-10 rounded-lg bg-text/3 animate-pulse' />
                                 ) : session ? (
                                     <div className='space-y-2'>
