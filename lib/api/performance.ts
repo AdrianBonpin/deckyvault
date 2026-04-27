@@ -138,10 +138,10 @@ export const performanceVerifyRoutes = new Elysia({
       params: t.Object({ id: t.String() }),
     },
   )
-  // ── User-scoped hard delete (owner or admin) ────────────────────
+  // ── User-scoped soft delete (owner or admin) ────────────────────
   .delete(
     "/:id/user-delete",
-    async ({ params, request, set }) => {
+    async ({ params, body, request, set }) => {
       const guard = await requireRole(request.headers, [
         "user",
         "contributor",
@@ -171,14 +171,28 @@ export const performanceVerifyRoutes = new Elysia({
         return { error: "Not authorized to delete this entry" }
       }
 
-      await db
-        .delete(performanceEntries)
+      const reason = body?.reason as string | undefined
+
+      const [updated] = await db
+        .update(performanceEntries)
+        .set({
+          isRemoved: true,
+          removedReason: reason ?? "User deleted",
+          updatedAt: new Date(),
+        })
         .where(eq(performanceEntries.id, params.id))
+        .returning()
+
+      if (!updated) {
+        set.status = 404
+        return { error: "Performance entry not found" }
+      }
 
       return { success: true }
     },
     {
       params: t.Object({ id: t.String() }),
+      body: t.Optional(t.Object({ reason: t.Optional(t.String()) })),
     },
   )
   // ── Best entry: highest-rated for latest version ──────────────────
