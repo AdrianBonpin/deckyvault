@@ -4,7 +4,6 @@ import {
   games,
   gameVersions,
   performanceEntries,
-  communityPresets,
   gameComments,
 } from "@/lib/db/schema"
 import { ilike, or, sql, eq, inArray, and } from "drizzle-orm"
@@ -109,12 +108,22 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
           .groupBy(gameVersions.gameId),
         db
           .select({
-            gameId: communityPresets.gameId,
+            gameId: gameVersions.gameId,
             count: sql<number>`count(*)::int`,
           })
-          .from(communityPresets)
-          .where(inArray(communityPresets.gameId, localGameIds))
-          .groupBy(communityPresets.gameId),
+          .from(performanceEntries)
+          .innerJoin(
+            gameVersions,
+            eq(performanceEntries.versionId, gameVersions.id),
+          )
+          .where(
+            and(
+              inArray(gameVersions.gameId, localGameIds),
+              eq(performanceEntries.isRemoved, false),
+              sql`${performanceEntries.settingsJson} IS NOT NULL`,
+            ),
+          )
+          .groupBy(gameVersions.gameId),
         db
           .select({
             gameId: gameComments.gameId,
