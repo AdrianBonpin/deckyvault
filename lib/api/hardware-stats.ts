@@ -158,9 +158,14 @@ export const hardwareStatsRoutes = new Elysia({ prefix: "/hardware" })
       }
 
       const totalBenchmarks = entries.length
-      const avgFps = Math.round(
-        (entries.reduce((s, e) => s + (e.fpsAvg ?? 0), 0) / totalBenchmarks) * 10
-      ) / 10
+      // Filter out null FPS entries before computing average (SQL avg() ignores nulls)
+      const fpsEntries = entries.filter((e) => e.fpsAvg !== null)
+      const avgFps =
+        fpsEntries.length > 0
+          ? Math.round(
+              (fpsEntries.reduce((s, e) => s + e.fpsAvg!, 0) / fpsEntries.length) * 10
+            ) / 10
+          : null
       const verifiedCount = entries.filter((e) => e.verifiedAt !== null).length
 
       // Unique game count
