@@ -746,15 +746,10 @@ export function GamePageClient({
                             </p>
                         </div>
                     ) : (
-                        <div className="relative">
-                            {/* Left fade edge */}
-                            <div className="pointer-events-none absolute left-0 top-0 bottom-4 w-12 z-10 bg-gradient-to-r from-background to-transparent" />
-                            {/* Right fade edge */}
-                            <div className="pointer-events-none absolute right-0 top-0 bottom-4 w-12 z-10 bg-gradient-to-l from-background to-transparent" />
-                            <div
-                                ref={presetsRef}
-                                className="flex gap-4 overflow-x-auto scrollbar-hide pb-4"
-                            >
+                        <div
+                            ref={presetsRef}
+                            className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-1"
+                        >
                                 {[...filteredPresets]
                                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                                     .map((preset) => {
@@ -883,7 +878,6 @@ export function GamePageClient({
                                         )
                                     })}
                             </div>
-                        </div>
                     )}
                 </div>
             </motion.div>
