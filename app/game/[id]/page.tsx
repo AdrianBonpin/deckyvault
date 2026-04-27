@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { after } from "next/server"
 import { db } from "@/lib/db/index"
@@ -8,13 +9,64 @@ import {
     gameComments,
     gamePlatformSupport,
     hardware,
+    user,
 } from "@/lib/db/schema"
 import { and, desc, eq, sql } from "drizzle-orm"
 import { isSyncStale, syncSteamGame } from "@/lib/steam/sync"
 import { GamePageClient } from "./game-page-client"
 
-export const metadata = {
-    title: "Game",
+async function resolveGame(id: string) {
+    const isNumeric = /^\d+$/.test(id)
+    let game
+    if (isNumeric) {
+        const rows = await db
+            .select()
+            .from(games)
+            .where(eq(games.steamAppId, Number(id)))
+            .limit(1)
+        game = rows[0]
+    } else {
+        const rows = await db
+            .select()
+            .from(games)
+            .where(eq(games.id, id))
+            .limit(1)
+        game = rows[0]
+    }
+    return game
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+    const { id } = await params
+    const game = await resolveGame(id)
+
+    if (!game) {
+        return { title: "Game Not Found | DeckyVault" }
+    }
+
+    const description = game.description
+        ? game.description.slice(0, 160)
+        : `Find benchmarks, community presets, and performance settings for ${game.title} on Steam Deck.`
+
+    return {
+        title: `${game.title} - Benchmarks & Settings`,
+        description,
+        alternates: { canonical: `https://deckyvault.xyz/game/${game.id}` },
+        openGraph: {
+            title: `${game.title} - Benchmarks & Settings | DeckyVault`,
+            description: game.description?.slice(0, 200) ?? `Benchmarks and settings for ${game.title}`,
+            url: `https://deckyvault.xyz/game/${game.id}`,
+            images: [{ url: `/game/${game.id}/opengraph-image`, width: 1200, height: 630 }],
+            type: "website",
+            siteName: "DeckyVault",
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: `${game.title} - Benchmarks & Settings | DeckyVault`,
+            description: game.description?.slice(0, 200) ?? `Benchmarks and settings for ${game.title}`,
+            images: [`/game/${game.id}/opengraph-image`],
+        },
+    }
 }
 
 async function createGameStub(steamAppId: number) {
@@ -100,22 +152,7 @@ export default async function GamePage({
     const forceSync = sync === "1"
 
     // ── Resolve game ────────────────────────────────────────────────
-    let game
-    if (isNumeric) {
-        const rows = await db
-            .select()
-            .from(games)
-            .where(eq(games.steamAppId, Number(id)))
-            .limit(1)
-        game = rows[0]
-    } else {
-        const rows = await db
-            .select()
-            .from(games)
-            .where(eq(games.id, id))
-            .limit(1)
-        game = rows[0]
-    }
+    let game = await resolveGame(id)
 
     if (!game && isNumeric) {
         try {
@@ -184,10 +221,18 @@ export default async function GamePage({
                 protonVersion: performanceEntries.protonVersion,
                 osVersion: performanceEntries.osVersion,
                 createdAt: performanceEntries.createdAt,
+                userId: performanceEntries.userId,
+                userName: user.name,
+                userImage: user.image,
+                downvotes: performanceEntries.downvotes,
+                launchOptions: performanceEntries.launchOptions,
+                userNotes: performanceEntries.userNotes,
+                verifiedAt: performanceEntries.verifiedAt,
             })
             .from(performanceEntries)
             .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
             .innerJoin(hardware, eq(performanceEntries.hardwareSlug, hardware.slug))
+            .innerJoin(user, eq(performanceEntries.userId, user.id))
             .where(
                 and(
                     eq(gameVersions.gameId, game.id),
@@ -249,19 +294,46 @@ export default async function GamePage({
         protonVersion: p.protonVersion,
         osVersion: p.osVersion,
         createdAt: p.createdAt.toISOString(),
+        settingsJson: p.settingsJson,
+        launchOptions: p.launchOptions,
+        userNotes: p.userNotes,
+        userId: p.userId,
+        userName: p.userName,
+        userImage: p.userImage,
+        downvotes: p.downvotes,
+        verifiedAt: p.verifiedAt ? p.verifiedAt.toISOString() : null,
     }))
 
     return (
-        <GamePageClient
-            game={serializedGame}
-            counts={{
-                benchmarks: benchmarkCount,
-                presets: presetCount,
-                comments: commentCount,
-            }}
-            platformSupport={platformSupport}
-            presets={serializedPresets}
-            gameId={game.id}
-        />
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "VideoGame",
+                        name: game.title,
+                        ...(game.developer && { developer: { "@type": "Organization", name: game.developer } }),
+                        ...(game.genres && game.genres.length > 0 && { genre: game.genres }),
+                        ...(game.headerImage && { image: game.headerImage }),
+                        url: `https://deckyvault.xyz/game/${game.id}`,
+                        applicationCategory: "Game",
+                        operatingSystem: "SteamOS",
+                        ...(game.storeUrl && { offers: { "@type": "Offer", url: game.storeUrl } }),
+                    }),
+                }}
+            />
+            <GamePageClient
+                game={serializedGame}
+                counts={{
+                    benchmarks: benchmarkCount,
+                    presets: presetCount,
+                    comments: commentCount,
+                }}
+                platformSupport={platformSupport}
+                presets={serializedPresets}
+                gameId={game.id}
+            />
+        </>
     )
 }
