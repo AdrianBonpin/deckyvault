@@ -138,6 +138,49 @@ export const performanceVerifyRoutes = new Elysia({
       params: t.Object({ id: t.String() }),
     },
   )
+  // ── User-scoped hard delete (owner or admin) ────────────────────
+  .delete(
+    "/:id/user-delete",
+    async ({ params, request, set }) => {
+      const guard = await requireRole(request.headers, [
+        "user",
+        "contributor",
+        "admin",
+      ])
+      if (!guard.ok) {
+        set.status = guard.status
+        return { error: guard.error }
+      }
+
+      const [entry] = await db
+        .select({
+          id: performanceEntries.id,
+          userId: performanceEntries.userId,
+        })
+        .from(performanceEntries)
+        .where(eq(performanceEntries.id, params.id))
+        .limit(1)
+
+      if (!entry) {
+        set.status = 404
+        return { error: "Performance entry not found" }
+      }
+
+      if (entry.userId !== guard.user.id && guard.user.role !== "admin") {
+        set.status = 403
+        return { error: "Not authorized to delete this entry" }
+      }
+
+      await db
+        .delete(performanceEntries)
+        .where(eq(performanceEntries.id, params.id))
+
+      return { success: true }
+    },
+    {
+      params: t.Object({ id: t.String() }),
+    },
+  )
   // ── Best entry: highest-rated for latest version ──────────────────
   .get(
     "/best",
