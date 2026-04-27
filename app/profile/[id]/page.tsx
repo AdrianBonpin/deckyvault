@@ -4,6 +4,9 @@ import { user, performanceEntries, games, gameVersions, hardware } from "@/lib/d
 import { eq, sql, and, desc } from "drizzle-orm"
 import { ProfilePageClient } from "./profile-page-client"
 
+// This page needs live data — skip static generation at build time
+export const dynamic = "force-dynamic"
+
 export const metadata = {
   title: "Profile",
 }

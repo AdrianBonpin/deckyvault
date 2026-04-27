@@ -4,6 +4,9 @@ import { games, gameVersions } from "@/lib/db/schema"
 import { eq, sql } from "drizzle-orm"
 import { GameEntryWizard } from "@/components/wizard/game-entry-wizard"
 
+// This page needs live data — skip static generation at build time
+export const dynamic = "force-dynamic"
+
 export const metadata = {
   title: "Submit Benchmark",
 }

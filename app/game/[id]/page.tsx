@@ -15,6 +15,9 @@ import { and, desc, eq, sql } from "drizzle-orm"
 import { isSyncStale, syncSteamGame } from "@/lib/steam/sync"
 import { GamePageClient } from "./game-page-client"
 
+// This page needs live data — skip static generation at build time
+export const dynamic = "force-dynamic"
+
 async function resolveGame(id: string) {
     const isNumeric = /^\d+$/.test(id)
     let game

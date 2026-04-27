@@ -5,6 +5,9 @@ import { eq, and, sql } from "drizzle-orm"
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
 
+// This needs live data — skip static generation at build time
+export const dynamic = "force-dynamic"
+
 export const alt = "DeckyVault - Game Benchmarks"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"

@@ -10,6 +10,9 @@ import {
 import { sql, eq, and, desc, inArray } from "drizzle-orm"
 import { GamesPageClient } from "./games-page-client"
 
+// This page needs live data — skip static generation at build time
+export const dynamic = "force-dynamic"
+
 export const metadata: Metadata = {
   title: "Games — DeckyVault",
   description:

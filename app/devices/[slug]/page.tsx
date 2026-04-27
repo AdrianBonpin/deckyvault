@@ -8,10 +8,16 @@ import type { Metadata } from "next"
 export const revalidate = 3600
 
 export async function generateStaticParams() {
-  const devices = await db
-    .select({ slug: hardware.slug })
-    .from(hardware)
-  return devices.map((d) => ({ slug: d.slug }))
+  try {
+    const devices = await db
+      .select({ slug: hardware.slug })
+      .from(hardware)
+    return devices.map((d) => ({ slug: d.slug }))
+  } catch {
+    // DB unreachable during build (e.g. Docker builder without network access).
+    // Return empty — pages will be generated on first request via ISR.
+    return []
+  }
 }
 
 export async function generateMetadata({

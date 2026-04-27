@@ -4,6 +4,9 @@ import { eq, sql, desc } from "drizzle-orm"
 import { DevicesPageClient } from "./page-client"
 import type { Metadata } from "next"
 
+// This page needs live data — skip static generation at build time
+export const dynamic = "force-dynamic"
+
 export const metadata: Metadata = {
   title: "Devices — DeckyVault",
   description:
