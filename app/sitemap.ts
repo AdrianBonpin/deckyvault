@@ -26,7 +26,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     return [
         { url: BASE_URL, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
-        { url: `${BASE_URL}/search`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
         { url: `${BASE_URL}/devices`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
         ...gameEntries,
         ...deviceEntries,
