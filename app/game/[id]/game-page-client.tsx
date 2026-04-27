@@ -12,11 +12,16 @@ import {
     SparklesIcon,
     DatabaseIcon,
     Plus,
+    ChevronLeftIcon,
+    ChevronRightIcon,
 } from "lucide-react"
 import Link from "next/link"
 import { useSession } from "@/lib/auth-client"
 import { FaSteam } from "react-icons/fa"
-import { motion } from "motion/react"
+import { motion, AnimatePresence } from "motion/react"
+
+import type { GameSettingCategory } from "@/lib/db/schema/performanceEntries"
+import { PresetDetailModal } from "./preset-detail-modal"
 
 import { BookmarkButton } from "@/components/saved-games/bookmark-button"
 
@@ -67,6 +72,8 @@ interface Preset {
     hardwareSlug: string
     hardwareName: string
     upvotes: number
+    downvotes: number
+    settingsJson: GameSettingCategory[] | null
     settingsCount: number
     fpsAvg: number | null
     fpsLow: number | null
@@ -76,6 +83,12 @@ interface Preset {
     frameGenMethod: string | null
     protonVersion: string | null
     osVersion: string | null
+    launchOptions: string | null
+    userNotes: string | null
+    userId: string
+    userName: string | null
+    userImage: string | null
+    verifiedAt: string | null
     createdAt: string
 }
 
@@ -207,6 +220,38 @@ export function GamePageClient({
         frameGen: "all",
     })
     const [loading, setLoading] = useState(true)
+    const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
+    const [reportedPresets, setReportedPresets] = useState<Set<string>>(new Set())
+    const presetsRef = useRef<HTMLDivElement>(null)
+
+    const handleDeletePreset = async (presetId: string) => {
+        try {
+            const res = await fetch(`/api/performance/${presetId}/user-delete`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+            })
+            if (res.ok) {
+                setSelectedPresetId(null)
+            }
+        } catch (err) {
+            console.error("Failed to delete preset:", err)
+        }
+    }
+
+    const handleReportPreset = async (presetId: string, reason: "inaccurate" | "spam" | "inappropriate" | "other", details?: string) => {
+        try {
+            const res = await fetch(`/api/performance/${presetId}/report`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ reason, details }),
+            })
+            if (res.ok) {
+                setReportedPresets((prev) => new Set(prev).add(presetId))
+            }
+        } catch (err) {
+            console.error("Failed to report preset:", err)
+        }
+    }
 
     const handleImgError = useCallback(() => setImgError(true), [])
 
@@ -322,6 +367,7 @@ export function GamePageClient({
     }, [])
 
     return (
+        <>
         <section className='w-full flex flex-col gap-8 pb-16'>
             {/* Section 1: Hero Header */}
             <motion.div
@@ -673,11 +719,183 @@ export function GamePageClient({
                 </div>
             </motion.div>
 
-            {/* Section 4: Statistics Dashboard */}
+            {/* Section 4: Community Presets */}
             <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.2 }}
+                className='px-4 md:px-[10svw]'
+            >
+                <div className='max-w-7xl mx-auto flex flex-col gap-4'>
+                    <div className='flex items-center justify-between'>
+                        <h2 className='text-lg font-semibold'>
+                            Community Presets
+                        </h2>
+                        <span className='text-xs text-text/50'>
+                            {filteredPresets.length} preset
+                            {filteredPresets.length !== 1 ? "s" : ""}
+                        </span>
+                    </div>
+
+                    {filteredPresets.length === 0 ? (
+                        <div className='flex flex-col items-center justify-center py-16 gap-3 rounded-xl border border-border bg-text/2'>
+                            <SettingsIcon className='h-10 w-10 text-text/20' />
+                            <p className='text-sm text-text/40'>
+                                No presets match the selected filters
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="relative group/presets">
+                            {/* Left scroll button */}
+                            <button
+                                onClick={() => presetsRef.current?.scrollBy({ left: -300, behavior: "smooth" })}
+                                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center h-10 w-10 rounded-full bg-background/80 border border-border hover:bg-text/5 opacity-0 group-hover/presets:opacity-100 transition-opacity"
+                            >
+                                <ChevronLeftIcon className="h-5 w-5" />
+                            </button>
+                            {/* Right scroll button */}
+                            <button
+                                onClick={() => presetsRef.current?.scrollBy({ left: 300, behavior: "smooth" })}
+                                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center h-10 w-10 rounded-full bg-background/80 border border-border hover:bg-text/5 opacity-0 group-hover/presets:opacity-100 transition-opacity"
+                            >
+                                <ChevronRightIcon className="h-5 w-5" />
+                            </button>
+                            <div
+                                ref={presetsRef}
+                                className="flex gap-4 overflow-x-auto scrollbar-hide pb-4"
+                            >
+                                {[...filteredPresets]
+                                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                                    .map((preset) => {
+                                        const raw = isRawPerformerPreset(preset)
+                                        const fpsColor = getFpsColor(preset)
+                                        return (
+                                            <motion.div
+                                                key={preset.id}
+                                                layoutId={preset.id}
+                                                onClick={() => setSelectedPresetId(preset.id)}
+                                                className={`flex-shrink-0 w-72 flex flex-col gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-primary/30 ${
+                                                    raw
+                                                        ? "border-green-500/30 bg-green-500/5"
+                                                        : "border-border bg-text/3"
+                                                }`}
+                                            >
+                                                {/* Header */}
+                                                <div className='flex items-start justify-between gap-2'>
+                                                    <div className='min-w-0'>
+                                                        <div className='flex items-center gap-2'>
+                                                            <h3 className='font-semibold text-sm truncate'>
+                                                                {generatePresetName(preset)}
+                                                            </h3>
+                                                            {raw && (
+                                                                <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-semibold'>
+                                                                    <SparklesIcon className='h-2.5 w-2.5' />
+                                                                    Raw
+                                                                </span>
+                                                            )}
+                                                            {isPoorPerformancePreset(preset) && preset.fpsAvg !== null && (
+                                                                <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-semibold'>
+                                                                    ⚠ Slow
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className='text-xs text-text/50 mt-0.5'>
+                                                            {preset.hardwareName}
+                                                        </p>
+                                                    </div>
+                                                    <div className='flex items-center gap-1 text-xs text-text/60 shrink-0'>
+                                                        <TrendingUpIcon className='h-3 w-3' />
+                                                        {preset.upvotes}
+                                                    </div>
+                                                </div>
+
+                                                {/* Settings count */}
+                                                <div className='text-xs text-text/50'>
+                                                    {preset.settingsCount} settings
+                                                </div>
+
+                                                {/* FPS */}
+                                                {preset.fpsAvg !== null && (
+                                                    <div
+                                                        className={`text-sm tabular-nums ${fpsColor}`}
+                                                    >
+                                                        <span className='font-semibold'>
+                                                            {preset.fpsAvg}
+                                                        </span>
+                                                        <span className='text-text/40'>
+                                                            {" "}
+                                                            avg
+                                                        </span>
+                                                        {preset.fpsLow !== null && (
+                                                            <span className='text-text/40'>
+                                                                {" "}
+                                                                ({preset.fpsLow}–
+                                                                {preset.fpsHigh})
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Technology tags */}
+                                                <div className='flex flex-wrap items-center gap-1.5'>
+                                                    {preset.upscalerType &&
+                                                        preset.upscalerType !==
+                                                            "none" && (
+                                                            <span className='px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20'>
+                                                                {preset.upscalerType.toUpperCase()}
+                                                                {preset.upscalerVersion ? ` ${preset.upscalerVersion}` : ""}
+                                                            </span>
+                                                        )}
+                                                    {preset.frameGenMethod &&
+                                                        preset.frameGenMethod !==
+                                                            "none" && (
+                                                            <span
+                                                                className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                                                                    preset.frameGenMethod ===
+                                                                    "dlss_fg"
+                                                                        ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                                                        : "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                                                                }`}
+                                                            >
+                                                                {preset.frameGenMethod ===
+                                                                "fsr_fg"
+                                                                    ? "FSR FG"
+                                                                    : preset.frameGenMethod ===
+                                                                        "dlss_fg"
+                                                                      ? "DLSS FG"
+                                                                      : preset.frameGenMethod}
+                                                            </span>
+                                                        )}
+                                                </div>
+
+                                                {/* Proton + OS */}
+                                                <div className='flex flex-wrap items-center gap-2 text-[10px] text-text/40'>
+                                                    {preset.protonVersion && (
+                                                        <span>
+                                                            Proton{" "}
+                                                            {preset.protonVersion}
+                                                        </span>
+                                                    )}
+                                                    {preset.osVersion && (
+                                                        <span>
+                                                            SteamOS {preset.osVersion}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </motion.div>
+                                        )
+                                    })}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </motion.div>
+
+            {/* Section 5: Statistics Dashboard */}
+            <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.25 }}
                 className='px-4 md:px-[10svw]'
             >
                 <div className='max-w-7xl mx-auto flex flex-col gap-6'>
@@ -792,156 +1010,23 @@ export function GamePageClient({
                     )}
                 </div>
             </motion.div>
-
-            {/* Section 5: Community Presets */}
-            <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.25 }}
-                className='px-4 md:px-[10svw]'
-            >
-                <div className='max-w-7xl mx-auto flex flex-col gap-4'>
-                    <div className='flex items-center justify-between'>
-                        <h2 className='text-lg font-semibold'>
-                            Community Presets
-                        </h2>
-                        <span className='text-xs text-text/50'>
-                            {filteredPresets.length} preset
-                            {filteredPresets.length !== 1 ? "s" : ""}
-                        </span>
-                    </div>
-
-                    {filteredPresets.length === 0 ? (
-                        <div className='flex flex-col items-center justify-center py-16 gap-3 rounded-xl border border-border bg-text/2'>
-                            <SettingsIcon className='h-10 w-10 text-text/20' />
-                            <p className='text-sm text-text/40'>
-                                No presets match the selected filters
-                            </p>
-                        </div>
-                    ) : (
-                        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
-                            {filteredPresets.map((preset) => {
-                                const raw = isRawPerformerPreset(preset)
-                                const fpsColor = getFpsColor(preset)
-                                return (
-                                    <div
-                                        key={preset.id}
-                                        className={`flex flex-col gap-3 p-4 rounded-xl border transition-colors ${
-                                            raw
-                                                ? "border-green-500/30 bg-green-500/5"
-                                                : "border-border bg-text/3"
-                                        }`}
-                                    >
-                                        {/* Header */}
-                                        <div className='flex items-start justify-between gap-2'>
-                                            <div className='min-w-0'>
-                                                <div className='flex items-center gap-2'>
-                                                    <h3 className='font-semibold text-sm truncate'>
-                                                        {generatePresetName(preset)}
-                                                    </h3>
-                                                    {raw && (
-                                                        <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-semibold'>
-                                                            <SparklesIcon className='h-2.5 w-2.5' />
-                                                            Raw
-                                                        </span>
-                                                    )}
-                                                    {isPoorPerformancePreset(preset) && preset.fpsAvg !== null && (
-                                                        <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-semibold'>
-                                                            ⚠ Slow
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <p className='text-xs text-text/50 mt-0.5'>
-                                                    {preset.hardwareName}
-                                                </p>
-                                            </div>
-                                            <div className='flex items-center gap-1 text-xs text-text/60 shrink-0'>
-                                                <TrendingUpIcon className='h-3 w-3' />
-                                                {preset.upvotes}
-                                            </div>
-                                        </div>
-
-                                        {/* Settings count */}
-                                        <div className='text-xs text-text/50'>
-                                            {preset.settingsCount} settings
-                                        </div>
-
-                                        {/* FPS */}
-                                        {preset.fpsAvg !== null && (
-                                            <div
-                                                className={`text-sm tabular-nums ${fpsColor}`}
-                                            >
-                                                <span className='font-semibold'>
-                                                    {preset.fpsAvg}
-                                                </span>
-                                                <span className='text-text/40'>
-                                                    {" "}
-                                                    avg
-                                                </span>
-                                                {preset.fpsLow !== null && (
-                                                    <span className='text-text/40'>
-                                                        {" "}
-                                                        ({preset.fpsLow}–
-                                                        {preset.fpsHigh})
-                                                    </span>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Technology tags */}
-                                        <div className='flex flex-wrap items-center gap-1.5'>
-                                            {preset.upscalerType &&
-                                                preset.upscalerType !==
-                                                    "none" && (
-                                                    <span className='px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20'>
-                                                        {preset.upscalerType.toUpperCase()}
-                                                        {preset.upscalerVersion ? ` ${preset.upscalerVersion}` : ""}
-                                                    </span>
-                                                )}
-                                            {preset.frameGenMethod &&
-                                                preset.frameGenMethod !==
-                                                    "none" && (
-                                                    <span
-                                                        className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
-                                                            preset.frameGenMethod ===
-                                                            "dlss_fg"
-                                                                ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                                                                : "bg-orange-500/10 text-orange-400 border-orange-500/20"
-                                                        }`}
-                                                    >
-                                                        {preset.frameGenMethod ===
-                                                        "fsr_fg"
-                                                            ? "FSR FG"
-                                                            : preset.frameGenMethod ===
-                                                                "dlss_fg"
-                                                              ? "DLSS FG"
-                                                              : preset.frameGenMethod}
-                                                    </span>
-                                                )}
-                                        </div>
-
-                                        {/* Proton + OS */}
-                                        <div className='flex flex-wrap items-center gap-2 text-[10px] text-text/40'>
-                                            {preset.protonVersion && (
-                                                <span>
-                                                    Proton{" "}
-                                                    {preset.protonVersion}
-                                                </span>
-                                            )}
-                                            {preset.osVersion && (
-                                                <span>
-                                                    SteamOS {preset.osVersion}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
-                </div>
-            </motion.div>
         </section>
+        <AnimatePresence>
+            {selectedPresetId && (() => {
+                const preset = filteredPresets.find((p) => p.id === selectedPresetId)
+                if (!preset) return null
+                return (
+                    <PresetDetailModal
+                        preset={preset}
+                        onClose={() => setSelectedPresetId(null)}
+                        onDelete={handleDeletePreset}
+                        onReport={handleReportPreset}
+                        hasReported={reportedPresets.has(preset.id)}
+                    />
+                )
+            })()}
+        </AnimatePresence>
+        </>
     )
 }
 
