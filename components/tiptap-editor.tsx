@@ -35,6 +35,7 @@ export function TiptapEditor({
         code: false,
         blockquote: false,
         horizontalRule: false,
+        link: false,
       }),
       Link.configure({
         openOnClick: false,

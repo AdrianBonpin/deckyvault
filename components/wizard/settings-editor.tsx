@@ -420,22 +420,32 @@ export function SettingsEditor({
                                 )}
                                 {setting.value ? "On" : "Off"}
                               </button>
-                            ) : (
+                            ) : typeof setting.value === "number" ? (
                               <input
-                                type={typeof setting.value === "number" ? "number" : "text"}
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                                 value={setting.value}
                                 onChange={(e) => {
-                                  const raw = e.target.value
-                                  const updated =
-                                    typeof setting.value === "number"
-                                      ? raw === ""
-                                        ? 0
-                                        : Number(raw)
-                                      : raw
+                                  const cleaned = e.target.value.replace(/[^0-9]/g, "")
+                                  const updated = cleaned === "" ? 0 : Number(cleaned)
                                   updateSetting(
                                     cat.category,
                                     setting.title,
                                     updated
+                                  )
+                                }}
+                                className="flex-1 min-w-0 px-3 py-1.5 rounded-md border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                value={setting.value}
+                                onChange={(e) => {
+                                  updateSetting(
+                                    cat.category,
+                                    setting.title,
+                                    e.target.value
                                   )
                                 }}
                                 className="flex-1 min-w-0 px-3 py-1.5 rounded-md border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
