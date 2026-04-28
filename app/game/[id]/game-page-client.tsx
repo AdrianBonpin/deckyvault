@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useState, useEffect, useMemo, useRef } from "react"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import {
     Gamepad2Icon,
@@ -199,6 +200,7 @@ export function GamePageClient({
     presets,
     gameId,
 }: Props) {
+    const router = useRouter()
     const { data: session } = useSession()
     const [imgError, setImgError] = useState(false)
     const [stats, setStats] = useState<StatsResponse | null>(null)
@@ -222,6 +224,7 @@ export function GamePageClient({
             })
             if (res.ok) {
                 setSelectedPresetId(null)
+                router.refresh()
             }
         } catch (err) {
             console.error("Failed to delete preset:", err)
