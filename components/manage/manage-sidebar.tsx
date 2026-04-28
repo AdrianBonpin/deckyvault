@@ -19,25 +19,24 @@ type NavItem =
 
 const navItems: NavItem[] = [
   { type: "section", label: "Management" },
-  { type: "link", href: "/admin/users", label: "Users", icon: UsersIcon },
-  { type: "link", href: "/admin/hardware", label: "Hardware", icon: CpuIcon },
-  { type: "link", href: "/admin/games", label: "Games", icon: Gamepad2Icon },
+  { type: "link", href: "/manage/users", label: "Users", icon: UsersIcon },
+  { type: "link", href: "/manage/hardware", label: "Hardware", icon: CpuIcon },
+  { type: "link", href: "/manage/games", label: "Games", icon: Gamepad2Icon },
   { type: "divider" },
   { type: "section", label: "Moderation" },
-  { type: "link", href: "/admin/reports", label: "Reports", icon: FlagIcon },
-  { type: "link", href: "/admin/benchmarks", label: "Benchmarks", icon: BarChart3Icon },
-  { type: "link", href: "/admin/comments", label: "Comments", icon: MessageSquareIcon },
+  { type: "link", href: "/manage/reports", label: "Reports", icon: FlagIcon },
+  { type: "link", href: "/manage/benchmarks", label: "Benchmarks", icon: BarChart3Icon },
+  { type: "link", href: "/manage/comments", label: "Comments", icon: MessageSquareIcon },
 ]
 
-export function AdminSidebar() {
+export function ManageSidebar() {
   const pathname = usePathname()
 
   return (
     <nav className="md:w-56 shrink-0">
-      {/* Desktop header */}
       <div className="hidden md:flex items-center gap-2 px-3 py-2 mb-2 text-sm font-semibold text-text/70">
         <LayoutDashboardIcon className="h-4 w-4" />
-        Admin Panel
+        Manage Panel
       </div>
 
       <div className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 md:border-r md:border-border md:pr-3">
