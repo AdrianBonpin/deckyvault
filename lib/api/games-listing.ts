@@ -41,6 +41,7 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
     }
 
     if (device) {
+      // Get games with platform support
       const supportedIds = await db
         .select({ gameId: gamePlatformSupport.gameId })
         .from(gamePlatformSupport)
@@ -50,8 +51,23 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
             eq(gamePlatformSupport.isSupported, true),
           ),
         )
-      if (supportedIds.length > 0) {
-        conditions.push(inArray(games.id, supportedIds.map((s) => s.gameId)))
+
+      // Also get games with performance entries for this hardware
+      const gamesWithBenchmarks = await db
+        .select({ gameId: gameVersions.gameId })
+        .from(performanceEntries)
+        .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+        .where(eq(performanceEntries.hardwareSlug, device))
+        .groupBy(gameVersions.gameId)
+
+      // Combine both sets
+      const deviceGameIds = new Set([
+        ...supportedIds.map((s) => s.gameId),
+        ...gamesWithBenchmarks.map((b) => b.gameId),
+      ])
+
+      if (deviceGameIds.size > 0) {
+        conditions.push(inArray(games.id, Array.from(deviceGameIds)))
       } else {
         return { data: [], total: 0, limit, offset, genres: [], devices: [] }
       }

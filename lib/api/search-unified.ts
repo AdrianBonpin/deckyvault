@@ -104,7 +104,12 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
             gameVersions,
             eq(performanceEntries.versionId, gameVersions.id),
           )
-          .where(inArray(gameVersions.gameId, localGameIds))
+          .where(
+            and(
+              inArray(gameVersions.gameId, localGameIds),
+              eq(performanceEntries.isRemoved, false),
+            ),
+          )
           .groupBy(gameVersions.gameId),
         db
           .select({
