@@ -33,6 +33,7 @@ interface Preset {
     fpsAvg: number | null
     fpsLow: number | null
     fpsHigh: number | null
+    fpsOnePercentLow: number | null
     upscalerType: string | null
     upscalerVersion: string | null
     frameGenMethod: string | null
@@ -293,6 +294,14 @@ export function PresetDetailModal({
                                                 </span>
                                             )}
                                         </div>
+                                    </div>
+                                )}
+                                {preset.fpsOnePercentLow !== null && (
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-text/50 uppercase tracking-wider">1% Low FPS</span>
+                                        <span className="text-sm font-semibold tabular-nums text-text">
+                                            {preset.fpsOnePercentLow} fps
+                                        </span>
                                     </div>
                                 )}
 

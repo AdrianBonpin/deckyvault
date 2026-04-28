@@ -34,6 +34,7 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
         fpsAvg: performanceEntries.fpsAvg,
         fpsLow: performanceEntries.fpsLow,
         fpsHigh: performanceEntries.fpsHigh,
+        fpsOnePercentLow: performanceEntries.fpsOnePercentLow,
         upscalerType: performanceEntries.upscalerType,
         upscalerVersion: performanceEntries.upscalerVersion,
         frameGenMethod: performanceEntries.frameGenMethod,
@@ -140,12 +141,14 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
         const q1Idx = Math.floor(n * 0.25)
         const medIdx = Math.floor(n * 0.5)
         const q3Idx = Math.floor(n * 0.75)
+        const onePercentLow = sorted.length > 0 ? sorted[Math.max(0, Math.floor(sorted.length * 0.01))] : sorted[0]
         return {
           hardwareSlug: slug,
           hardwareName,
           min: sorted[0],
           q1: sorted[q1Idx],
           median: sorted[medIdx],
+          onePercentLow,
           q3: sorted[q3Idx],
           max: sorted[n - 1],
         }
@@ -222,12 +225,23 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
         fpsLow: e.fpsLow!,
         fpsAvg: e.fpsAvg ?? 0,
         fpsHigh: e.fpsHigh!,
+        fpsOnePercentLow: e.fpsOnePercentLow ?? null,
         isRawPerformer:
           (e.fpsAvg ?? 0) >= 60 &&
           e.upscalerType === "none" &&
           e.frameGenMethod === "none",
         isPoorPerformer: (e.fpsAvg ?? 0) < 30,
       }))
+
+    // Stability score computation
+    const stabilityScores = entries
+      .filter(e => e.fpsOnePercentLow != null && (e.fpsAvg ?? 0) > 0)
+      .map(e => Math.min(1, e.fpsOnePercentLow! / (e.fpsAvg ?? 1)))
+    const avgStability = stabilityScores.length > 0
+      ? Math.round((stabilityScores.reduce((a, b) => a + b, 0) / stabilityScores.length) * 100) / 100
+      : null
+    const bestOnePercentLow = entries.reduce((best, e) =>
+      e.fpsOnePercentLow != null && e.fpsOnePercentLow > (best ?? 0) ? e.fpsOnePercentLow : best, null as number | null)
 
     // ── 8. Device breakdown ───────────────────────────────────────
     const deviceBreakdown = Array.from(boxplotMap.entries()).map(
@@ -253,6 +267,8 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
         bestDevice,
         verifiedCount,
         versionCount,
+        avgStability,
+        bestOnePercentLow,
       },
       isRawPerformer,
       isPoorPerformance,

@@ -15,6 +15,7 @@ import {
     Plus,
     ThumbsUpIcon,
     ThumbsDownIcon,
+    GaugeIcon,
 } from "lucide-react"
 import Link from "next/link"
 import { useSession } from "@/lib/auth-client"
@@ -81,6 +82,7 @@ interface Preset {
     fpsAvg: number | null
     fpsLow: number | null
     fpsHigh: number | null
+    fpsOnePercentLow: number | null
     upscalerType: string | null
     upscalerVersion: string | null
     frameGenMethod: string | null
@@ -102,6 +104,8 @@ interface StatsResponse {
         bestDevice: string
         verifiedCount: number
         versionCount: number
+        avgStability: number | null
+        bestOnePercentLow: number | null
     }
     isRawPerformer: boolean
     isPoorPerformance: boolean
@@ -111,6 +115,7 @@ interface StatsResponse {
         min: number
         q1: number
         median: number
+        onePercentLow?: number
         q3: number
         max: number
     }>
@@ -136,6 +141,7 @@ interface StatsResponse {
         fpsLow: number
         fpsAvg: number
         fpsHigh: number
+        fpsOnePercentLow: number | null
         isRawPerformer: boolean
     }>
     deviceBreakdown: Array<{
@@ -840,11 +846,16 @@ export function GamePageClient({
                                                             {" "}
                                                             avg
                                                         </span>
-                                                        {preset.fpsLow !== null && (
+                                                        {preset.fpsOnePercentLow !== null && (
                                                             <span className='text-text/40'>
                                                                 {" "}
-                                                                ({preset.fpsLow}–
-                                                                {preset.fpsHigh})
+                                                                · {preset.fpsOnePercentLow} 1% low
+                                                            </span>
+                                                        )}
+                                                        {preset.fpsLow !== null && preset.fpsHigh !== null && !preset.fpsOnePercentLow && (
+                                                            <span className='text-text/40'>
+                                                                {" "}
+                                                                ({preset.fpsLow}–{preset.fpsHigh})
                                                             </span>
                                                         )}
                                                     </div>
@@ -953,6 +964,13 @@ export function GamePageClient({
                                     )}
                                     icon={DatabaseIcon}
                                 />
+                                {filteredStats.summary.avgStability !== null && (
+                                    <StatCard
+                                        label='Avg Stability'
+                                        value={`${Math.round(filteredStats.summary.avgStability * 100)}%`}
+                                        icon={GaugeIcon}
+                                    />
+                                )}
                             </div>
                         </div>
                     )}
