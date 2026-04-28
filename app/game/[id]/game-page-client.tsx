@@ -17,6 +17,7 @@ import {
     ThumbsDownIcon,
     GaugeIcon,
     ChevronDownIcon,
+    PencilIcon,
 } from "lucide-react"
 import Link from "next/link"
 import { useSession } from "@/lib/auth-client"
@@ -589,6 +590,15 @@ export function GamePageClient({
                         {stats && (
                             <div className='flex flex-wrap items-center gap-2 mt-2'>
                                 <BookmarkButton gameId={game.id} />
+                                {session?.user && game.source !== "steam" && (
+                                    <Link
+                                        href={`/game/${gameId}/edit`}
+                                        className='inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-sm text-text/70 hover:bg-text/5 transition-colors cursor-pointer'
+                                    >
+                                        <PencilIcon className='h-4 w-4' />
+                                        Edit Game
+                                    </Link>
+                                )}
                                 {session && (
                                     <Link
                                         href={`/game/${game.id}/submit`}
