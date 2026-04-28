@@ -11,11 +11,10 @@ export const routes = [
         title: "Games",
         href: "/games",
     },
-    // TODO: Add back when compare page is implemented
-    // {
-    //     title: "Compare",
-    //     href: "/compare",
-    // },
+    {
+        title: "Compare",
+        href: "/compare",
+    },
     {
         title: "Devices",
         href: "/devices",
