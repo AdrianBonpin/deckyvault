@@ -21,6 +21,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "cdn.steamgriddb.com",
       },
+      {
+        protocol: "https",
+        hostname: "cdn2.steamgriddb.com",
+      }
     ],
   },
 };

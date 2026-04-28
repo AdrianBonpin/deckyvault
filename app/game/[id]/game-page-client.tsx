@@ -355,11 +355,11 @@ export function GamePageClient({
 
         const deviceSet = new Set(selectedDevices)
 
-        const filterByDevice = <T extends { hardwareSlug: string }>(arr: T[]) =>
-            arr.filter((item) => deviceSet.has(item.hardwareSlug))
+        const filterByDevice = <T extends { hardwareSlug: string }>(arr: T[] | undefined) =>
+            arr?.filter((item) => deviceSet.has(item.hardwareSlug)) ?? []
 
-        const filterUpscaler = (arr: StatsResponse["upscalerStats"]) =>
-            arr.filter((item) => {
+        const filterUpscaler = (arr: StatsResponse["upscalerStats"] | undefined) =>
+            (arr ?? []).filter((item) => {
                 if (!deviceSet.has(item.hardwareSlug)) return false
                 if (filters.upscaler !== "all" && item.upscalerType !== filters.upscaler)
                     return false
@@ -374,7 +374,7 @@ export function GamePageClient({
         return {
             ...stats,
             boxplot: filterByDevice(stats.boxplot),
-            historical: stats.historical
+            historical: (stats.historical ?? [])
                 .map((h) => ({
                     ...h,
                     entries: h.entries.filter((e) =>
