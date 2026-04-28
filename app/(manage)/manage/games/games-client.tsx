@@ -9,6 +9,7 @@ import {
   ExternalLinkIcon,
   TrashIcon,
   Gamepad2Icon,
+  RefreshCwIcon,
 } from "lucide-react"
 
 interface Game {
@@ -45,6 +46,7 @@ export function GamesClient() {
   const [search, setSearch] = useState("")
   const [offset, setOffset] = useState(0)
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
+  const [resyncingIds, setResyncingIds] = useState<Set<string>>(new Set())
 
   const isSearchChangeRef = useRef(false)
 
@@ -92,6 +94,32 @@ export function GamesClient() {
       clearTimeout(timer)
     }
   }, [search, offset])
+
+  const handleResync = async (game: Game) => {
+    setResyncingIds((prev) => new Set(prev).add(game.id))
+    try {
+      const res = await fetch(`/api/games/${game.id}/sync`, {
+        method: "POST",
+      })
+      if (res.ok) {
+        setGames((prev) =>
+          prev.map((g) =>
+            g.id === game.id
+              ? { ...g, syncStatus: "synced", lastSync: new Date().toISOString() }
+              : g
+          )
+        )
+      }
+    } catch (error) {
+      console.error("Resync failed:", error)
+    } finally {
+      setResyncingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(game.id)
+        return next
+      })
+    }
+  }
 
   const handleDelete = async (game: Game) => {
     if (!confirm(`Are you sure you want to delete "${game.title}"?`)) return
@@ -237,6 +265,18 @@ export function GamesClient() {
                         <ExternalLinkIcon className="h-3.5 w-3.5" />
                         View
                       </Link>
+                      <button
+                        onClick={() => handleResync(game)}
+                        disabled={resyncingIds.has(game.id)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        {resyncingIds.has(game.id) ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <RefreshCwIcon className="h-3.5 w-3.5" />
+                        )}
+                        Resync
+                      </button>
                       <button
                         onClick={() => handleDelete(game)}
                         disabled={deletingIds.has(game.id)}
