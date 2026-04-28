@@ -71,6 +71,13 @@
       "when": 1777273845181,
       "tag": "0009_flawless_meltdown",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1777386687207,
+      "tag": "0010_soft_wilson_fisk",
+      "breakpoints": true
     }
   ]
 }

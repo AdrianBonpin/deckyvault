@@ -54,6 +54,7 @@ export const performanceEntries = pgTable(
     // Performance metrics
     fpsAvg: real("fps_avg").notNull(),
     fpsLow: real("fps_low"),
+    fpsOnePercentLow: real("fps_one_percent_low"),
     fpsHigh: real("fps_high"),
 
     // Environment
