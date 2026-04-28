@@ -751,7 +751,6 @@ export function GamePageClient({
                                         return (
                                             <motion.div
                                                 key={preset.id}
-                                                layoutId={preset.id}
                                                 onClick={() => setSelectedPresetId(preset.id)}
                                                 className={`shrink-0 w-72 flex flex-col gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-primary/30 ${
                                                     raw

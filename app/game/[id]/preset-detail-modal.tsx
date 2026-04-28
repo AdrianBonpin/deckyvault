@@ -164,14 +164,13 @@ export function PresetDetailModal({
                 >
                     {/* Modal card */}
                     <motion.div
-                        layoutId={preset.id}
                         className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-xl border border-border bg-background flex flex-col"
-                        initial={{ scale: 0.95, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.95, opacity: 0 }}
+                        initial={{ y: "100%", opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: "100%", opacity: 0 }}
                         transition={{
                             type: "spring",
-                            damping: 25,
+                            damping: 30,
                             stiffness: 300,
                         }}
                         onClick={(e) => e.stopPropagation()}
@@ -427,62 +426,71 @@ export function PresetDetailModal({
                             {/* Right panel */}
                             <div className="flex-1 overflow-y-auto p-5">
                                 {hasCategories ? (
-                                    <div className="flex flex-col gap-4">
-                                        {/* Category navigation */}
-                                        <div className="flex items-center justify-between">
-                                            <button
-                                                onClick={goPrevCategory}
-                                                className="p-1.5 rounded-md hover:bg-text/5 transition-colors cursor-pointer"
-                                                aria-label="Previous category"
-                                            >
-                                                <ChevronLeftIcon className="h-4 w-4 text-text/50" />
-                                            </button>
-                                            <span className="text-sm font-medium text-text/80">
-                                                {currentCategory?.category}{" "}
-                                                <span className="text-text/40">
-                                                    ({activeCategoryIndex + 1}/{categories.length})
+                                    <AnimatePresence mode="wait">
+                                        <motion.div
+                                            key={currentCategory?.category ?? "empty"}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.15 }}
+                                            className="flex flex-col gap-4"
+                                        >
+                                            {/* Category navigation */}
+                                            <div className="flex items-center justify-between">
+                                                <button
+                                                    onClick={goPrevCategory}
+                                                    className="p-1.5 rounded-md hover:bg-text/5 transition-colors cursor-pointer"
+                                                    aria-label="Previous category"
+                                                >
+                                                    <ChevronLeftIcon className="h-4 w-4 text-text/50" />
+                                                </button>
+                                                <span className="text-sm font-medium text-text/80">
+                                                    {currentCategory?.category}{" "}
+                                                    <span className="text-text/40">
+                                                        ({activeCategoryIndex + 1}/{categories.length})
+                                                    </span>
                                                 </span>
-                                            </span>
-                                            <button
-                                                onClick={goNextCategory}
-                                                className="p-1.5 rounded-md hover:bg-text/5 transition-colors cursor-pointer"
-                                                aria-label="Next category"
-                                            >
-                                                <ChevronRightIcon className="h-4 w-4 text-text/50" />
-                                            </button>
-                                        </div>
+                                                <button
+                                                    onClick={goNextCategory}
+                                                    className="p-1.5 rounded-md hover:bg-text/5 transition-colors cursor-pointer"
+                                                    aria-label="Next category"
+                                                >
+                                                    <ChevronRightIcon className="h-4 w-4 text-text/50" />
+                                                </button>
+                                            </div>
 
-                                        {/* Settings table */}
-                                        <div className="rounded-lg border border-border overflow-hidden">
-                                            <table className="w-full text-sm">
-                                                <thead className="bg-text/3">
-                                                    <tr>
-                                                        <th className="text-left px-2 py-1.5 md:px-3 md:py-2 text-xs font-medium uppercase tracking-wider text-text/50">
-                                                            Setting
-                                                        </th>
-                                                        <th className="text-right px-2 py-1.5 md:px-3 md:py-2 text-xs font-medium uppercase tracking-wider text-text/50">
-                                                            Value
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {currentCategory?.settings.map((setting, sIdx) => (
-                                                        <tr
-                                                            key={sIdx}
-                                                            className="border-t border-border"
-                                                        >
-                                                            <td className="px-2 py-1.5 md:px-3 md:py-2 text-text/70">
-                                                                {setting.title}
-                                                            </td>
-                                                            <td className="px-2 py-1.5 md:px-3 md:py-2 text-right font-medium text-text">
-                                                                {formatValue(setting.value)}
-                                                            </td>
+                                            {/* Settings table */}
+                                            <div className="rounded-lg border border-border overflow-hidden">
+                                                <table className="w-full text-sm">
+                                                    <thead className="bg-text/3">
+                                                        <tr>
+                                                            <th className="text-left px-2 py-1.5 md:px-3 md:py-2 text-xs font-medium uppercase tracking-wider text-text/50">
+                                                                Setting
+                                                            </th>
+                                                            <th className="text-right px-2 py-1.5 md:px-3 md:py-2 text-xs font-medium uppercase tracking-wider text-text/50">
+                                                                Value
+                                                            </th>
                                                         </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
+                                                    </thead>
+                                                    <tbody>
+                                                        {currentCategory?.settings.map((setting, sIdx) => (
+                                                            <tr
+                                                                key={sIdx}
+                                                                className="border-t border-border"
+                                                            >
+                                                                <td className="px-2 py-1.5 md:px-3 md:py-2 text-text/70">
+                                                                    {setting.title}
+                                                                </td>
+                                                                <td className="px-2 py-1.5 md:px-3 md:py-2 text-right font-medium text-text">
+                                                                    {formatValue(setting.value)}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </motion.div>
+                                    </AnimatePresence>
                                 ) : (
                                     <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-lg border border-border bg-text/2">
                                         <p className="text-sm text-text/40">
