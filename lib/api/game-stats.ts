@@ -252,7 +252,34 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
       }),
     )
 
-    // ── 9. Filter options ────────────────────────────────────────
+    // ── 9. Performance tier breakdown per device ────────────────
+    const tierMap = new Map<string, { unplayable: number; playable: number; smooth: number; excellent: number }>()
+    for (const e of entries) {
+      const existing = tierMap.get(e.hardwareSlug) || { unplayable: 0, playable: 0, smooth: 0, excellent: 0 }
+      if (e.fpsAvg < 30) existing.unplayable++
+      else if (e.fpsAvg < 60) existing.playable++
+      else if (e.fpsAvg < 120) existing.smooth++
+      else existing.excellent++
+      tierMap.set(e.hardwareSlug, existing)
+    }
+
+    const performanceTiers = Array.from(tierMap.entries()).map(([slug, tiers]) => ({
+      hardwareSlug: slug,
+      ...tiers,
+    }))
+
+    // ── 10. Stability scatter data ──────────────────────────────
+    const stabilityScatter = entries
+      .filter((e) => e.fpsOnePercentLow != null)
+      .map((e) => ({
+        id: e.id,
+        hardwareSlug: e.hardwareSlug,
+        fpsAvg: e.fpsAvg ?? 0,
+        fpsOnePercentLow: e.fpsOnePercentLow!,
+        stabilityRatio: e.fpsAvg > 0 ? Math.min(1, e.fpsOnePercentLow! / e.fpsAvg) : 0,
+      }))
+
+    // ── 11. Filter options ────────────────────────────────────────
     const protonVersions = [
       ...new Set(entries.map((e) => e.protonVersion).filter(Boolean)),
     ] as string[]
@@ -277,6 +304,8 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
       upscalerStats,
       fpsRange,
       deviceBreakdown,
+      performanceTiers,
+      stabilityScatter,
       filterOptions: { protonVersions, osVersions },
     }
   },

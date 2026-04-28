@@ -33,6 +33,8 @@ import { UpscalerBarChart } from "@/components/charts/UpscalerBarChart"
 import { FpsBoxplot } from "@/components/charts/FpsBoxplot"
 import { FpsRangeChart } from "@/components/charts/FpsRangeChart"
 import { DeviceDonut } from "@/components/charts/DeviceDonut"
+import { PerformanceTierChart } from "@/components/charts/PerformanceTierChart"
+import { StabilityScatterChart } from "@/components/charts/StabilityScatterChart"
 
 // Comments
 import { CommentSection } from "@/components/comments/comment-section"
@@ -148,6 +150,20 @@ interface StatsResponse {
         hardwareSlug: string
         hardwareName: string
         count: number
+    }>
+    performanceTiers: Array<{
+        hardwareSlug: string
+        unplayable: number
+        playable: number
+        smooth: number
+        excellent: number
+    }>
+    stabilityScatter: Array<{
+        id: string
+        hardwareSlug: string
+        fpsAvg: number
+        fpsOnePercentLow: number
+        stabilityRatio: number
     }>
     filterOptions: {
         protonVersions: string[]
@@ -352,6 +368,8 @@ export function GamePageClient({
             upscalerStats: filterUpscaler(stats.upscalerStats),
             fpsRange: filterByDevice(stats.fpsRange),
             deviceBreakdown: filterByDevice(stats.deviceBreakdown),
+            performanceTiers: filterByDevice(stats.performanceTiers),
+            stabilityScatter: filterByDevice(stats.stabilityScatter),
         }
     }, [stats, selectedDevices, filters])
 
@@ -1024,6 +1042,31 @@ export function GamePageClient({
                                     </h3>
                                     <DeviceDonut
                                         data={filteredStats.deviceBreakdown}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Row 4 — Performance Tiers + Stability Scatter */}
+                    {filteredStats && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {filteredStats.performanceTiers.length > 0 && (
+                                <div className="rounded-xl border border-border bg-text/3 p-4">
+                                    <h3 className="text-sm font-medium text-text/80 mb-2">
+                                        Performance Tiers
+                                    </h3>
+                                    <PerformanceTierChart data={filteredStats.performanceTiers} />
+                                </div>
+                            )}
+                            {filteredStats.stabilityScatter.length > 0 && (
+                                <div className="rounded-xl border border-border bg-text/3 p-4">
+                                    <h3 className="text-sm font-medium text-text/80 mb-2">
+                                        Avg FPS vs 1% Low (Stability)
+                                    </h3>
+                                    <StabilityScatterChart
+                                        data={filteredStats.stabilityScatter}
+                                        deviceNames={Object.fromEntries(filteredStats.deviceBreakdown.map((d) => [d.hardwareSlug, d.hardwareName]))}
                                     />
                                 </div>
                             )}
