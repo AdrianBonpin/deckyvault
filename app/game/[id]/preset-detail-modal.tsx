@@ -195,7 +195,7 @@ export function PresetDetailModal({
                         {/* Two-column body */}
                         <div className="flex flex-col md:flex-row overflow-hidden flex-1">
                             {/* Left panel */}
-                            <div className="w-full md:w-1/3 md:min-w-[240px] flex flex-col gap-4 p-5 border-b md:border-b-0 md:border-r border-border overflow-y-auto">
+                            <div className="w-full md:w-1/3 md:min-w-[240px] flex flex-col gap-3 md:gap-4 p-4 md:p-5 border-b md:border-b-0 md:border-r border-border overflow-y-auto">
                                 {/* User info */}
                                 <div className="flex items-center gap-3">
                                     <div className="h-10 w-10 rounded-full bg-text/10 overflow-hidden flex items-center justify-center shrink-0">
@@ -457,10 +457,10 @@ export function PresetDetailModal({
                                             <table className="w-full text-sm">
                                                 <thead className="bg-text/3">
                                                     <tr>
-                                                        <th className="text-left px-3 py-2 text-xs font-medium uppercase tracking-wider text-text/50">
+                                                        <th className="text-left px-2 py-1.5 md:px-3 md:py-2 text-xs font-medium uppercase tracking-wider text-text/50">
                                                             Setting
                                                         </th>
-                                                        <th className="text-right px-3 py-2 text-xs font-medium uppercase tracking-wider text-text/50">
+                                                        <th className="text-right px-2 py-1.5 md:px-3 md:py-2 text-xs font-medium uppercase tracking-wider text-text/50">
                                                             Value
                                                         </th>
                                                     </tr>
@@ -471,10 +471,10 @@ export function PresetDetailModal({
                                                             key={sIdx}
                                                             className="border-t border-border"
                                                         >
-                                                            <td className="px-3 py-2 text-text/70">
+                                                            <td className="px-2 py-1.5 md:px-3 md:py-2 text-text/70">
                                                                 {setting.title}
                                                             </td>
-                                                            <td className="px-3 py-2 text-right font-medium text-text">
+                                                            <td className="px-2 py-1.5 md:px-3 md:py-2 text-right font-medium text-text">
                                                                 {formatValue(setting.value)}
                                                             </td>
                                                         </tr>
