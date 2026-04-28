@@ -23,6 +23,7 @@ import { steamSearchRoutes } from "@/lib/api/steam-search"
 import { searchUnifiedRoutes } from "@/lib/api/search-unified"
 import { gameStubRoutes } from "@/lib/api/game-stub"
 import { gameStatsRoutes } from "@/lib/api/game-stats"
+import { gamesManualRoutes } from "@/lib/api/games-manual"
 import { gamesListingRoutes } from "@/lib/api/games-listing"
 import { steamgridProxyRoutes } from "@/lib/api/steamgrid-proxy"
 
@@ -89,6 +90,8 @@ export const app = new Elysia({ prefix: "/api" })
   .use(steamgridProxyRoutes)
   // Game stats aggregation
   .use(gameStatsRoutes)
+  // Manual game creation
+  .use(gamesManualRoutes)
   // Saved games
   .use(savedGamesRoutes)
   // Contact form

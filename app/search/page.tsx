@@ -14,6 +14,8 @@ import {
 } from "lucide-react"
 import { FaSteam } from "react-icons/fa"
 import Image from "next/image"
+import Link from "next/link"
+import { useSession } from "@/lib/auth-client"
 import { WindowsIcon, MacIcon, LinuxIcon } from "@/app/components/PlatformIcons"
 
 interface UnifiedResult {
@@ -49,6 +51,7 @@ interface UnifiedResult {
 function SearchContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { data: session } = useSession()
   const query = searchParams.get("q") || ""
 
   const [results, setResults] = useState<UnifiedResult[]>([])
@@ -190,6 +193,17 @@ function SearchContent() {
               ))}
             </AnimatePresence>
           </motion.div>
+        )}
+
+        {session?.user && (
+          <div className="mt-6 text-center">
+            <p className="text-sm text-text/50">
+              Can&apos;t find your game?{" "}
+              <Link href="/game/add" className="text-primary hover:underline cursor-pointer">
+                Add it manually
+              </Link>
+            </p>
+          </div>
         )}
       </div>
     </section>
