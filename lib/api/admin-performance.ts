@@ -7,7 +7,7 @@ import {
   hardware,
   user,
 } from "@/lib/db/schema"
-import { eq, desc, sql, and, ilike, isNull, isNotNull } from "drizzle-orm"
+import { eq, desc, sql, and, ilike, isNull, isNotNull, or } from "drizzle-orm"
 import {
   requireContributorOrAdmin,
   requireAdmin,
@@ -44,7 +44,12 @@ export const adminPerformanceRoutes = new Elysia({ prefix: "/admin" })
       }
 
       if (searchTerm) {
-        conditions.push(ilike(user.name, `%${searchTerm}%`))
+        conditions.push(
+          or(
+            ilike(user.name, `%${searchTerm}%`),
+            ilike(games.title, `%${searchTerm}%`),
+          ),
+        )
       }
 
       const whereClause = conditions.length > 0 ? and(...conditions) : undefined
@@ -78,6 +83,7 @@ export const adminPerformanceRoutes = new Elysia({ prefix: "/admin" })
           verifiedBy: performanceEntries.verifiedBy,
           createdAt: performanceEntries.createdAt,
           updatedAt: performanceEntries.updatedAt,
+          gameId: games.id,
           gameTitle: games.title,
           versionString: gameVersions.versionString,
           hardwareName: hardware.name,
