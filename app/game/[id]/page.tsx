@@ -276,6 +276,17 @@ export default async function GamePage({
         lastSync: game.lastSync ? game.lastSync.toISOString() : null,
         syncStatus: game.syncStatus,
         createdAt: game.createdAt.toISOString(),
+        systemRequirements: game.systemRequirements,
+        metacriticScore: game.metacriticScore,
+        metacriticUrl: game.metacriticUrl,
+        recommendationsTotal: game.recommendationsTotal,
+        priceCurrent: game.priceCurrent,
+        priceInitial: game.priceInitial,
+        priceCurrency: game.priceCurrency,
+        isFree: game.isFree,
+        releaseDate: game.releaseDate,
+        categories: game.categories,
+        platforms: game.platforms,
     }
 
     const serializedPresets = presetRows.map((p) => ({

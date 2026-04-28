@@ -16,6 +16,7 @@ import {
     ThumbsUpIcon,
     ThumbsDownIcon,
     GaugeIcon,
+    ChevronDownIcon,
 } from "lucide-react"
 import Link from "next/link"
 import { useSession } from "@/lib/auth-client"
@@ -26,6 +27,7 @@ import type { GameSettingCategory } from "@/lib/db/schema/performanceEntries"
 import { PresetDetailModal } from "./preset-detail-modal"
 
 import { BookmarkButton } from "@/components/saved-games/bookmark-button"
+import { WindowsIcon, MacIcon, LinuxIcon } from "@/app/components/PlatformIcons"
 
 // Chart imports
 import { HistoricalAreaChart } from "@/components/charts/HistoricalAreaChart"
@@ -57,6 +59,17 @@ interface Game {
     createdAt: string
     metascore?: number | null
     onlineMultiplayerStatus?: string | null
+    systemRequirements: { minimum: string | null; recommended: string | null } | null
+    metacriticScore: number | null
+    metacriticUrl: string | null
+    recommendationsTotal: number | null
+    priceCurrent: number | null
+    priceInitial: number | null
+    priceCurrency: string | null
+    isFree: boolean
+    releaseDate: string | null
+    categories: string[] | null
+    platforms: { windows: boolean; mac: boolean; linux: boolean } | null
 }
 
 interface Counts {
@@ -239,6 +252,7 @@ export function GamePageClient({
     })
     const [loading, setLoading] = useState(true)
     const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
+    const [showSystemReq, setShowSystemReq] = useState(false)
     const [reportedPresets, setReportedPresets] = useState<Set<string>>(new Set())
     const presetsRef = useRef<HTMLDivElement>(null)
 
@@ -607,6 +621,33 @@ export function GamePageClient({
                                 No description available.
                             </p>
                         )}
+                        {game.systemRequirements && (game.systemRequirements.minimum || game.systemRequirements.recommended) && (
+                            <div className="mt-6">
+                                <button
+                                    onClick={() => setShowSystemReq(!showSystemReq)}
+                                    className="flex items-center gap-2 text-sm font-medium text-text/80 hover:text-primary transition-colors cursor-pointer"
+                                >
+                                    <ChevronDownIcon className={`h-4 w-4 transition-transform ${showSystemReq ? 'rotate-180' : ''}`} />
+                                    System Requirements
+                                </button>
+                                {showSystemReq && (
+                                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {game.systemRequirements.minimum && (
+                                            <div className="p-4 rounded-lg border border-border bg-text/3">
+                                                <h4 className="text-xs font-medium uppercase tracking-wider text-text/50 mb-2">Minimum</h4>
+                                                <div className="text-xs text-text/70 prose prose-sm prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: game.systemRequirements.minimum }} />
+                                            </div>
+                                        )}
+                                        {game.systemRequirements.recommended && (
+                                            <div className="p-4 rounded-lg border border-border bg-text/3">
+                                                <h4 className="text-xs font-medium uppercase tracking-wider text-text/50 mb-2">Recommended</h4>
+                                                <div className="text-xs text-text/70 prose prose-sm prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: game.systemRequirements.recommended }} />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Right: Metadata grid */}
@@ -639,9 +680,59 @@ export function GamePageClient({
                                     value={game.onlineMultiplayerStatus}
                                 />
                             )}
+                            {game.isFree && <MetaItem label="Price" value="Free to Play" />}
+                            {game.priceCurrent != null && !game.isFree && game.priceCurrency && (
+                                <MetaItem
+                                    label="Price"
+                                    value={new Intl.NumberFormat("en-US", { style: "currency", currency: game.priceCurrency }).format(game.priceCurrent / 100)}
+                                />
+                            )}
+                            {game.priceCurrent != null && !game.isFree && game.priceInitial != null && game.priceInitial > game.priceCurrent && game.priceCurrency && (
+                                <MetaItem
+                                    label="Original Price"
+                                    value={new Intl.NumberFormat("en-US", { style: "currency", currency: game.priceCurrency }).format(game.priceInitial / 100)}
+                                />
+                            )}
+                            {game.metacriticScore != null && (
+                                <MetaItem
+                                    label="Metacritic"
+                                    value={`${game.metacriticScore}/100`}
+                                />
+                            )}
+                            {game.recommendationsTotal != null && (
+                                <MetaItem
+                                    label="Reviews"
+                                    value={game.recommendationsTotal.toLocaleString()}
+                                />
+                            )}
+                            {game.releaseDate && <MetaItem label="Release Date" value={game.releaseDate} />}
                         </div>
 
-                        {/* Platform Support */}
+                        {/* Platforms */}
+                        {game.platforms && (
+                            <div className='mt-4'>
+                                <h3 className='text-xs font-medium uppercase tracking-wider text-text/50 mb-2'>
+                                    Platforms
+                                </h3>
+                                <div className='flex items-center gap-1.5'>
+                                    <span title="Windows">
+                                        <WindowsIcon
+                                            className={`h-3.5 w-3.5 ${game.platforms.windows ? "text-blue-400" : "text-text/20"}`}
+                                        />
+                                    </span>
+                                    <span title="macOS">
+                                        <MacIcon
+                                            className={`h-3.5 w-3.5 ${game.platforms.mac ? "text-text/60" : "text-text/20"}`}
+                                        />
+                                    </span>
+                                    <span title="Linux">
+                                        <LinuxIcon
+                                            className={`h-3.5 w-3.5 ${game.platforms.linux ? "text-yellow-500" : "text-text/20"}`}
+                                        />
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                         {platformSupport.length > 0 && (
                             <div className='mt-4'>
                                 <h3 className='text-xs font-medium uppercase tracking-wider text-text/50 mb-2'>
