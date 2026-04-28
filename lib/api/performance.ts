@@ -233,6 +233,7 @@ export const performanceVerifyRoutes = new Elysia({
       }
 
       if (body.fpsAvg !== undefined) updateData.fpsAvg = body.fpsAvg
+      if (body.fpsOnePercentLow !== undefined) updateData.fpsOnePercentLow = body.fpsOnePercentLow
       if (body.fpsLow !== undefined) updateData.fpsLow = body.fpsLow
       if (body.fpsHigh !== undefined) updateData.fpsHigh = body.fpsHigh
       if (body.protonVersion !== undefined)
@@ -264,6 +265,7 @@ export const performanceVerifyRoutes = new Elysia({
       params: t.Object({ id: t.String() }),
       body: t.Object({
         fpsAvg: t.Optional(t.Number()),
+        fpsOnePercentLow: t.Optional(t.Number()),
         fpsLow: t.Optional(t.Number()),
         fpsHigh: t.Optional(t.Number()),
         protonVersion: t.Optional(t.Union([t.String(), t.Null()])),

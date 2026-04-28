@@ -95,6 +95,7 @@ export function ReviewStep({
         <div className="rounded-lg border border-border bg-text/5 p-4">
           <SectionHeader icon={Gauge} label="Performance" />
           <SummaryRow label="FPS Average" value={formatNumber(performance.fpsAvg)} />
+          <SummaryRow label="1% Low FPS" value={formatNumber(performance.fpsOnePercentLow)} />
           <SummaryRow label="FPS Low" value={formatNumber(performance.fpsLow)} />
           <SummaryRow label="FPS High" value={formatNumber(performance.fpsHigh)} />
           <SummaryRow label="Load Time SSD" value={formatNumber(performance.loadTimeSsd)} />

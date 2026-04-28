@@ -42,6 +42,7 @@ export function GameEntryWizard({ gameId, gameVersionId, editEntry }: GameEntryW
     editEntry
       ? {
           fpsAvg: editEntry.fpsAvg,
+          fpsOnePercentLow: editEntry.fpsOnePercentLow ?? undefined,
           fpsLow: editEntry.fpsLow ?? undefined,
           fpsHigh: editEntry.fpsHigh ?? undefined,
           loadTimeSsd: editEntry.loadTimeSsd ?? undefined,
@@ -160,6 +161,7 @@ export function GameEntryWizard({ gameId, gameVersionId, editEntry }: GameEntryW
         versionId: gameVersionId,
         hardwareSlug,
         fpsAvg: Number(performance.fpsAvg),
+        fpsOnePercentLow: performance.fpsOnePercentLow !== undefined ? Number(performance.fpsOnePercentLow) : null,
         fpsLow: performance.fpsLow !== undefined ? Number(performance.fpsLow) : null,
         fpsHigh: performance.fpsHigh !== undefined ? Number(performance.fpsHigh) : null,
         loadTimeSsd: performance.loadTimeSsd !== undefined ? Number(performance.loadTimeSsd) : null,

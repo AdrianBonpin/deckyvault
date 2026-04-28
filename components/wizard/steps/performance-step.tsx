@@ -5,6 +5,7 @@ import { Gauge, Timer } from "lucide-react"
 
 export interface PerformanceData {
   fpsAvg?: number
+  fpsOnePercentLow?: number
   fpsLow?: number
   fpsHigh?: number
   loadTimeSsd?: number
@@ -42,7 +43,7 @@ export function PerformanceStep({ value, onChange }: PerformanceStepProps) {
           <h3 className="text-sm font-semibold text-text">Frame Rate</h3>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-text/60">
               FPS Average <span className="text-red-400">*</span>
@@ -57,6 +58,20 @@ export function PerformanceStep({ value, onChange }: PerformanceStepProps) {
               className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
             />
             <p className="text-[10px] text-text/30">Required — average framerate during gameplay</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-text/60">1% Low FPS</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={value.fpsOnePercentLow ?? ""}
+              onChange={(e) => update("fpsOnePercentLow", e.target.value)}
+              placeholder="e.g. 32"
+              className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
+            />
+            <p className="text-[10px] text-text/30">FPS at the 1st percentile — represents worst 1% of frametimes</p>
           </div>
 
           <div className="space-y-1.5">
