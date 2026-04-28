@@ -197,8 +197,8 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
     // If sorting by benchmarks, re-sort the enriched data
     if (sort === "benchmarks") {
       const sortFn = query.order === "asc"
-        ? (a: any, b: any) => a.benchmarkCount - b.benchmarkCount
-        : (a: any, b: any) => b.benchmarkCount - a.benchmarkCount
+        ? (a: { benchmarkCount: number }, b: { benchmarkCount: number }) => a.benchmarkCount - b.benchmarkCount
+        : (a: { benchmarkCount: number }, b: { benchmarkCount: number }) => b.benchmarkCount - a.benchmarkCount
       enrichedData.sort(sortFn)
     }
 

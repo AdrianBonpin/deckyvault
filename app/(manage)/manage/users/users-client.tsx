@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import { authClient } from "@/lib/auth-client"
-import { Loader2, SearchIcon, BanIcon, UserCheckIcon, ShieldIcon, UsersIcon } from "lucide-react"
+import { Loader2, SearchIcon, BanIcon, UserCheckIcon, UsersIcon } from "lucide-react"
 
 type Role = "user" | "contributor" | "admin"
 
@@ -28,21 +28,6 @@ function formatDate(value: Date | string | null | undefined) {
 
 function getInitial(name: string) {
   return name?.charAt(0)?.toUpperCase() || "?"
-}
-
-function RoleBadge({ role }: { role: Role }) {
-  const config = {
-    admin: { bg: "bg-red-500/10", text: "text-red-400", icon: ShieldIcon },
-    contributor: { bg: "bg-blue-500/10", text: "text-blue-400", icon: UserCheckIcon },
-    user: { bg: "bg-text/5", text: "text-text/50", icon: UsersIcon },
-  }[role]
-  const Icon = config.icon
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
-      <Icon className="h-3 w-3" />
-      {role.charAt(0).toUpperCase() + role.slice(1)}
-    </span>
-  )
 }
 
 export function UsersClient() {
