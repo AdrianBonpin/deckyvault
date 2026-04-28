@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import { after } from "next/server"
 import { db } from "@/lib/db/index"
@@ -326,17 +327,19 @@ export default async function GamePage({
                     }),
                 }}
             />
-            <GamePageClient
-                game={serializedGame}
-                counts={{
-                    benchmarks: benchmarkCount,
-                    presets: presetCount,
-                    comments: commentCount,
-                }}
-                platformSupport={platformSupport}
-                presets={serializedPresets}
-                gameId={game.id}
-            />
+            <Suspense fallback={<div className="min-h-screen" />}>
+                <GamePageClient
+                    game={serializedGame}
+                    counts={{
+                        benchmarks: benchmarkCount,
+                        presets: presetCount,
+                        comments: commentCount,
+                    }}
+                    platformSupport={platformSupport}
+                    presets={serializedPresets}
+                    gameId={game.id}
+                />
+            </Suspense>
         </>
     )
 }

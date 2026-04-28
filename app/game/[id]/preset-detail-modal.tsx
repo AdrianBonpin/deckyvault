@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "motion/react"
 import { useSession } from "@/lib/auth-client"
 import type { GameSettingCategory } from "@/lib/db/schema/performanceEntries"
@@ -15,11 +16,14 @@ import {
     ShieldCheckIcon,
     XIcon,
     UserIcon,
+    ShareIcon,
+    PencilIcon,
 } from "lucide-react"
 import { TiptapRenderer } from "@/components/tiptap-renderer"
 
 interface Preset {
     id: string
+    gameId?: string
     hardwareSlug: string
     hardwareName: string
     upvotes: number
@@ -45,6 +49,7 @@ interface Preset {
 
 interface PresetDetailModalProps {
     preset: Preset
+    gameId: string
     onClose: () => void
     onDelete: (presetId: string) => void
     onReport: (
@@ -67,11 +72,13 @@ function formatValue(value: string | number | boolean): string {
 
 export function PresetDetailModal({
     preset,
+    gameId,
     onClose,
     onDelete,
     onReport,
     hasReported,
 }: PresetDetailModalProps) {
+    const router = useRouter()
     const { data: session } = useSession()
 
     const [activeCategoryIndex, setActiveCategoryIndex] = useState(0)
@@ -81,6 +88,7 @@ export function PresetDetailModal({
         "inaccurate" | "spam" | "inappropriate" | "other"
     >("inaccurate")
     const [reportDetails, setReportDetails] = useState("")
+    const [copied, setCopied] = useState(false)
 
     const [userVote, setUserVote] = useState<"up" | "down" | null>(null)
     const [localUpvotes, setLocalUpvotes] = useState(preset.upvotes)
@@ -89,6 +97,13 @@ export function PresetDetailModal({
     const isOwner = session?.user?.id === preset.userId
     const isAdmin = session?.user?.role === "admin"
     const isAuthenticated = !!session?.user
+
+    const handleShare = () => {
+        const url = `${window.location.origin}/game/${gameId}?preset=${preset.id}`
+        navigator.clipboard.writeText(url)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+    }
 
     const categories = preset.settingsJson ?? []
     const hasCategories = categories.length > 0
@@ -348,6 +363,24 @@ export function PresetDetailModal({
                                             )}
                                         </>
                                     )}
+
+                                    {(isOwner || isAdmin) && (
+                                        <button
+                                            onClick={() => router.push(`/game/${gameId}/submit?edit=${preset.id}`)}
+                                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-primary border border-primary/20 hover:bg-primary/10 transition-colors cursor-pointer"
+                                        >
+                                            <PencilIcon className="h-4 w-4" />
+                                            Edit
+                                        </button>
+                                    )}
+
+                                    <button
+                                        onClick={handleShare}
+                                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-primary border border-primary/20 hover:bg-primary/10 transition-colors cursor-pointer"
+                                    >
+                                        <ShareIcon className="h-4 w-4" />
+                                        {copied ? "Link copied!" : "Share"}
+                                    </button>
 
                                     {session && !hasReported && (
                                         <>

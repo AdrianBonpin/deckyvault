@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useState, useEffect, useMemo, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import {
     Gamepad2Icon,
@@ -201,6 +201,7 @@ export function GamePageClient({
     gameId,
 }: Props) {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const { data: session } = useSession()
     const [imgError, setImgError] = useState(false)
     const [stats, setStats] = useState<StatsResponse | null>(null)
@@ -215,6 +216,32 @@ export function GamePageClient({
     const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
     const [reportedPresets, setReportedPresets] = useState<Set<string>>(new Set())
     const presetsRef = useRef<HTMLDivElement>(null)
+
+    // On mount, auto-open preset from URL
+    useEffect(() => {
+        const presetId = searchParams.get("preset")
+        queueMicrotask(() => {
+            if (presetId) {
+                setSelectedPresetId(presetId)
+            } else {
+                setSelectedPresetId(null)
+            }
+        })
+    }, [searchParams])
+
+    const handlePresetOpen = (presetId: string) => {
+        setSelectedPresetId(presetId)
+        const url = new URL(window.location.href)
+        url.searchParams.set("preset", presetId)
+        router.replace(url.toString(), { scroll: false })
+    }
+
+    const handlePresetClose = () => {
+        setSelectedPresetId(null)
+        const url = new URL(window.location.href)
+        url.searchParams.delete("preset")
+        router.replace(url.toString(), { scroll: false })
+    }
 
     const handleDeletePreset = async (presetId: string) => {
         try {
@@ -751,7 +778,7 @@ export function GamePageClient({
                                         return (
                                             <motion.div
                                                 key={preset.id}
-                                                onClick={() => setSelectedPresetId(preset.id)}
+                                                onClick={() => handlePresetOpen(preset.id)}
                                                 className={`shrink-0 w-72 flex flex-col gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-primary/30 ${
                                                     raw
                                                         ? "border-green-500/30 bg-green-500/5"
@@ -992,7 +1019,8 @@ export function GamePageClient({
                 return (
                     <PresetDetailModal
                         preset={preset}
-                        onClose={() => setSelectedPresetId(null)}
+                        gameId={gameId}
+                        onClose={handlePresetClose}
                         onDelete={handleDeletePreset}
                         onReport={handleReportPreset}
                         hasReported={reportedPresets.has(preset.id)}
