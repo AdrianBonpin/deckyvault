@@ -711,7 +711,7 @@ export function GamePageClient({
                             }
                         />
                         <FilterSelect
-                            label='SteamOS Version'
+                            label='OS Version'
                             value={filters.os}
                             options={[
                                 "all",
@@ -892,7 +892,7 @@ export function GamePageClient({
                                                     )}
                                                     {preset.osVersion && (
                                                         <span>
-                                                            SteamOS {preset.osVersion}
+                                                            {preset.osVersion}
                                                         </span>
                                                     )}
                                                 </div>

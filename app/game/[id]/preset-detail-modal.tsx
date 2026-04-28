@@ -301,7 +301,7 @@ export function PresetDetailModal({
                                 {/* Metadata */}
                                 <div className="flex flex-col gap-3">
                                     <MetaItem label="Proton" value={preset.protonVersion} />
-                                    <MetaItem label="SteamOS" value={preset.osVersion} />
+                                    <MetaItem label="OS" value={preset.osVersion} />
                                     <MetaItem
                                         label="Upscaler"
                                         value={
