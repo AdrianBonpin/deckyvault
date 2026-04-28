@@ -45,6 +45,8 @@ interface Preset {
     userName: string | null
     userImage: string | null
     verifiedAt: string | null
+    isPinned: boolean
+    pinnedAt: string | null
     createdAt: string
 }
 
@@ -154,6 +156,18 @@ export function PresetDetailModal({
         )
         setShowReportForm(false)
         setReportDetails("")
+    }
+
+    const handleTogglePin = async () => {
+        const method = preset.isPinned ? "DELETE" : "POST"
+        try {
+            const res = await fetch(`/api/performance/${preset.id}/pin`, { method })
+            if (res.ok) {
+                router.refresh()
+            }
+        } catch (err) {
+            console.error("Failed to toggle pin:", err)
+        }
     }
 
     return (
@@ -338,6 +352,14 @@ export function PresetDetailModal({
 
                                 {/* Actions */}
                                 <div className="flex flex-wrap items-center gap-2 mt-auto">
+                                    {isAdmin && (
+                                        <button
+                                            onClick={handleTogglePin}
+                                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border border-yellow-500/20 hover:bg-yellow-500/10 text-yellow-400 transition-colors cursor-pointer"
+                                        >
+                                            📌 {preset.isPinned ? 'Unpin' : 'Pin'}
+                                        </button>
+                                    )}
                                     {(isOwner || isAdmin) && (
                                         <>
                                             {!showDeleteConfirm ? (

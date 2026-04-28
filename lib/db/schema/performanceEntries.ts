@@ -87,6 +87,8 @@ export const performanceEntries = pgTable(
 
     // Moderation
     isRemoved: boolean("is_removed").default(false).notNull(),
+    isPinned: boolean("is_pinned").default(false).notNull(),
+    pinnedAt: timestamp("pinned_at"),
     removedReason: text("removed_reason"),
 
     // Community rating

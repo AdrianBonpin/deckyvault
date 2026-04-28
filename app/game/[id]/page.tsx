@@ -233,6 +233,8 @@ export default async function GamePage({
                 launchOptions: performanceEntries.launchOptions,
                 userNotes: performanceEntries.userNotes,
                 verifiedAt: performanceEntries.verifiedAt,
+                isPinned: performanceEntries.isPinned,
+                pinnedAt: performanceEntries.pinnedAt,
             })
             .from(performanceEntries)
             .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
@@ -245,7 +247,7 @@ export default async function GamePage({
                     sql`${performanceEntries.settingsJson} IS NOT NULL`,
                 ),
             )
-            .orderBy(desc(performanceEntries.upvotes)),
+            .orderBy(desc(performanceEntries.isPinned), desc(performanceEntries.upvotes)),
     ])
 
     // ── Sync logic: force or stale-while-revalidate ─────────────────
@@ -319,6 +321,8 @@ export default async function GamePage({
         userImage: p.userImage,
         downvotes: p.downvotes,
         verifiedAt: p.verifiedAt ? p.verifiedAt.toISOString() : null,
+        isPinned: p.isPinned,
+        pinnedAt: p.pinnedAt ? p.pinnedAt.toISOString() : null,
     }))
 
     return (

@@ -85,6 +85,13 @@
       "when": 1777389114548,
       "tag": "0011_talented_bloodstorm",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1777389996351,
+      "tag": "0012_clever_thunderbolt_ross",
+      "breakpoints": true
     }
   ]
 }

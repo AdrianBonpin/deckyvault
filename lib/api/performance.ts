@@ -138,6 +138,42 @@ export const performanceVerifyRoutes = new Elysia({
       params: t.Object({ id: t.String() }),
     },
   )
+  // ── Pin a preset (admin only) ──────────────────────────────────────
+  .post(
+    "/:id/pin",
+    async ({ request, params, set }) => {
+      const guard = await requireRole(request.headers, ["admin"])
+      if (!guard.ok) { set.status = guard.status; return { error: guard.error } }
+
+      const [entry] = await db
+        .update(performanceEntries)
+        .set({ isPinned: true, pinnedAt: new Date() })
+        .where(eq(performanceEntries.id, params.id))
+        .returning()
+
+      if (!entry) { set.status = 404; return { error: "Entry not found" } }
+      return { entry }
+    },
+    { params: t.Object({ id: t.String() }) },
+  )
+  // ── Unpin a preset (admin only) ────────────────────────────────────
+  .delete(
+    "/:id/pin",
+    async ({ request, params, set }) => {
+      const guard = await requireRole(request.headers, ["admin"])
+      if (!guard.ok) { set.status = guard.status; return { error: guard.error } }
+
+      const [entry] = await db
+        .update(performanceEntries)
+        .set({ isPinned: false, pinnedAt: null })
+        .where(eq(performanceEntries.id, params.id))
+        .returning()
+
+      if (!entry) { set.status = 404; return { error: "Entry not found" } }
+      return { entry }
+    },
+    { params: t.Object({ id: t.String() }) },
+  )
   // ── User-scoped soft delete (owner or admin) ────────────────────
   .delete(
     "/:id/user-delete",

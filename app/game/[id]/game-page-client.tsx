@@ -109,6 +109,8 @@ interface Preset {
     userName: string | null
     userImage: string | null
     verifiedAt: string | null
+    isPinned: boolean
+    pinnedAt: string | null
     createdAt: string
 }
 
@@ -408,6 +410,9 @@ export function GamePageClient({
             return true
         })
     }, [presets, selectedDevices, filters])
+
+    const pinnedPresets = useMemo(() => filteredPresets.filter((p) => p.isPinned), [filteredPresets])
+    const regularPresets = useMemo(() => filteredPresets.filter((p) => !p.isPinned), [filteredPresets])
 
     const coverImage = game.capsuleImage || game.headerImage
 
@@ -858,7 +863,161 @@ export function GamePageClient({
                 </div>
             </motion.div>
 
-            {/* Section 4: Community Presets */}
+            {/* Section 4a: Pinned Presets */}
+            {pinnedPresets.length > 0 && (
+            <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+                className='px-4 md:px-[10svw]'
+            >
+                <div className='max-w-7xl mx-auto flex flex-col gap-4'>
+                    <div className='flex items-center justify-between'>
+                        <h2 className='text-lg font-semibold'>
+                            📌 Pinned Presets
+                        </h2>
+                        <span className='text-xs text-text/50'>
+                            {pinnedPresets.length} pinned
+                        </span>
+                    </div>
+                    <div
+                        className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-1"
+                    >
+                        {pinnedPresets.map((preset) => {
+                            const raw = isRawPerformerPreset(preset)
+                            const fpsColor = getFpsColor(preset)
+                            return (
+                                <motion.div
+                                    key={preset.id}
+                                    onClick={() => handlePresetOpen(preset.id)}
+                                    className={`shrink-0 w-72 flex flex-col gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-primary/30 ${
+                                        raw
+                                            ? "border-green-500/30 bg-green-500/5"
+                                            : "border-yellow-500/30 bg-yellow-500/5"
+                                    }`}
+                                >
+                                    {/* Header */}
+                                    <div className='flex items-start justify-between gap-2'>
+                                        <div className='min-w-0'>
+                                            <div className='flex items-center gap-2'>
+                                                <h3 className='font-semibold text-sm truncate'>
+                                                    {generatePresetName(preset)}
+                                                </h3>
+                                                {raw && (
+                                                    <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-semibold'>
+                                                        <SparklesIcon className='h-2.5 w-2.5' />
+                                                        Raw
+                                                    </span>
+                                                )}
+                                                {isPoorPerformancePreset(preset) && preset.fpsAvg !== null && (
+                                                    <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-semibold'>
+                                                        ⚠ Slow
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className='text-xs text-text/50 mt-0.5'>
+                                                {preset.hardwareName}
+                                            </p>
+                                        </div>
+                                        <div className='flex items-center gap-2 text-xs text-text/60 shrink-0'>
+                                            <span className='flex items-center gap-0.5'>
+                                                <ThumbsUpIcon className='h-3 w-3' />
+                                                {preset.upvotes}
+                                            </span>
+                                            <span className='flex items-center gap-0.5'>
+                                                <ThumbsDownIcon className='h-3 w-3' />
+                                                {preset.downvotes}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Settings count */}
+                                    <div className='text-xs text-text/50'>
+                                        {preset.settingsCount} settings
+                                    </div>
+
+                                    {/* FPS */}
+                                    {preset.fpsAvg !== null && (
+                                        <div
+                                            className={`text-sm tabular-nums ${fpsColor}`}
+                                        >
+                                            <span className='font-semibold'>
+                                                {preset.fpsAvg}
+                                            </span>
+                                            <span className='text-text/40'>
+                                                {" "}
+                                                avg
+                                            </span>
+                                            {preset.fpsOnePercentLow !== null && (
+                                                <span className='text-text/40'>
+                                                    {" "}
+                                                    · {preset.fpsOnePercentLow} 1% low
+                                                </span>
+                                            )}
+                                            {preset.fpsLow !== null && preset.fpsHigh !== null && !preset.fpsOnePercentLow && (
+                                                <span className='text-text/40'>
+                                                    {" "}
+                                                    ({preset.fpsLow}–{preset.fpsHigh})
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Technology tags */}
+                                    <div className='flex flex-wrap items-center gap-1.5'>
+                                        {preset.upscalerType &&
+                                            preset.upscalerType !==
+                                                "none" && (
+                                                <span className='px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20'>
+                                                    {preset.upscalerType.toUpperCase()}
+                                                    {preset.upscalerVersion ? ` ${preset.upscalerVersion}` : ""}
+                                                </span>
+                                            )}
+                                        {preset.frameGenMethod &&
+                                            preset.frameGenMethod !==
+                                                "none" && (
+                                                <span
+                                                    className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                                                        preset.frameGenMethod ===
+                                                        "dlss_fg"
+                                                            ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                                            : "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                                                    }`}
+                                                >
+                                                    {preset.frameGenMethod ===
+                                                    "fsr_fg"
+                                                        ? "FSR FG"
+                                                        : preset.frameGenMethod ===
+                                                            "dlss_fg"
+                                                          ? "DLSS FG"
+                                                          : preset.frameGenMethod}
+                                                </span>
+                                            )}
+                                    </div>
+
+                                    {/* Proton + OS */}
+                                    <div className='flex flex-wrap items-center gap-2 text-[10px] text-text/40'>
+                                        {preset.protonVersion && (
+                                            <span>
+                                                Proton{" "}
+                                                {preset.protonVersion}
+                                            </span>
+                                        )}
+                                        {preset.osVersion && (
+                                            <span>
+                                                {preset.osVersion}
+                                            </span>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )
+                        })}
+                    </div>
+                </div>
+            </motion.div>
+            )}
+
+            {/* Section 4b: Community Presets */}
             <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -871,12 +1030,12 @@ export function GamePageClient({
                             Community Presets
                         </h2>
                         <span className='text-xs text-text/50'>
-                            {filteredPresets.length} preset
-                            {filteredPresets.length !== 1 ? "s" : ""}
+                            {regularPresets.length} preset
+                            {regularPresets.length !== 1 ? "s" : ""}
                         </span>
                     </div>
 
-                    {filteredPresets.length === 0 ? (
+                    {regularPresets.length === 0 ? (
                         <div className='flex flex-col items-center justify-center py-16 gap-3 rounded-xl border border-border bg-text/2'>
                             <SettingsIcon className='h-10 w-10 text-text/20' />
                             <p className='text-sm text-text/40'>
@@ -888,21 +1047,19 @@ export function GamePageClient({
                             ref={presetsRef}
                             className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-1"
                         >
-                                {[...filteredPresets]
-                                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                                    .map((preset) => {
-                                        const raw = isRawPerformerPreset(preset)
-                                        const fpsColor = getFpsColor(preset)
-                                        return (
-                                            <motion.div
-                                                key={preset.id}
-                                                onClick={() => handlePresetOpen(preset.id)}
-                                                className={`shrink-0 w-72 flex flex-col gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-primary/30 ${
-                                                    raw
-                                                        ? "border-green-500/30 bg-green-500/5"
-                                                        : "border-border bg-text/3"
-                                                }`}
-                                            >
+                                {regularPresets.map((preset) => {
+                                    const raw = isRawPerformerPreset(preset)
+                                    const fpsColor = getFpsColor(preset)
+                                    return (
+                                        <motion.div
+                                            key={preset.id}
+                                            onClick={() => handlePresetOpen(preset.id)}
+                                            className={`shrink-0 w-72 flex flex-col gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-primary/30 ${
+                                                raw
+                                                    ? "border-green-500/30 bg-green-500/5"
+                                                    : "border-border bg-text/3"
+                                            }`}
+                                        >
                                                 {/* Header */}
                                                 <div className='flex items-start justify-between gap-2'>
                                                     <div className='min-w-0'>
