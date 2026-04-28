@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/store_item_assets/**",
       },
+      {
+        protocol: "https",
+        hostname: "cdn.steamgriddb.com",
+      },
     ],
   },
 };
