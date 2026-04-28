@@ -195,6 +195,107 @@ export const performanceVerifyRoutes = new Elysia({
       body: t.Optional(t.Object({ reason: t.Optional(t.String()) })),
     },
   )
+  // ── Edit entry (owner or admin) ───────────────────────────────────
+  .patch(
+    "/:id/edit",
+    async ({ params, body, request, set }) => {
+      const guard = await requireRole(request.headers, [
+        "user",
+        "contributor",
+        "admin",
+      ])
+      if (!guard.ok) {
+        set.status = guard.status
+        return { error: guard.error }
+      }
+
+      const [entry] = await db
+        .select({
+          id: performanceEntries.id,
+          userId: performanceEntries.userId,
+        })
+        .from(performanceEntries)
+        .where(eq(performanceEntries.id, params.id))
+        .limit(1)
+
+      if (!entry) {
+        set.status = 404
+        return { error: "Performance entry not found" }
+      }
+
+      if (entry.userId !== guard.user.id && guard.user.role !== "admin") {
+        set.status = 403
+        return { error: "Not authorized to edit this entry" }
+      }
+
+      const updateData: Partial<typeof performanceEntries.$inferInsert> = {
+        updatedAt: new Date(),
+      }
+
+      if (body.fpsAvg !== undefined) updateData.fpsAvg = body.fpsAvg
+      if (body.fpsLow !== undefined) updateData.fpsLow = body.fpsLow
+      if (body.fpsHigh !== undefined) updateData.fpsHigh = body.fpsHigh
+      if (body.protonVersion !== undefined)
+        updateData.protonVersion = body.protonVersion
+      if (body.osVersion !== undefined)
+        updateData.osVersion = body.osVersion
+      if (body.upscalerType !== undefined)
+        updateData.upscalerType = body.upscalerType ?? "none"
+      if (body.upscalerVersion !== undefined)
+        updateData.upscalerVersion = body.upscalerVersion
+      if (body.frameGenMethod !== undefined)
+        updateData.frameGenMethod = body.frameGenMethod ?? "none"
+      if (body.launchOptions !== undefined)
+        updateData.launchOptions = body.launchOptions
+      if (body.settingsJson !== undefined)
+        updateData.settingsJson = body.settingsJson
+      if (body.userNotes !== undefined)
+        updateData.userNotes = body.userNotes
+
+      const [updated] = await db
+        .update(performanceEntries)
+        .set(updateData)
+        .where(eq(performanceEntries.id, params.id))
+        .returning()
+
+      return updated
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      body: t.Object({
+        fpsAvg: t.Optional(t.Number()),
+        fpsLow: t.Optional(t.Number()),
+        fpsHigh: t.Optional(t.Number()),
+        protonVersion: t.Optional(t.Union([t.String(), t.Null()])),
+        osVersion: t.Optional(t.Union([t.String(), t.Null()])),
+        upscalerType: t.Optional(
+          t.Union([
+            t.Literal("none"),
+            t.Literal("fsr"),
+            t.Literal("dlss"),
+            t.Literal("xess"),
+            t.Literal("lsfg"),
+            t.Literal("other"),
+            t.Null(),
+          ]),
+        ),
+        upscalerVersion: t.Optional(t.Union([t.String(), t.Null()])),
+        frameGenMethod: t.Optional(
+          t.Union([
+            t.Literal("none"),
+            t.Literal("fsr_fg"),
+            t.Literal("dlss_fg"),
+            t.Literal("lsfg"),
+            t.Literal("other"),
+            t.Null(),
+          ]),
+        ),
+        launchOptions: t.Optional(t.Union([t.String(), t.Null()])),
+        settingsJson: t.Optional(t.Union([t.Array(t.Any()), t.Null()])),
+        userNotes: t.Optional(t.Union([t.String(), t.Null()])),
+      }),
+    },
+  )
   // ── Best entry: highest-rated for latest version ──────────────────
   .get(
     "/best",

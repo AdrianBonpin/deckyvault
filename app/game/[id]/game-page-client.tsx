@@ -33,6 +33,9 @@ import { FpsBoxplot } from "@/components/charts/FpsBoxplot"
 import { FpsRangeChart } from "@/components/charts/FpsRangeChart"
 import { DeviceDonut } from "@/components/charts/DeviceDonut"
 
+// Comments
+import { CommentSection } from "@/components/comments/comment-section"
+
 // Types
 interface Game {
     id: string
@@ -1009,6 +1012,18 @@ export function GamePageClient({
                         </div>
                     )}
 
+                </div>
+            </motion.div>
+
+            {/* Section 6: Comments */}
+            <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+                className='px-4 md:px-[10svw]'
+            >
+                <div className='max-w-7xl mx-auto'>
+                    <CommentSection gameId={gameId} initialCount={counts.comments} />
                 </div>
             </motion.div>
         </section>

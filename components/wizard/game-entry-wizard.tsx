@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import { StepIndicator } from "@/components/wizard/step-indicator"
@@ -10,6 +10,7 @@ import { SettingsStep } from "@/components/wizard/steps/settings-step"
 import { EnvironmentStep, type EnvironmentData } from "@/components/wizard/steps/environment-step"
 import { ReviewStep } from "@/components/wizard/steps/review-step"
 import type { SettingCategory } from "@/components/wizard/settings-editor"
+import { performanceEntries } from "@/lib/db/schema"
 
 const STEPS = [
   { label: "Hardware", tooltip: "Choose the hardware you tested this game on" },
@@ -22,9 +23,10 @@ const STEPS = [
 interface GameEntryWizardProps {
   gameId: string
   gameVersionId: string
+  editEntry?: typeof performanceEntries.$inferSelect | null
 }
 
-export function GameEntryWizard({ gameId, gameVersionId }: GameEntryWizardProps) {
+export function GameEntryWizard({ gameId, gameVersionId, editEntry }: GameEntryWizardProps) {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -32,23 +34,48 @@ export function GameEntryWizard({ gameId, gameVersionId }: GameEntryWizardProps)
   const [success, setSuccess] = useState(false)
 
   // Step 1: Hardware
-  const [hardwareSlug, setHardwareSlug] = useState("")
+  const [hardwareSlug, setHardwareSlug] = useState(editEntry?.hardwareSlug ?? "")
   const [hardwareName, setHardwareName] = useState("")
 
   // Step 2: Performance
-  const [performance, setPerformance] = useState<PerformanceData>({})
+  const [performance, setPerformance] = useState<PerformanceData>(
+    editEntry
+      ? {
+          fpsAvg: editEntry.fpsAvg,
+          fpsLow: editEntry.fpsLow ?? undefined,
+          fpsHigh: editEntry.fpsHigh ?? undefined,
+          loadTimeSsd: editEntry.loadTimeSsd ?? undefined,
+          loadTimeSd: editEntry.loadTimeSd ?? undefined,
+        }
+      : {},
+  )
 
   // Step 3: Settings
-  const [settingsJson, setSettingsJson] = useState<SettingCategory[]>([])
+  const [settingsJson, setSettingsJson] = useState<SettingCategory[]>(
+    editEntry?.settingsJson ?? [],
+  )
 
   // Step 4: Environment
-  const [environment, setEnvironment] = useState<EnvironmentData>({
-    upscalerType: "none",
-    frameGenMethod: "none",
-  })
+  const [environment, setEnvironment] = useState<EnvironmentData>(
+    editEntry
+      ? {
+          protonVersion: editEntry.protonVersion ?? undefined,
+          osVersion: editEntry.osVersion ?? undefined,
+          upscalerType: editEntry.upscalerType ?? "none",
+          upscalerVersion: editEntry.upscalerVersion ?? undefined,
+          frameGenMethod: editEntry.frameGenMethod ?? "none",
+          launchOptions: editEntry.launchOptions ?? undefined,
+          estimatedBatteryMin: editEntry.estimatedBatteryMin ?? undefined,
+          customSystem: editEntry.customSystem ?? false,
+        }
+      : {
+          upscalerType: "none",
+          frameGenMethod: "none",
+        },
+  )
 
   // Step 5: Notes
-  const [userNotes, setUserNotes] = useState("")
+  const [userNotes, setUserNotes] = useState(editEntry?.userNotes ?? "")
 
   // Fetch hardware name when slug changes
   const handleHardwareChange = useCallback(async (slug: string) => {
@@ -68,6 +95,26 @@ export function GameEntryWizard({ gameId, gameVersionId }: GameEntryWizardProps)
       // ignore
     }
   }, [])
+
+  // Fetch hardware name when in edit mode
+  useEffect(() => {
+    if (!editEntry || !hardwareSlug) return
+    let cancelled = false
+    async function fetchName() {
+      try {
+        const res = await fetch("/api/performance/hardware")
+        if (res.ok && !cancelled) {
+          const data = await res.json() as { data: Array<{ slug: string; name: string }> }
+          const device = data.data.find((d) => d.slug === hardwareSlug)
+          if (device && !cancelled) setHardwareName(device.name)
+        }
+      } catch {
+        // ignore
+      }
+    }
+    fetchName()
+    return () => { cancelled = true }
+  }, [editEntry, hardwareSlug])
 
   const canProceed = () => {
     switch (currentStep) {
@@ -109,33 +156,40 @@ export function GameEntryWizard({ gameId, gameVersionId }: GameEntryWizardProps)
     setError(null)
 
     try {
-      const res = await fetch("/api/performance/submit", {
-        method: "POST",
+      const payload = {
+        versionId: gameVersionId,
+        hardwareSlug,
+        fpsAvg: Number(performance.fpsAvg),
+        fpsLow: performance.fpsLow !== undefined ? Number(performance.fpsLow) : null,
+        fpsHigh: performance.fpsHigh !== undefined ? Number(performance.fpsHigh) : null,
+        loadTimeSsd: performance.loadTimeSsd !== undefined ? Number(performance.loadTimeSsd) : null,
+        loadTimeSd: performance.loadTimeSd !== undefined ? Number(performance.loadTimeSd) : null,
+        protonVersion: environment.protonVersion || null,
+        osVersion: environment.osVersion || null,
+        upscalerType: environment.upscalerType ?? "none",
+        upscalerVersion: environment.upscalerVersion || null,
+        frameGenMethod: environment.frameGenMethod ?? "none",
+        launchOptions: environment.launchOptions || null,
+        estimatedBatteryMin: environment.estimatedBatteryMin ?? null,
+        customSystem: environment.customSystem ?? false,
+        settingsJson: settingsJson.length > 0 ? settingsJson : null,
+        userNotes: userNotes || null,
+      }
+
+      const url = editEntry
+        ? `/api/performance/${editEntry.id}/edit`
+        : "/api/performance/submit"
+      const method = editEntry ? "PATCH" : "POST"
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          versionId: gameVersionId,
-          hardwareSlug,
-          fpsAvg: Number(performance.fpsAvg),
-          fpsLow: performance.fpsLow !== undefined ? Number(performance.fpsLow) : null,
-          fpsHigh: performance.fpsHigh !== undefined ? Number(performance.fpsHigh) : null,
-          loadTimeSsd: performance.loadTimeSsd !== undefined ? Number(performance.loadTimeSsd) : null,
-          loadTimeSd: performance.loadTimeSd !== undefined ? Number(performance.loadTimeSd) : null,
-          protonVersion: environment.protonVersion || null,
-          osVersion: environment.osVersion || null,
-          upscalerType: environment.upscalerType ?? "none",
-          upscalerVersion: environment.upscalerVersion || null,
-          frameGenMethod: environment.frameGenMethod ?? "none",
-          launchOptions: environment.launchOptions || null,
-          estimatedBatteryMin: environment.estimatedBatteryMin ?? null,
-          customSystem: environment.customSystem ?? false,
-          settingsJson: settingsJson.length > 0 ? settingsJson : null,
-          userNotes: userNotes || null,
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || "Failed to submit entry")
+        throw new Error(data.error || `Failed to ${editEntry ? "update" : "submit"} entry`)
       }
 
       setSuccess(true)

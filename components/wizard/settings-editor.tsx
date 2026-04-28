@@ -42,6 +42,12 @@ const DEFAULT_CATEGORIES: SettingCategory[] = [
   },
 ]
 
+const typeOptions = [
+  { value: "text", label: "Abc" },
+  { value: "number", label: "123" },
+  { value: "boolean", label: "\u2713/\u2717" },
+] as const
+
 interface SettingsEditorProps {
   value: SettingCategory[]
   onChange: (categories: SettingCategory[]) => void
@@ -59,6 +65,7 @@ export function SettingsEditor({
   const [newCategoryName, setNewCategoryName] = useState("")
   const [newSettingNames, setNewSettingNames] = useState<Record<string, string>>({})
   const [newSettingTypes, setNewSettingTypes] = useState<Record<string, string>>({})
+  const addSettingInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
   const toggleCategory = (category: string) => {
     setCollapsedCategories((prev) => {
@@ -106,6 +113,8 @@ export function SettingsEditor({
       })
     )
     setNewSettingNames((prev) => ({ ...prev, [category]: "" }))
+    // Refocus after React re-renders
+    setTimeout(() => addSettingInputRefs.current[category]?.focus(), 0)
   }
 
   const moveCategoryUp = (category: string) => {
@@ -326,6 +335,59 @@ export function SettingsEditor({
                     className="overflow-hidden"
                   >
                     <div className="px-4 pb-4 pt-2 space-y-3">
+                      {/* Add setting row at the top */}
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          {typeOptions.map((opt) => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() =>
+                                setNewSettingTypes((prev) => ({
+                                  ...prev,
+                                  [cat.category]: opt.value,
+                                }))
+                              }
+                              className={`px-2 py-1.5 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
+                                (newSettingTypes[cat.category] || "text") === opt.value
+                                  ? "bg-primary text-white border-primary"
+                                  : "border-border text-text/60 hover:bg-text/5"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                        <input
+                          ref={(el) => {
+                            addSettingInputRefs.current[cat.category] = el
+                          }}
+                          type="text"
+                          value={newSettingNames[cat.category] || ""}
+                          onChange={(e) =>
+                            setNewSettingNames((prev) => ({
+                              ...prev,
+                              [cat.category]: e.target.value,
+                            }))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault()
+                              addSetting(cat.category)
+                            }
+                          }}
+                          placeholder="Add setting..."
+                          className="flex-1 px-3 py-1.5 rounded-md border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
+                        />
+                        <button
+                          onClick={() => addSetting(cat.category)}
+                          className="p-1.5 rounded-md bg-primary text-white hover:bg-primary/90 transition-colors cursor-pointer flex-shrink-0"
+                          title="Add setting"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+
                       <AnimatePresence initial={false}>
                         {cat.settings.map((setting) => (
                           <motion.div
@@ -408,48 +470,6 @@ export function SettingsEditor({
                           </motion.div>
                         ))}
                       </AnimatePresence>
-
-                      <div className="flex items-center gap-2 pt-1">
-                        <select
-                          value={newSettingTypes[cat.category] || "text"}
-                          onChange={(e) =>
-                            setNewSettingTypes((prev) => ({
-                              ...prev,
-                              [cat.category]: e.target.value,
-                            }))
-                          }
-                          className="text-xs px-2 py-1.5 rounded-md border border-border bg-text/5 text-text/60 outline-none focus:border-primary"
-                        >
-                          <option value="text">Text</option>
-                          <option value="number">Number</option>
-                          <option value="boolean">Boolean</option>
-                        </select>
-                        <input
-                          type="text"
-                          value={newSettingNames[cat.category] || ""}
-                          onChange={(e) =>
-                            setNewSettingNames((prev) => ({
-                              ...prev,
-                              [cat.category]: e.target.value,
-                            }))
-                          }
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault()
-                              addSetting(cat.category)
-                            }
-                          }}
-                          placeholder="Add setting..."
-                          className="flex-1 px-3 py-1.5 rounded-md border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
-                        />
-                        <button
-                          onClick={() => addSetting(cat.category)}
-                          className="p-1.5 rounded-md bg-primary text-white hover:bg-primary/90 transition-colors cursor-pointer"
-                          title="Add setting"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
                     </div>
                   </motion.div>
                 )}

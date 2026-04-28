@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import { db } from "@/lib/db/index"
-import { games, gameVersions } from "@/lib/db/schema"
+import { games, gameVersions, performanceEntries } from "@/lib/db/schema"
 import { eq, sql } from "drizzle-orm"
 import { GameEntryWizard } from "@/components/wizard/game-entry-wizard"
 
@@ -11,12 +11,17 @@ export const metadata = {
   title: "Submit Benchmark",
 }
 
+interface PageProps {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ edit?: string }>
+}
+
 export default async function SubmitBenchmarkPage({
   params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+  searchParams,
+}: PageProps) {
   const { id } = await params
+  const { edit } = await searchParams
 
   // Resolve game
   const isNumeric = /^\d+$/.test(id)
@@ -63,18 +68,33 @@ export default async function SubmitBenchmarkPage({
       .returning()
   }
 
+  // If editing, fetch the existing performance entry
+  let editEntry = null
+  if (edit) {
+    const [entry] = await db
+      .select()
+      .from(performanceEntries)
+      .where(eq(performanceEntries.id, edit))
+      .limit(1)
+    editEntry = entry ?? null
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 w-full">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-2">Submit Benchmark</h1>
+        <h1 className="text-2xl font-bold mb-2">
+          {editEntry ? "Edit Benchmark" : "Submit Benchmark"}
+        </h1>
         <p className="text-sm text-text/60">
-          Submit performance data for <span className="text-text font-medium">{game.title}</span>
+          {editEntry ? "Update your performance data for" : "Submit performance data for"}{" "}
+          <span className="text-text font-medium">{game.title}</span>
         </p>
       </div>
 
       <GameEntryWizard
         gameId={game.id}
         gameVersionId={version.id}
+        editEntry={editEntry}
       />
     </div>
   )

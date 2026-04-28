@@ -18,14 +18,18 @@ interface PerformanceStepProps {
 
 export function PerformanceStep({ value, onChange }: PerformanceStepProps) {
   const error = useMemo(() => {
-    if (value.fpsAvg !== undefined && value.fpsAvg !== null && value.fpsAvg <= 0) {
+    if (value.fpsAvg !== undefined && value.fpsAvg !== null && (isNaN(value.fpsAvg) || value.fpsAvg <= 0)) {
       return "FPS Average must be greater than 0"
     }
     return null
   }, [value.fpsAvg])
 
   const update = (field: keyof PerformanceData, val: string) => {
-    const num = val === "" ? undefined : Number(val)
+    const isDecimalField = field === "loadTimeSsd" || field === "loadTimeSd"
+    const cleaned = isDecimalField
+      ? val.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1")
+      : val.replace(/[^0-9]/g, "")
+    const num = cleaned === "" || cleaned === "." ? undefined : Number(cleaned)
     onChange({ ...value, [field]: num })
   }
 
@@ -44,9 +48,9 @@ export function PerformanceStep({ value, onChange }: PerformanceStepProps) {
               FPS Average <span className="text-red-400">*</span>
             </label>
             <input
-              type="number"
-              min={1}
-              step={1}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={value.fpsAvg ?? ""}
               onChange={(e) => update("fpsAvg", e.target.value)}
               placeholder="e.g. 45"
@@ -58,9 +62,9 @@ export function PerformanceStep({ value, onChange }: PerformanceStepProps) {
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-text/60">FPS Low</label>
             <input
-              type="number"
-              min={1}
-              step={1}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={value.fpsLow ?? ""}
               onChange={(e) => update("fpsLow", e.target.value)}
               placeholder="e.g. 30"
@@ -71,9 +75,9 @@ export function PerformanceStep({ value, onChange }: PerformanceStepProps) {
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-text/60">FPS High</label>
             <input
-              type="number"
-              min={1}
-              step={1}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={value.fpsHigh ?? ""}
               onChange={(e) => update("fpsHigh", e.target.value)}
               placeholder="e.g. 60"
@@ -98,9 +102,9 @@ export function PerformanceStep({ value, onChange }: PerformanceStepProps) {
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-text/60">Load Time SSD (seconds)</label>
             <input
-              type="number"
-              min={0}
-              step={0.1}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={value.loadTimeSsd ?? ""}
               onChange={(e) => update("loadTimeSsd", e.target.value)}
               placeholder="e.g. 12.5"
@@ -111,9 +115,9 @@ export function PerformanceStep({ value, onChange }: PerformanceStepProps) {
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-text/60">Load Time SD Card (seconds)</label>
             <input
-              type="number"
-              min={0}
-              step={0.1}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={value.loadTimeSd ?? ""}
               onChange={(e) => update("loadTimeSd", e.target.value)}
               placeholder="e.g. 35.0"
