@@ -110,7 +110,7 @@ export function BenchmarksClient() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({})
   const [confirmAction, setConfirmAction] = useState<
-    | { type: "verify" | "remove" | "restore"; entry: PerformanceEntry }
+    | { type: "verify" | "remove" | "restore" | "hardDelete"; entry: PerformanceEntry }
     | null
   >(null)
   const [removeReason, setRemoveReason] = useState("")
@@ -224,6 +224,22 @@ export function BenchmarksClient() {
     }
   }
 
+  const handleHardDelete = async (entry: PerformanceEntry) => {
+    setActionLoading((prev) => ({ ...prev, [entry.id]: true }))
+    try {
+      const res = await fetch(`/api/admin/performance/${entry.id}/hard-delete`, {
+        method: "DELETE",
+      })
+      if (res.ok) {
+        setEntries((prev) => prev.filter((e) => e.id !== entry.id))
+        setTotal((prev) => Math.max(0, prev - 1))
+        setConfirmAction(null)
+      }
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [entry.id]: false }))
+    }
+  }
+
   const handleRestore = async (entry: PerformanceEntry) => {
     setActionLoading((prev) => ({ ...prev, [entry.id]: true }))
     try {
@@ -281,7 +297,8 @@ export function BenchmarksClient() {
 
       {/* Table */}
       <div className="rounded-xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[800px]">
           <thead className="bg-text/[0.03]">
             <tr>
               <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-text/50">
@@ -452,6 +469,15 @@ export function BenchmarksClient() {
                           Restore
                         </button>
                       )}
+                      <button
+                        onClick={() => setConfirmAction({ type: "hardDelete", entry })}
+                        disabled={actionLoading[entry.id]}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-red-600/10 text-red-500 hover:bg-red-600/20 transition-colors cursor-pointer disabled:opacity-50"
+                        title="Permanently delete"
+                      >
+                        <TrashIcon className="h-3.5 w-3.5" />
+                        Purge
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -459,6 +485,7 @@ export function BenchmarksClient() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Pagination */}
@@ -592,6 +619,37 @@ export function BenchmarksClient() {
                       <RefreshCwIcon className="h-3.5 w-3.5" />
                     )}
                     Restore
+                  </button>
+                </div>
+              </>
+            )}
+
+            {confirmAction.type === "hardDelete" && (
+              <>
+                <h2 className="text-base font-semibold text-text">
+                  ⚠️ Permanent Delete
+                </h2>
+                <p className="text-sm text-text/70">
+                  This will permanently delete this benchmark entry. This action cannot be undone.
+                </p>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => setConfirmAction(null)}
+                    className="px-3 py-1.5 rounded-md text-xs font-medium bg-text/5 text-text hover:bg-text/10 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleHardDelete(confirmAction.entry)}
+                    disabled={actionLoading[confirmAction.entry.id]}
+                    className="px-3 py-1.5 rounded-md text-xs font-medium bg-red-600/10 text-red-500 hover:bg-red-600/20 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {actionLoading[confirmAction.entry.id] ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <TrashIcon className="h-3.5 w-3.5" />
+                    )}
+                    Delete Forever
                   </button>
                 </div>
               </>

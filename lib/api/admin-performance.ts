@@ -226,6 +226,36 @@ export const adminPerformanceRoutes = new Elysia({ prefix: "/admin" })
       ),
     },
   )
+  .delete(
+    "/performance/:id/hard-delete",
+    async ({ params, request, set }) => {
+      const guard = await requireAdmin(request.headers)
+      if (!guard.ok) {
+        set.status = guard.status
+        return { error: guard.error }
+      }
+
+      const [entry] = await db
+        .select()
+        .from(performanceEntries)
+        .where(eq(performanceEntries.id, params.id))
+        .limit(1)
+
+      if (!entry) {
+        set.status = 404
+        return { error: "Performance entry not found" }
+      }
+
+      await db
+        .delete(performanceEntries)
+        .where(eq(performanceEntries.id, params.id))
+
+      return { success: true }
+    },
+    {
+      params: t.Object({ id: t.String() }),
+    },
+  )
   .patch(
     "/performance/:id/restore",
     async ({ params, request, set }) => {
