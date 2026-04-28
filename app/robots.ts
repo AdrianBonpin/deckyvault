@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
             {
                 userAgent: "*",
                 allow: "/",
-                disallow: ["/admin", "/api"],
+                disallow: ["/manage", "/api"],
             },
         ],
         sitemap: "https://deckyvault.xyz/sitemap.xml",

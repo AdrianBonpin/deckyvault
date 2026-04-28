@@ -16,8 +16,8 @@ export default async function ManageLayout({
 }) {
     return (
         <section className='w-full flex flex-col gap-8 py-16'>
-            <div className='px-4 md:px-[10svw]'>
-                <div className='max-w-7xl mx-auto'>
+            <div className='px-4 md:px-8 lg:px-12'>
+                <div className='mx-auto'>
                     <h1 className='text-2xl sm:text-3xl font-bold'>Manage</h1>
                     <p className='text-sm text-text/60 mt-1'>
                         Manage your platform
@@ -25,8 +25,8 @@ export default async function ManageLayout({
                 </div>
             </div>
 
-            <div className='px-4 md:px-[10svw]'>
-                <div className='max-w-7xl mx-auto flex flex-col md:flex-row gap-6'>
+            <div className='px-4 md:px-8 lg:px-12'>
+                <div className='mx-auto flex flex-col md:flex-row gap-6'>
                     <ManageSidebar />
                     <div className='flex-1 min-w-0'>{children}</div>
                 </div>
