@@ -24,6 +24,7 @@ import { searchUnifiedRoutes } from "@/lib/api/search-unified"
 import { gameStubRoutes } from "@/lib/api/game-stub"
 import { gameStatsRoutes } from "@/lib/api/game-stats"
 import { gamesManualRoutes } from "@/lib/api/games-manual"
+import { compareRoutes } from "@/lib/api/compare"
 import { gamesListingRoutes } from "@/lib/api/games-listing"
 import { steamgridProxyRoutes } from "@/lib/api/steamgrid-proxy"
 
@@ -96,6 +97,8 @@ export const app = new Elysia({ prefix: "/api" })
   .use(savedGamesRoutes)
   // Contact form
   .use(contactRoutes)
+  // Compare
+  .use(compareRoutes)
   // Root
   .get("/", () => ({
     name: "DeckyVault API",
