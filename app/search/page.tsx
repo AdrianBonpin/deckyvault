@@ -535,17 +535,32 @@ function PriceTag({
 }: {
   price?: { currency: string; initial: number; final: number } | null
 }) {
-  if (!price || price.final === 0) {
+  if (!price) {
+    return null
+  }
+
+  // Price is 0 and initial is 0 → legitimately free-to-play
+  if (price.initial === 0 && price.final === 0) {
     return (
-      <span
-        className="px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/20 text-green-400 text-[11px] font-medium"
-        title="Free to play"
-      >
+      <span className="px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/20 text-green-400 text-[11px] font-medium">
         Free
       </span>
     )
   }
 
+  // Price is 0 but initial > 0 → promotional free (free weekend etc.)
+  if (price.final === 0 && price.initial > 0) {
+    return (
+      <span
+        className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-medium"
+        title="Currently free — may be a promotional event"
+      >
+        Free*
+      </span>
+    )
+  }
+
+  // Normal paid game
   const isDiscounted = price.final < price.initial
   const fmt = new Intl.NumberFormat("en-US", {
     style: "currency",
