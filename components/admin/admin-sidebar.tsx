@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { UsersIcon, CpuIcon, Gamepad2Icon } from "lucide-react"
+import { UsersIcon, CpuIcon, Gamepad2Icon, MessageSquareIcon } from "lucide-react"
 
 const adminNavItems = [
   { href: "/admin/users", label: "Users", icon: UsersIcon },
   { href: "/admin/hardware", label: "Hardware", icon: CpuIcon },
   { href: "/admin/games", label: "Games", icon: Gamepad2Icon },
+  { href: "/admin/comments", label: "Comments", icon: MessageSquareIcon },
 ]
 
 export function AdminSidebar() {
