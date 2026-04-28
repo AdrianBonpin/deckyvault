@@ -43,6 +43,7 @@ interface UnifiedResult {
   isPoorPerformance?: boolean
   bestFps?: number | null
   latestVersion?: string | null
+  tinyImage?: string | null
 }
 
 function SearchContent() {
@@ -240,7 +241,7 @@ function SearchResultCard({
           whileHover={{ scale: 1.03 }}
           transition={{ duration: 0.2 }}
         >
-          <GameCover image={result.image} title={result.title} />
+          <GameCover image={result.image} tinyImage={result.tinyImage} title={result.title} />
         </motion.div>
 
         {/* Main Content */}
@@ -507,18 +508,29 @@ function protonColor(status: string): string {
   return map[status] || "text-text/25"
 }
 
-function GameCover({ image, title }: { image: string | null; title: string }) {
-  const [error, setError] = useState(false)
+function GameCover({ image, tinyImage, title }: { image: string | null; tinyImage?: string | null; title: string }) {
+  const [src, setSrc] = useState(image)
+  const [fallbackStage, setFallbackStage] = useState(0)
 
-  if (image && !error) {
+  const handleError = () => {
+    if (fallbackStage === 0 && tinyImage) {
+      setFallbackStage(1)
+      setSrc(tinyImage)
+    } else {
+      setFallbackStage(2)
+      setSrc(null)
+    }
+  }
+
+  if (src) {
     return (
       <Image
-        src={image}
+        src={src}
         alt={title}
         fill
         className="object-cover"
         sizes="(max-width: 640px) 80px, 112px"
-        onError={() => setError(true)}
+        onError={handleError}
       />
     )
   }
