@@ -21,6 +21,7 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
     const genre = query.genre || ""
     const device = query.device || ""
     const sort = query.sort || "recent"
+    const order = query.order === "asc" ? asc : desc
 
     // Build where conditions
     const conditions = []
@@ -106,12 +107,12 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
     let orderBy
     switch (sort) {
       case "name":
-        orderBy = asc(games.title)
+        orderBy = order(games.title)
         break
       case "benchmarks":
       case "recent":
       default:
-        orderBy = desc(games.createdAt)
+        orderBy = order(games.createdAt)
         break
     }
 
@@ -195,7 +196,10 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
 
     // If sorting by benchmarks, re-sort the enriched data
     if (sort === "benchmarks") {
-      enrichedData.sort((a, b) => b.benchmarkCount - a.benchmarkCount)
+      const sortFn = query.order === "asc"
+        ? (a: any, b: any) => a.benchmarkCount - b.benchmarkCount
+        : (a: any, b: any) => b.benchmarkCount - a.benchmarkCount
+      enrichedData.sort(sortFn)
     }
 
     const [{ count: total }] = await countQuery
@@ -217,6 +221,7 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
       genre: t.Optional(t.String()),
       device: t.Optional(t.String()),
       sort: t.Optional(t.String()),
+      order: t.Optional(t.String()),
     }),
   },
 )

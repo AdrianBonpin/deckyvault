@@ -230,10 +230,9 @@ export function NonSteamBasicInfoStep({ value, onChange }: NonSteamBasicInfoStep
       <div className="space-y-1.5">
         <label className="text-xs font-medium text-text/60">Release Date</label>
         <input
-          type="text"
+          type="date"
           value={value.releaseDate}
           onChange={(e) => update("releaseDate", e.target.value)}
-          placeholder="e.g. 2017-02-24"
           className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
         />
       </div>

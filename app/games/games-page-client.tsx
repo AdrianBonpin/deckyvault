@@ -31,6 +31,7 @@ interface DeviceOption {
 }
 
 type SortOption = "recent" | "name" | "benchmarks"
+type SortDirection = "asc" | "desc"
 
 const DECK_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   native: { label: "Native", className: "bg-green-500/10 border-green-500/20 text-green-400" },
@@ -62,6 +63,7 @@ export function GamesPageClient({
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
   const [selectedDevice, setSelectedDevice] = useState("")
   const [sort, setSort] = useState<SortOption>("recent")
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
@@ -76,12 +78,13 @@ export function GamesPageClient({
       params.set("offset", String(offset))
       params.set("limit", "24")
       params.set("sort", sort)
+      params.set("order", sortDirection)
       if (search) params.set("search", search)
       if (selectedDevice) params.set("device", selectedDevice)
       if (selectedGenres.length === 1) params.set("genre", selectedGenres[0])
       return `/api/games/listing?${params.toString()}`
     },
-    [sort, search, selectedDevice, selectedGenres],
+    [sort, sortDirection, search, selectedDevice, selectedGenres],
   )
 
   // Load more function for infinite scroll
@@ -217,6 +220,13 @@ export function GamesPageClient({
                 </option>
               ))}
             </select>
+            <button
+              onClick={() => setSortDirection(prev => prev === "asc" ? "desc" : "asc")}
+              className="px-2 py-2 rounded-md text-sm bg-text/5 border border-border hover:bg-text/10 transition-colors cursor-pointer"
+              title={sortDirection === "asc" ? "Sort ascending" : "Sort descending"}
+            >
+              {sortDirection === "asc" ? "↑" : "↓"}
+            </button>
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`px-3 py-2 rounded-md text-sm transition-colors cursor-pointer border ${
