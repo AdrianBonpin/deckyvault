@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia"
 import { db } from "@/lib/db/index"
 import { games, gameVersions, gamePlatformSupport } from "@/lib/db/schema"
-import { ilike } from "drizzle-orm"
+import { ilike, eq } from "drizzle-orm"
 import { requireRole } from "@/lib/auth/guard"
 
 export const gamesManualRoutes = new Elysia({ prefix: "/games" })
@@ -45,6 +45,7 @@ export const gamesManualRoutes = new Elysia({ prefix: "/games" })
           storeUrl: body.storeUrl || null,
           genres: body.genres || null,
           releaseDate: body.releaseDate || null,
+          createdBy: guard.user.id,
         })
         .returning()
 
@@ -90,6 +91,71 @@ export const gamesManualRoutes = new Elysia({ prefix: "/games" })
             })
           )
         ),
+      }),
+    }
+  )
+  .put(
+    "/:gameId/manual",
+    async ({ request, params, body, set }) => {
+      const guard = await requireRole(request.headers, ["user", "contributor", "admin"])
+      if (!guard.ok) {
+        set.status = guard.status
+        return { error: guard.error }
+      }
+
+      const [game] = await db
+        .select()
+        .from(games)
+        .where(eq(games.id, params.gameId))
+        .limit(1)
+
+      if (!game) {
+        set.status = 404
+        return { error: "Game not found" }
+      }
+
+      if (game.source === "steam") {
+        set.status = 403
+        return { error: "Steam games are synced automatically and cannot be manually edited" }
+      }
+
+      // Only creator or admin can edit
+      if (game.createdBy && game.createdBy !== guard.user.id && guard.user.role !== "admin") {
+        set.status = 403
+        return { error: "Only the creator or an admin can edit this game" }
+      }
+
+      const [updated] = await db
+        .update(games)
+        .set({
+          title: body.title ?? game.title,
+          developer: body.developer ?? game.developer,
+          publisher: body.publisher ?? game.publisher,
+          description: body.description ?? game.description,
+          headerImage: body.headerImage ?? game.headerImage,
+          capsuleImage: body.capsuleImage ?? game.capsuleImage,
+          storeUrl: body.storeUrl ?? game.storeUrl,
+          genres: body.genres ?? game.genres,
+          releaseDate: body.releaseDate ?? game.releaseDate,
+          updatedAt: new Date(),
+        })
+        .where(eq(games.id, params.gameId))
+        .returning()
+
+      return { game: updated }
+    },
+    {
+      params: t.Object({ gameId: t.String() }),
+      body: t.Object({
+        title: t.Optional(t.String()),
+        developer: t.Optional(t.String()),
+        publisher: t.Optional(t.String()),
+        description: t.Optional(t.String()),
+        headerImage: t.Optional(t.String()),
+        capsuleImage: t.Optional(t.String()),
+        storeUrl: t.Optional(t.String()),
+        genres: t.Optional(t.Array(t.String())),
+        releaseDate: t.Optional(t.String()),
       }),
     }
   )

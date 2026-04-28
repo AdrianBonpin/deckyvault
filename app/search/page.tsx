@@ -267,6 +267,16 @@ function SearchResultCard({
                 <h3 className="text-sm sm:text-base font-semibold text-text group-hover:text-primary transition-colors duration-200 truncate">
                   {result.title}
                 </h3>
+                {!isLocal && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-text/5 border border-border text-text/35 capitalize shrink-0">
+                    Steam
+                  </span>
+                )}
+                {isLocal && result.source !== "steam" && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 capitalize shrink-0">
+                    {result.source}
+                  </span>
+                )}
                 {result.isRawPerformer && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-semibold shrink-0">
                     ⚡ RAW PERFORMER

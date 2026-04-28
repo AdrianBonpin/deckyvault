@@ -62,6 +62,7 @@ export const games = pgTable(
     }>(),
     lastSync: timestamp("last_sync"),
     syncStatus: text("sync_status").default("pending"),
+    createdBy: text("created_by"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
