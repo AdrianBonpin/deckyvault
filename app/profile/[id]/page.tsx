@@ -54,6 +54,18 @@ export default async function ProfilePage({
       sql`${performanceEntries.verifiedAt} IS NOT NULL`
     ))
 
+  // Calculate reputation (upvotes - downvotes)
+  const reputationResult = await db
+    .select({
+      totalUpvotes: sql<number>`coalesce(sum(${performanceEntries.upvotes}), 0)::int`,
+      totalDownvotes: sql<number>`coalesce(sum(${performanceEntries.downvotes}), 0)::int`,
+    })
+    .from(performanceEntries)
+    .where(and(
+      eq(performanceEntries.userId, id),
+      eq(performanceEntries.isRemoved, false),
+    ))
+
   // Fetch recent contributions (last 5)
   const recentContributions = await db
     .select({
@@ -90,7 +102,10 @@ export default async function ProfilePage({
         createdAt: profile.createdAt.toISOString(),
         contributions,
         verifiedEntries,
-        reputation: contributions * 10,
+        reputation: Math.max(0,
+          (reputationResult[0]?.totalUpvotes ?? 0) -
+          (reputationResult[0]?.totalDownvotes ?? 0)
+        ),
         verified: !!profile.emailVerified,
       }}
       recentContributions={recentContributions.map((e) => ({
