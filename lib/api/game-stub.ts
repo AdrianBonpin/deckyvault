@@ -12,6 +12,14 @@ interface SteamAppDetails {
   header_image?: string
   genres?: { id: string; description: string }[]
   website?: string
+  pc_requirements?: { minimum?: string; recommended?: string }
+  metacritic?: { score: number; url: string }
+  recommendations?: { total: number }
+  price_overview?: { currency: string; initial: number; final: number }
+  is_free?: boolean
+  release_date?: { coming_soon: boolean; date: string }
+  categories?: { id: string; description: string }[]
+  platforms?: { windows: boolean; mac: boolean; linux: boolean }
 }
 
 export const gameStubRoutes = new Elysia({ prefix: "/games" }).post(
@@ -81,6 +89,19 @@ export const gameStubRoutes = new Elysia({ prefix: "/games" }).post(
         headerImage,
         capsuleImage,
         storeUrl: `https://store.steampowered.com/app/${body.steamAppId}`,
+        systemRequirements: details?.pc_requirements
+          ? { minimum: details.pc_requirements.minimum || null, recommended: details.pc_requirements.recommended || null }
+          : null,
+        metacriticScore: details?.metacritic?.score ?? null,
+        metacriticUrl: details?.metacritic?.url ?? null,
+        recommendationsTotal: details?.recommendations?.total ?? null,
+        priceCurrent: details?.price_overview?.final ?? null,
+        priceInitial: details?.price_overview?.initial ?? null,
+        priceCurrency: details?.price_overview?.currency ?? null,
+        isFree: details?.is_free ?? false,
+        releaseDate: details?.release_date?.date ?? null,
+        categories: details?.categories?.map((c) => c.description) ?? null,
+        platforms: details?.platforms ?? null,
         lastSync: new Date(),
         syncStatus: "synced",
       })

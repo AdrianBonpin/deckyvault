@@ -1,4 +1,5 @@
 import {
+  boolean,
   integer,
   jsonb,
   pgEnum,
@@ -41,6 +42,24 @@ export const games = pgTable(
     )
       .default("unknown")
       .notNull(),
+    systemRequirements: jsonb("system_requirements").$type<{
+      minimum: string | null
+      recommended: string | null
+    }>(),
+    metacriticScore: integer("metacritic_score"),
+    metacriticUrl: text("metacritic_url"),
+    recommendationsTotal: integer("recommendations_total"),
+    priceCurrent: integer("price_current"),
+    priceInitial: integer("price_initial"),
+    priceCurrency: text("price_currency"),
+    isFree: boolean("is_free").default(false).notNull(),
+    releaseDate: text("release_date"),
+    categories: jsonb("categories").$type<string[]>(),
+    platforms: jsonb("platforms").$type<{
+      windows: boolean
+      mac: boolean
+      linux: boolean
+    }>(),
     lastSync: timestamp("last_sync"),
     syncStatus: text("sync_status").default("pending"),
     createdAt: timestamp("created_at").defaultNow().notNull(),

@@ -78,6 +78,13 @@
       "when": 1777386687207,
       "tag": "0010_soft_wilson_fisk",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1777389114548,
+      "tag": "0011_talented_bloodstorm",
+      "breakpoints": true
     }
   ]
 }
