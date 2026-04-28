@@ -1,6 +1,6 @@
 "use client"
 
-import { ImageIcon, Monitor, Info, FileText, Link, Calendar } from "lucide-react"
+import { ImageIcon, Monitor, Info, FileText, Link } from "lucide-react"
 import { BasicInfoData } from "./non-steam-basic-info-step"
 import { PlatformSupportItem } from "./non-steam-platform-step"
 

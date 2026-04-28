@@ -64,8 +64,8 @@ export default function ComparePage() {
       }
       const data = await res.json()
       setComparisonData(data.games || [])
-    } catch (err: any) {
-      setError(err.message || "Failed to load comparison")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load comparison")
     } finally {
       setLoading(false)
     }

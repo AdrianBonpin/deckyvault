@@ -49,6 +49,7 @@ export function StabilityScatterChart({ data, deviceNames }: { data: ScatterPoin
   const option = {
     tooltip: {
       trigger: "item" as const,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       formatter: (params: any) => {
         if (params.seriesName === "Perfect Stability") return ""
         return `${params.seriesName}<br/>Avg: ${params.value[0]} fps<br/>1% Low: ${params.value[1]} fps`

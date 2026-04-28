@@ -98,8 +98,8 @@ export function NonSteamEditForm({ game, platformSupport, hardwareList, isOwner,
       }
       router.push(`/game/${game.id}`)
       router.refresh()
-    } catch (err: any) {
-      setError(err.message || "Failed to update game")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to update game")
     } finally {
       setLoading(false)
     }

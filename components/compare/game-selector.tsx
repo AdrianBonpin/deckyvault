@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import { SearchIcon, XIcon, Gamepad2Icon } from "lucide-react"
+import { useDebounce } from "@/lib/hooks/useDebounce"
 
 interface SearchResult {
   id: string
@@ -25,28 +26,28 @@ export function GameSelector({ selectedGames, onSelect, onRemove, maxSelections 
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const debouncedQuery = useDebounce(query, 300)
 
   useEffect(() => {
-    if (query.length < 2) {
-      setResults([])
+    if (debouncedQuery.length < 2) {
       return
     }
 
     let cancelled = false
-    const timeout = setTimeout(async () => {
+    async function fetchResults() {
       setLoading(true)
       try {
-        const res = await fetch(`/api/search/unified?q=${encodeURIComponent(query)}`)
+        const res = await fetch(`/api/search/unified?q=${encodeURIComponent(debouncedQuery)}`)
         if (!res.ok) throw new Error("Search failed")
-        const data = await res.json()
+        const data = await res.json() as { results: Array<{ id?: string; appId?: number; title: string; image: string | null; source: string }> }
         if (!cancelled) {
           setResults(
             (data.results || [])
-              .filter((r: any) => !selectedGames.some(sg => sg.id === (r.id || `steam-${r.appId}`)))
+              .filter((r) => !selectedGames.some(sg => sg.id === (r.id || `steam-${r.appId}`)))
               .slice(0, 8)
-              .map((r: any) => ({
+              .map((r) => ({
                 id: r.id || `steam-${r.appId}`,
-                appId: r.appId,
+                appId: r.appId ?? null,
                 title: r.title,
                 image: r.image,
                 source: r.source,
@@ -58,13 +59,12 @@ export function GameSelector({ selectedGames, onSelect, onRemove, maxSelections 
       } finally {
         if (!cancelled) setLoading(false)
       }
-    }, 300)
-
+    }
+    fetchResults()
     return () => {
       cancelled = true
-      clearTimeout(timeout)
     }
-  }, [query, selectedGames])
+  }, [debouncedQuery, selectedGames])
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -122,7 +122,7 @@ export function GameSelector({ selectedGames, onSelect, onRemove, maxSelections 
           </div>
 
           {/* Dropdown results */}
-          {open && (query.length >= 2) && (
+          {open && (debouncedQuery.length >= 2) && (
             <div className="absolute z-50 top-full left-0 right-0 mt-1 rounded-lg border border-border bg-background shadow-lg max-h-64 overflow-y-auto">
               {loading && (
                 <div className="px-4 py-3 text-xs text-text/40">Searching...</div>
