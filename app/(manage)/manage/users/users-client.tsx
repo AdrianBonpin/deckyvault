@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import { authClient } from "@/lib/auth-client"
-import { Loader2, SearchIcon, BanIcon, UserCheckIcon } from "lucide-react"
+import { Loader2, SearchIcon, BanIcon, UserCheckIcon, ShieldIcon, UsersIcon } from "lucide-react"
 
 type Role = "user" | "contributor" | "admin"
 
@@ -28,6 +28,21 @@ function formatDate(value: Date | string | null | undefined) {
 
 function getInitial(name: string) {
   return name?.charAt(0)?.toUpperCase() || "?"
+}
+
+function RoleBadge({ role }: { role: Role }) {
+  const config = {
+    admin: { bg: "bg-red-500/10", text: "text-red-400", icon: ShieldIcon },
+    contributor: { bg: "bg-blue-500/10", text: "text-blue-400", icon: UserCheckIcon },
+    user: { bg: "bg-text/5", text: "text-text/50", icon: UsersIcon },
+  }[role]
+  const Icon = config.icon
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+      <Icon className="h-3 w-3" />
+      {role.charAt(0).toUpperCase() + role.slice(1)}
+    </span>
+  )
 }
 
 export function UsersClient() {
@@ -96,6 +111,15 @@ export function UsersClient() {
 
   return (
     <div className="space-y-4">
+      {/* Header with count */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <UsersIcon className="h-5 w-5 text-text/50" />
+          <h2 className="text-lg font-semibold">Users</h2>
+          <span className="text-sm text-text/50">({filteredUsers.length})</span>
+        </div>
+      </div>
+
       {/* Search */}
       <div className="relative">
         <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text/40" />
@@ -104,130 +128,94 @@ export function UsersClient() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name or email..."
-          className="w-full pl-9 pr-4 py-2 rounded-md bg-text/5 border border-border text-sm text-text placeholder:text-text/40 focus:outline-none focus:border-primary/60 transition-colors"
+          className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-text/5 border border-border text-sm text-text placeholder:text-text/40 focus:outline-none focus:border-primary/60 transition-colors"
         />
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border border-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-text/[0.03]">
-            <tr>
-              <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-text/50">
-                User
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-text/50">
-                Role
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-text/50">
-                Status
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-text/50">
-                Joined
-              </th>
-              <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-text/50">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-text/50">
-                  <Loader2 className="h-5 w-5 animate-spin mx-auto" />
-                </td>
-              </tr>
-            ) : filteredUsers.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-text/50">
-                  No users found.
-                </td>
-              </tr>
-            ) : (
-              filteredUsers.map((user) => (
-                <tr
-                  key={user.id}
-                  className="border-t border-border hover:bg-text/[0.02] transition-colors"
+      {/* Users List */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      ) : filteredUsers.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-text/50">
+          <UsersIcon className="h-8 w-8 mb-2" />
+          <p className="text-sm">No users found</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filteredUsers.map((user) => (
+            <div
+              key={user.id}
+              className="flex items-center gap-4 p-4 rounded-xl border border-border bg-text/[0.02] hover:bg-text/[0.04] transition-colors"
+            >
+              {/* Avatar */}
+              {user.image ? (
+                <Image
+                  src={user.image}
+                  alt=""
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="h-10 w-10 rounded-full bg-text/10 flex items-center justify-center text-sm font-medium text-text/70">
+                  {getInitial(user.name)}
+                </div>
+              )}
+
+              {/* User Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-text truncate">{user.name || "Unnamed"}</p>
+                  {user.banned && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">
+                      Banned
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-text/50 truncate">{user.email}</p>
+                <p className="text-[11px] text-text/30 mt-0.5">Joined {formatDate(user.createdAt)}</p>
+              </div>
+
+              {/* Role Selector */}
+              <select
+                value={user.role || "user"}
+                onChange={(e) => handleRoleChange(user.id, e.target.value as Role)}
+                disabled={actionLoading[user.id]}
+                className="text-xs px-3 py-1.5 rounded-lg border border-border bg-text/5 text-text focus:outline-none focus:border-primary/60 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {roles.map((r) => (
+                  <option key={r} value={r}>
+                    {r.charAt(0).toUpperCase() + r.slice(1)}
+                  </option>
+                ))}
+              </select>
+
+              {/* Action Button */}
+              {actionLoading[user.id] ? (
+                <Loader2 className="h-4 w-4 animate-spin text-text/50" />
+              ) : user.banned ? (
+                <button
+                  onClick={() => handleUnban(user.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors cursor-pointer"
                 >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      {user.image ? (
-                        <Image
-                          src={user.image}
-                          alt=""
-                          width={32}
-                          height={32}
-                          className="h-8 w-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-8 w-8 rounded-full bg-text/10 flex items-center justify-center text-xs font-medium text-text/70">
-                          {getInitial(user.name)}
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="font-medium text-text truncate">
-                          {user.name || "Unnamed"}
-                        </p>
-                        <p className="text-xs text-text/50 truncate">{user.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <select
-                      value={user.role || "user"}
-                      onChange={(e) =>
-                        handleRoleChange(user.id, e.target.value as Role)
-                      }
-                      disabled={actionLoading[user.id]}
-                      className="text-xs px-2 py-1 rounded-full border border-border bg-text/5 text-text focus:outline-none focus:border-primary/60 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {roles.map((r) => (
-                        <option key={r} value={r}>
-                          {r.charAt(0).toUpperCase() + r.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`h-2 w-2 rounded-full ${user.banned ? "bg-red-500" : "bg-green-500"}`}
-                      />
-                      <span className="text-xs text-text/70">
-                        {user.banned ? "Banned" : "Active"}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-text/50">
-                    {formatDate(user.createdAt)}
-                  </td>
-                  <td className="px-4 py-3">
-                    {actionLoading[user.id] ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-text/50" />
-                    ) : user.banned ? (
-                      <button
-                        onClick={() => handleUnban(user.id)}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors cursor-pointer"
-                      >
-                        <UserCheckIcon className="h-3.5 w-3.5" />
-                        Unban
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleBan(user.id)}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
-                      >
-                        <BanIcon className="h-3.5 w-3.5" />
-                        Ban
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                  <UserCheckIcon className="h-3.5 w-3.5" />
+                  Unban
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleBan(user.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
+                >
+                  <BanIcon className="h-3.5 w-3.5" />
+                  Ban
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
