@@ -93,6 +93,9 @@ export function GamesClient() {
           setGames(json.data)
           setTotal(json.total)
         }
+      } else {
+        const errorData = await res.json().catch(() => ({ error: "Unknown error" }))
+        alert(`Sync failed: ${errorData.error || res.statusText}`)
       }
     } catch (error) {
       console.error("Bulk sync failed:", error)
@@ -116,6 +119,7 @@ export function GamesClient() {
       if (res.ok) {
         const data = await res.json()
         alert(data.message)
+        setSelectedIds(new Set())
         // Refresh games list
         const refreshRes = await fetch(
           `/api/games?limit=${LIMIT}&offset=${offset}&search=${encodeURIComponent(search)}`
@@ -125,6 +129,9 @@ export function GamesClient() {
           setGames(json.data)
           setTotal(json.total)
         }
+      } else {
+        const errorData = await res.json().catch(() => ({ error: "Unknown error" }))
+        alert(`Sync failed: ${errorData.error || res.statusText}`)
       }
     } catch (error) {
       console.error("Sync all failed:", error)
@@ -140,11 +147,13 @@ export function GamesClient() {
     setSearch(value)
     setOffset(0)
     isSearchChangeRef.current = true
+    setSelectedIds(new Set()) // Clear selection on search change
   }
 
   const handlePrev = () => {
     setOffset((prev) => Math.max(0, prev - LIMIT))
     isSearchChangeRef.current = false
+    setSelectedIds(new Set()) // Clear selection on page change
   }
 
   const handleNext = () => {
