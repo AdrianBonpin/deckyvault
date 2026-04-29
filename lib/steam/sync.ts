@@ -22,6 +22,8 @@ interface SteamAppDetails {
 }
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+const ONE_HOUR_MS = 60 * 60 * 1000
+const MAX_RETRY_DELAY_MS = SEVEN_DAYS_MS
 
 export function isSyncStale(lastSync: Date | null): boolean {
   if (!lastSync) return true
@@ -107,12 +109,20 @@ export async function syncSteamGame(
 
     if (!res.ok) {
       const errorMsg = `Steam API returned ${res.status}`
+      // Get current retry count for exponential backoff
+      const [currentGame] = await db
+        .select({ retryCount: games.syncRetryCount })
+        .from(games)
+        .where(eq(games.steamAppId, steamAppId))
+        .limit(1)
+      const retryCount = (currentGame?.retryCount ?? 0) + 1
+      const backoffMs = Math.min(ONE_HOUR_MS * Math.pow(2, retryCount - 1), MAX_RETRY_DELAY_MS)
       await db
         .update(games)
         .set({
           syncError: errorMsg,
-          syncRetryCount: sql`COALESCE(sync_retry_count, 0) + 1`,
-          syncNextRetry: new Date(Date.now() + SEVEN_DAYS_MS),
+          syncRetryCount: retryCount,
+          syncNextRetry: new Date(Date.now() + backoffMs),
           updatedAt: new Date(),
         })
         .where(eq(games.steamAppId, steamAppId))
@@ -127,12 +137,20 @@ export async function syncSteamGame(
 
     if (!entry?.success || !entry.data) {
       const errorMsg = `No data returned from Steam for app ${steamAppId}`
+      // Get current retry count for exponential backoff
+      const [currentGame] = await db
+        .select({ retryCount: games.syncRetryCount })
+        .from(games)
+        .where(eq(games.steamAppId, steamAppId))
+        .limit(1)
+      const retryCount = (currentGame?.retryCount ?? 0) + 1
+      const backoffMs = Math.min(ONE_HOUR_MS * Math.pow(2, retryCount - 1), MAX_RETRY_DELAY_MS)
       await db
         .update(games)
         .set({
           syncError: errorMsg,
-          syncRetryCount: sql`COALESCE(sync_retry_count, 0) + 1`,
-          syncNextRetry: new Date(Date.now() + SEVEN_DAYS_MS),
+          syncRetryCount: retryCount,
+          syncNextRetry: new Date(Date.now() + backoffMs),
           updatedAt: new Date(),
         })
         .where(eq(games.steamAppId, steamAppId))
@@ -190,12 +208,20 @@ export async function syncSteamGame(
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err)
     try {
+      // Get current retry count for exponential backoff
+      const [currentGame] = await db
+        .select({ retryCount: games.syncRetryCount })
+        .from(games)
+        .where(eq(games.steamAppId, steamAppId))
+        .limit(1)
+      const retryCount = (currentGame?.retryCount ?? 0) + 1
+      const backoffMs = Math.min(ONE_HOUR_MS * Math.pow(2, retryCount - 1), MAX_RETRY_DELAY_MS)
       await db
         .update(games)
         .set({
           syncError: errorMsg,
-          syncRetryCount: sql`COALESCE(sync_retry_count, 0) + 1`,
-          syncNextRetry: new Date(Date.now() + SEVEN_DAYS_MS),
+          syncRetryCount: retryCount,
+          syncNextRetry: new Date(Date.now() + backoffMs),
           updatedAt: new Date(),
         })
         .where(eq(games.steamAppId, steamAppId))
