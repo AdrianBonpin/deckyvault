@@ -102,6 +102,7 @@ export function GamesClient() {
     }
 
     setSyncing(true)
+    setSyncCompleted(false)
     setSyncProgress({
       isRunning: true,
       current: 0,
@@ -208,6 +209,7 @@ export function GamesClient() {
         return
       }
 
+      setSyncCompleted(false)
       setSyncProgress({
         isRunning: true,
         current: 0,
@@ -301,6 +303,16 @@ export function GamesClient() {
       results: new Map(),
     })
   }
+
+  // Close sync overlay on Escape key
+  useEffect(() => {
+    if (!syncCompleted) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeSyncOverlay()
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [syncCompleted])
 
   const isSearchChangeRef = useRef(false)
 
@@ -595,7 +607,12 @@ export function GamesClient() {
       {(syncProgress.isRunning || syncCompleted) &&
         createPortal(
           <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center">
-            <div className="w-full max-w-md mx-4 p-6 bg-background border border-border rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="sync-overlay-title"
+              className="w-full max-w-md mx-4 p-6 bg-background border border-border rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+            >
               {syncProgress.isRunning ? (
                 <>
                   <div className="flex items-center gap-3 mb-4">
@@ -606,7 +623,7 @@ export function GamesClient() {
                       </div>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-text">Syncing Games</h3>
+                      <h3 id="sync-overlay-title" className="font-semibold text-text">Syncing Games</h3>
                       <p className="text-sm text-text/50">
                         {syncProgress.current} of {syncProgress.total} games
                       </p>
@@ -642,7 +659,7 @@ export function GamesClient() {
                     <div className="flex items-center gap-3">
                       <CheckCircle2Icon className="h-8 w-8 text-green-400" />
                       <div>
-                        <h3 className="font-semibold text-text">Sync Complete</h3>
+                        <h3 id="sync-overlay-title" className="font-semibold text-text">Sync Complete</h3>
                         <p className="text-sm text-text/50">
                           {syncProgress.synced} synced, {syncProgress.failed} failed
                         </p>
@@ -698,7 +715,7 @@ export function GamesClient() {
                           {game?.title || gameId}
                         </span>
                         {!result.success && result.error && (
-                          <span className="text-xs text-red-400/70 ml-auto shrink-0">
+                          <span className="text-xs text-red-400/70 ml-auto shrink-0 truncate max-w-[150px]" title={result.error}>
                             {result.error}
                           </span>
                         )}
