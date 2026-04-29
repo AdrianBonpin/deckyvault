@@ -2,6 +2,7 @@ import { Elysia, t } from "elysia"
 import { db } from "@/lib/db/index"
 import { games } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
+import { validateImageUrl, fetchSteamGridDBCover } from "@/lib/steam/sync"
 
 interface SteamAppDetails {
   type?: string
@@ -77,6 +78,18 @@ export const gameStubRoutes = new Elysia({ prefix: "/games" }).post(
     const capsuleImage =
       `https://cdn.akamai.steamstatic.com/steam/apps/${body.steamAppId}/library_600x900.jpg`
 
+    let finalCapsuleImage: string | null = capsuleImage
+    const imageValid = await validateImageUrl(capsuleImage)
+
+    if (!imageValid) {
+      const fallbackImage = await fetchSteamGridDBCover(title)
+      if (fallbackImage) {
+        finalCapsuleImage = fallbackImage
+      } else {
+        finalCapsuleImage = null
+      }
+    }
+
     const [game] = await db
       .insert(games)
       .values({
@@ -87,7 +100,7 @@ export const gameStubRoutes = new Elysia({ prefix: "/games" }).post(
         publisher,
         genres,
         headerImage,
-        capsuleImage,
+        capsuleImage: finalCapsuleImage,
         storeUrl: `https://store.steampowered.com/app/${body.steamAppId}`,
         systemRequirements: details?.pc_requirements
           ? { minimum: details.pc_requirements.minimum || null, recommended: details.pc_requirements.recommended || null }

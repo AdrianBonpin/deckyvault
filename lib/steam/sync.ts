@@ -30,7 +30,7 @@ export function isSyncStale(lastSync: Date | null): boolean {
   return Date.now() - new Date(lastSync).getTime() > SEVEN_DAYS_MS
 }
 
-async function validateImageUrl(url: string): Promise<boolean> {
+export async function validateImageUrl(url: string): Promise<boolean> {
   try {
     const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(5000) });
     return res.ok;
@@ -39,7 +39,7 @@ async function validateImageUrl(url: string): Promise<boolean> {
   }
 }
 
-async function fetchSteamGridDBCover(gameTitle: string): Promise<string | null> {
+export async function fetchSteamGridDBCover(gameTitle: string): Promise<string | null> {
   try {
     const apiKey = process.env.STEAMGRIDDB_API_KEY;
     if (!apiKey) return null;
