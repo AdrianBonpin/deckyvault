@@ -10,7 +10,19 @@ import {
   TrashIcon,
   Gamepad2Icon,
   RefreshCwIcon,
+  CheckCircle2Icon,
+  XCircleIcon,
 } from "lucide-react"
+
+interface SyncProgress {
+  isRunning: boolean
+  current: number
+  total: number
+  currentGame: string | null
+  synced: number
+  failed: number
+  results: Map<string, { success: boolean; error?: string }>
+}
 
 interface Game {
   id: string
@@ -50,6 +62,15 @@ export function GamesClient() {
   const [resyncingIds, setResyncingIds] = useState<Set<string>>(new Set())
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [syncing, setSyncing] = useState(false)
+  const [syncProgress, setSyncProgress] = useState<SyncProgress>({
+    isRunning: false,
+    current: 0,
+    total: 0,
+    currentGame: null,
+    synced: 0,
+    failed: 0,
+    results: new Map(),
+  })
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -72,67 +93,190 @@ export function GamesClient() {
     const ids = Array.from(selectedIds)
     if (ids.length === 0) return
 
-    setSyncing(true)
-    try {
-      const res = await fetch("/api/games/sync/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameIds: ids, mode: "selected" }),
-      })
-
-      if (res.ok) {
-        const data = await res.json()
-        alert(data.message)
-        setSelectedIds(new Set())
-        // Refresh games list
-        const refreshRes = await fetch(
-          `/api/games?limit=${LIMIT}&offset=${offset}&search=${encodeURIComponent(search)}`
-        )
-        if (refreshRes.ok) {
-          const json = await refreshRes.json()
-          setGames(json.data)
-          setTotal(json.total)
-        }
-      } else {
-        const errorData = await res.json().catch(() => ({ error: "Unknown error" }))
-        alert(`Sync failed: ${errorData.error || res.statusText}`)
-      }
-    } catch (error) {
-      console.error("Bulk sync failed:", error)
-      alert("Sync failed. Check console for details.")
-    } finally {
-      setSyncing(false)
+    const gamesToSync = games.filter((g) => ids.includes(g.id) && g.steamAppId)
+    if (gamesToSync.length === 0) {
+      alert("No Steam games selected to sync")
+      return
     }
+
+    setSyncing(true)
+    setSyncProgress({
+      isRunning: true,
+      current: 0,
+      total: gamesToSync.length,
+      currentGame: null,
+      synced: 0,
+      failed: 0,
+      results: new Map(),
+    })
+
+    let synced = 0
+    let failed = 0
+    const results = new Map<string, { success: boolean; error?: string }>()
+
+    for (let i = 0; i < gamesToSync.length; i++) {
+      const game = gamesToSync[i]
+      setSyncProgress((prev) => ({
+        ...prev,
+        current: i + 1,
+        currentGame: game.title,
+      }))
+
+      try {
+        const res = await fetch(`/api/games/${game.id}/sync`, { method: "POST" })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.status === "synced") {
+            synced++
+            results.set(game.id, { success: true })
+          } else {
+            failed++
+            results.set(game.id, { success: false, error: data.error })
+          }
+        } else {
+          failed++
+          results.set(game.id, { success: false, error: `HTTP ${res.status}` })
+        }
+      } catch (error) {
+        failed++
+        results.set(game.id, { success: false, error: String(error) })
+      }
+
+      setSyncProgress((prev) => ({
+        ...prev,
+        synced,
+        failed,
+        results: new Map(results),
+      }))
+
+      // Update the game in the list immediately
+      const result = results.get(game.id)
+      if (result?.success) {
+        setGames((prev) =>
+          prev.map((g) =>
+            g.id === game.id
+              ? { ...g, syncStatus: "synced", lastSync: new Date().toISOString(), syncError: null }
+              : g
+          )
+        )
+      } else {
+        setGames((prev) =>
+          prev.map((g) =>
+            g.id === game.id
+              ? { ...g, syncStatus: "failed", syncError: result?.error || "Sync failed" }
+              : g
+          )
+        )
+      }
+
+      // Rate limit: 500ms between syncs (skip on last)
+      if (i < gamesToSync.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+      }
+    }
+
+    setSyncProgress((prev) => ({
+      ...prev,
+      isRunning: false,
+      currentGame: null,
+    }))
+    setSyncing(false)
+    setSelectedIds(new Set())
   }
 
   const handleSyncAll = async () => {
     if (!confirm("This will sync all Steam games. Continue?")) return
 
+    // Fetch all Steam games
     setSyncing(true)
     try {
-      const res = await fetch("/api/games/sync/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "all" }),
+      const res = await fetch("/api/games?limit=1000&filter_source=steam")
+      if (!res.ok) {
+        alert("Failed to fetch games list")
+        setSyncing(false)
+        return
+      }
+      const data = await res.json()
+      const allSteamGames = data.data.filter((g: Game) => g.steamAppId)
+
+      if (allSteamGames.length === 0) {
+        alert("No Steam games to sync")
+        setSyncing(false)
+        return
+      }
+
+      setSyncProgress({
+        isRunning: true,
+        current: 0,
+        total: allSteamGames.length,
+        currentGame: null,
+        synced: 0,
+        failed: 0,
+        results: new Map(),
       })
 
-      if (res.ok) {
-        const data = await res.json()
-        alert(data.message)
-        setSelectedIds(new Set())
-        // Refresh games list
-        const refreshRes = await fetch(
-          `/api/games?limit=${LIMIT}&offset=${offset}&search=${encodeURIComponent(search)}`
-        )
-        if (refreshRes.ok) {
-          const json = await refreshRes.json()
-          setGames(json.data)
-          setTotal(json.total)
+      let synced = 0
+      let failed = 0
+      const results = new Map<string, { success: boolean; error?: string }>()
+
+      for (let i = 0; i < allSteamGames.length; i++) {
+        const game = allSteamGames[i]
+        setSyncProgress((prev) => ({
+          ...prev,
+          current: i + 1,
+          currentGame: game.title,
+        }))
+
+        try {
+          const syncRes = await fetch(`/api/games/${game.id}/sync`, { method: "POST" })
+          if (syncRes.ok) {
+            const syncData = await syncRes.json()
+            if (syncData.status === "synced") {
+              synced++
+              results.set(game.id, { success: true })
+            } else {
+              failed++
+              results.set(game.id, { success: false, error: syncData.error })
+            }
+          } else {
+            failed++
+            results.set(game.id, { success: false, error: `HTTP ${syncRes.status}` })
+          }
+        } catch (error) {
+          failed++
+          results.set(game.id, { success: false, error: String(error) })
         }
-      } else {
-        const errorData = await res.json().catch(() => ({ error: "Unknown error" }))
-        alert(`Sync failed: ${errorData.error || res.statusText}`)
+
+        setSyncProgress((prev) => ({
+          ...prev,
+          synced,
+          failed,
+          results: new Map(results),
+        }))
+
+        // Update the game in the list if it's currently visible
+        const result = results.get(game.id)
+        setGames((prev) =>
+          prev.map((g) =>
+            g.id === game.id
+              ? result?.success
+                ? { ...g, syncStatus: "synced", lastSync: new Date().toISOString(), syncError: null }
+                : { ...g, syncStatus: "failed", syncError: result?.error || "Sync failed" }
+              : g
+          )
+        )
+
+        // Rate limit: 500ms between syncs (skip on last)
+        if (i < allSteamGames.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 500))
+        }
       }
+
+      setSyncProgress((prev) => ({
+        ...prev,
+        isRunning: false,
+        currentGame: null,
+      }))
     } catch (error) {
       console.error("Sync all failed:", error)
       alert("Sync failed. Check console for details.")
@@ -430,8 +574,97 @@ export function GamesClient() {
         </table>
       </div>
 
+      {/* Sync Progress Overlay */}
+      {syncProgress.isRunning && (
+        <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="w-full max-w-md mx-4 p-6 bg-background border border-border rounded-2xl shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="relative">
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <RefreshCwIcon className="h-4 w-4 text-primary" />
+                </div>
+              </div>
+              <div>
+                <h3 className="font-semibold text-text">Syncing Games</h3>
+                <p className="text-sm text-text/50">
+                  {syncProgress.current} of {syncProgress.total} games
+                </p>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="mb-4">
+              <div className="flex justify-between text-xs text-text/50 mb-1">
+                <span>Progress</span>
+                <span>{Math.round((syncProgress.current / syncProgress.total) * 100)}%</span>
+              </div>
+              <div className="h-2 bg-text/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300 ease-out"
+                  style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Current game */}
+            {syncProgress.currentGame && (
+              <div className="mb-4 p-3 bg-text/5 rounded-lg">
+                <p className="text-xs text-text/50 mb-1">Currently syncing:</p>
+                <p className="text-sm font-medium text-text truncate">{syncProgress.currentGame}</p>
+              </div>
+            )}
+
+            {/* Stats */}
+            <div className="flex gap-4 mb-4">
+              <div className="flex-1 p-3 bg-green-500/10 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2Icon className="h-4 w-4 text-green-400" />
+                  <span className="text-sm font-medium text-green-400">{syncProgress.synced}</span>
+                </div>
+                <p className="text-xs text-text/50 mt-1">Synced</p>
+              </div>
+              <div className="flex-1 p-3 bg-red-500/10 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <XCircleIcon className="h-4 w-4 text-red-400" />
+                  <span className="text-sm font-medium text-red-400">{syncProgress.failed}</span>
+                </div>
+                <p className="text-xs text-text/50 mt-1">Failed</p>
+              </div>
+            </div>
+
+            {/* Recent results */}
+            {syncProgress.results.size > 0 && (
+              <div className="max-h-32 overflow-y-auto">
+                <p className="text-xs text-text/50 mb-2">Recent results:</p>
+                {Array.from(syncProgress.results.entries()).slice(-5).reverse().map(([gameId, result]) => {
+                  const game = games.find((g) => g.id === gameId)
+                  return (
+                    <div key={gameId} className="flex items-center gap-2 py-1">
+                      {result.success ? (
+                        <CheckCircle2Icon className="h-3 w-3 text-green-400 shrink-0" />
+                      ) : (
+                        <XCircleIcon className="h-3 w-3 text-red-400 shrink-0" />
+                      )}
+                      <span className="text-xs text-text/70 truncate">
+                        {game?.title || gameId}
+                      </span>
+                      {!result.success && result.error && (
+                        <span className="text-xs text-red-400/70 ml-auto shrink-0">
+                          {result.error.length > 20 ? result.error.slice(0, 20) + "..." : result.error}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Floating action bar */}
-      {selectedIds.size > 0 && (
+      {selectedIds.size > 0 && !syncProgress.isRunning && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 bg-background border border-border rounded-xl shadow-lg">
           <span className="text-sm text-text/70">
             {selectedIds.size} game{selectedIds.size !== 1 ? "s" : ""} selected
@@ -441,11 +674,7 @@ export function GamesClient() {
             disabled={syncing}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-sm font-medium cursor-pointer disabled:opacity-50"
           >
-            {syncing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCwIcon className="h-4 w-4" />
-            )}
+            <RefreshCwIcon className="h-4 w-4" />
             Resync Selected
           </button>
           <button
