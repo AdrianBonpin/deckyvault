@@ -2,7 +2,8 @@ import { Elysia, t } from "elysia"
 import { createCrudRoutes } from "./crud-builder"
 import { games, gameVersions } from "@/lib/db/schema"
 import { db } from "@/lib/db/index"
-import { eq, and, desc, sql } from "drizzle-orm"
+import { eq, and, or, desc, sql } from "drizzle-orm"
+import { syncSteamGame } from "@/lib/steam/sync"
 import { requireRole } from "@/lib/auth/guard"
 
 // ── Games CRUD (uses builder) ─────────────────────────────────────
@@ -186,3 +187,124 @@ export const gameVersionsRoutes = new Elysia({ prefix: "/games/:gameId/versions"
       params: t.Object({ gameId: t.String(), id: t.String() }),
     },
   )
+
+// ── Game Sync Routes ────────────────────────────────────────────────
+export const gameSyncRoutes = new Elysia({ prefix: "/games" })
+  // Single game sync
+  .post(
+    "/:gameId/sync",
+    async ({ params, request, set }) => {
+      const guard = await requireRole(request.headers, ["admin"]);
+      if (!guard.ok) {
+        set.status = guard.status;
+        return { error: guard.error };
+      }
+
+      const [game] = await db
+        .select({ id: games.id, steamAppId: games.steamAppId })
+        .from(games)
+        .where(eq(games.id, params.gameId))
+        .limit(1);
+
+      if (!game) {
+        set.status = 404;
+        return { error: "Game not found" };
+      }
+
+      if (!game.steamAppId) {
+        set.status = 400;
+        return { error: "Game has no Steam App ID" };
+      }
+
+      const result = await syncSteamGame(game.steamAppId, { forceRetry: true });
+
+      if (!result.success) {
+        set.status = 500;
+        return { status: "failed", error: result.error };
+      }
+
+      return { status: "synced" };
+    },
+    {
+      params: t.Object({ gameId: t.String() }),
+    }
+  )
+  // Bulk sync
+  .post(
+    "/sync/bulk",
+    async ({ body, request, set }) => {
+      const guard = await requireRole(request.headers, ["admin"]);
+      if (!guard.ok) {
+        set.status = guard.status;
+        return { error: guard.error };
+      }
+
+      let gameIds: string[] = [];
+
+      if (body.mode === "all") {
+        const allGames = await db
+          .select({ id: games.id })
+          .from(games)
+          .where(sql`${games.steamAppId} IS NOT NULL`);
+        gameIds = allGames.map((g) => g.id);
+      } else if (body.mode === "stale") {
+        const staleGames = await db
+          .select({ id: games.id })
+          .from(games)
+          .where(
+            and(
+              sql`${games.steamAppId} IS NOT NULL`,
+              or(
+                sql`${games.lastSync} IS NULL`,
+                sql`${games.lastSync} < NOW() - INTERVAL '7 days'`
+              )
+            )
+          );
+        gameIds = staleGames.map((g) => g.id);
+      } else {
+        gameIds = body.gameIds || [];
+      }
+
+      if (gameIds.length === 0) {
+        return { queued: 0, message: "No games to sync" };
+      }
+
+      // Process syncs sequentially with delay
+      let synced = 0;
+      let failed = 0;
+
+      for (const gameId of gameIds) {
+        const [game] = await db
+          .select({ steamAppId: games.steamAppId })
+          .from(games)
+          .where(eq(games.id, gameId))
+          .limit(1);
+
+        if (game?.steamAppId) {
+          const result = await syncSteamGame(game.steamAppId, { forceRetry: true });
+          if (result.success) synced++;
+          else failed++;
+
+          // Rate limit protection
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+      }
+
+      return {
+        queued: gameIds.length,
+        synced,
+        failed,
+        message: `Synced ${synced} games, ${failed} failed`,
+      };
+    },
+    {
+      body: t.Object({
+        gameIds: t.Optional(t.Array(t.String())),
+        mode: t.Union([
+          t.Literal("selected"),
+          t.Literal("all"),
+          t.Literal("stale"),
+        ]),
+      }),
+    }
+  );

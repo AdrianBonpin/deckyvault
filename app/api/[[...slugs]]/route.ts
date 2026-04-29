@@ -6,6 +6,7 @@ import {
   userRoutes,
   gamesRoutes,
   gameVersionsRoutes,
+  gameSyncRoutes,
   hardwareRoutes,
   hardwareStatsRoutes,
   performanceRoutes,
@@ -67,6 +68,7 @@ export const app = new Elysia({ prefix: "/api" })
   // Games + Versions
   .use(gamesRoutes)
   .use(gameVersionsRoutes)
+  .use(gameSyncRoutes)
   .use(gamesListingRoutes)
   // Hardware
   .use(hardwareRoutes)

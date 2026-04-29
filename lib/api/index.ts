@@ -1,6 +1,6 @@
 export { healthRoutes } from "./health"
 export { userRoutes } from "./user"
-export { gamesRoutes, gameVersionsRoutes } from "./games"
+export { gamesRoutes, gameVersionsRoutes, gameSyncRoutes } from "./games"
 export { hardwareRoutes } from "./hardware"
 export { performanceRoutes, performanceVerifyRoutes } from "./performance"
 export { performanceSubmitRoutes } from "./performance-submit"
