@@ -14,6 +14,8 @@ import { useSession } from "@/lib/auth-client"
 import { TiptapRenderer } from "@/components/tiptap-renderer"
 import { TiptapEditor } from "@/components/tiptap-editor"
 
+const MAX_DEPTH = 3
+
 export interface CommentData {
   id: string
   gameId: string
@@ -39,8 +41,6 @@ function formatDate(value: string | null | undefined): string {
 function getInitial(name: string | null | undefined): string {
   return name?.charAt(0)?.toUpperCase() || "?"
 }
-
-const MAX_DEPTH = 3
 
 interface CommentItemProps {
   comment: CommentData
