@@ -40,6 +40,8 @@ function getInitial(name: string | null | undefined): string {
   return name?.charAt(0)?.toUpperCase() || "?"
 }
 
+const MAX_DEPTH = 3
+
 interface CommentItemProps {
   comment: CommentData
   depth?: number
@@ -164,7 +166,7 @@ export function CommentItem({
   }
 
   return (
-    <div className={depth > 0 ? "ml-8 border-l border-border pl-4" : ""}>
+    <div className={depth > 0 ? "ml-4 border-l border-border pl-3" : ""}>
       <div className="flex gap-3 py-3">
         {/* Avatar */}
         <div className="shrink-0">
@@ -214,7 +216,7 @@ export function CommentItem({
               <span>{upvotes}</span>
             </button>
 
-            {session && depth === 0 && (
+            {session && depth < MAX_DEPTH && (
               <button
                 onClick={() => setIsReplying((prev) => !prev)}
                 className="flex items-center gap-1 text-xs text-text/50 hover:text-text/80 transition-colors cursor-pointer"
@@ -288,7 +290,7 @@ export function CommentItem({
           )}
 
           {/* Load replies */}
-          {depth === 0 && (
+          {depth < MAX_DEPTH && (
             <div className="mt-2">
               {replies.length > 0 && !showReplies && (
                 <button
@@ -328,7 +330,7 @@ export function CommentItem({
           )}
 
           {/* Replies list */}
-          {depth === 0 && showReplies && replies.length > 0 && (
+          {depth < MAX_DEPTH && showReplies && replies.length > 0 && (
             <div className="mt-2">
               {replies.map((reply) => (
                 <CommentItem
