@@ -104,7 +104,7 @@ export const app = new Elysia({ prefix: "/api" })
   // Root
   .get("/", () => ({
     name: "DeckyVault API",
-    version: "2026.0.1",
+    version: "2026.0.9",
   }))
 
 export const GET = app.fetch
