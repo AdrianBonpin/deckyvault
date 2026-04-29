@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import Image from "next/image"
 import Link from "next/link"
 import {
@@ -71,6 +72,7 @@ export function GamesClient() {
     failed: 0,
     results: new Map(),
   })
+  const [syncCompleted, setSyncCompleted] = useState(false)
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -182,6 +184,7 @@ export function GamesClient() {
     }))
     setSyncing(false)
     setSelectedIds(new Set())
+    setSyncCompleted(true)
   }
 
   const handleSyncAll = async () => {
@@ -277,12 +280,26 @@ export function GamesClient() {
         isRunning: false,
         currentGame: null,
       }))
+      setSyncCompleted(true)
     } catch (error) {
       console.error("Sync all failed:", error)
       alert("Sync failed. Check console for details.")
     } finally {
       setSyncing(false)
     }
+  }
+
+  const closeSyncOverlay = () => {
+    setSyncCompleted(false)
+    setSyncProgress({
+      isRunning: false,
+      current: 0,
+      total: 0,
+      currentGame: null,
+      synced: 0,
+      failed: 0,
+      results: new Map(),
+    })
   }
 
   const isSearchChangeRef = useRef(false)
@@ -574,94 +591,126 @@ export function GamesClient() {
         </table>
       </div>
 
-      {/* Sync Progress Overlay */}
-      {syncProgress.isRunning && (
-        <div className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm flex items-center justify-center">
-          <div className="w-full max-w-md mx-4 p-6 bg-background border border-border rounded-2xl shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="relative">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <RefreshCwIcon className="h-4 w-4 text-primary" />
-                </div>
-              </div>
-              <div>
-                <h3 className="font-semibold text-text">Syncing Games</h3>
-                <p className="text-sm text-text/50">
-                  {syncProgress.current} of {syncProgress.total} games
-                </p>
-              </div>
-            </div>
-
-            {/* Progress bar */}
-            <div className="mb-4">
-              <div className="flex justify-between text-xs text-text/50 mb-1">
-                <span>Progress</span>
-                <span>{Math.round((syncProgress.current / syncProgress.total) * 100)}%</span>
-              </div>
-              <div className="h-2 bg-text/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all duration-300 ease-out"
-                  style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Current game */}
-            {syncProgress.currentGame && (
-              <div className="mb-4 p-3 bg-text/5 rounded-lg">
-                <p className="text-xs text-text/50 mb-1">Currently syncing:</p>
-                <p className="text-sm font-medium text-text truncate">{syncProgress.currentGame}</p>
-              </div>
-            )}
-
-            {/* Stats */}
-            <div className="flex gap-4 mb-4">
-              <div className="flex-1 p-3 bg-green-500/10 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2Icon className="h-4 w-4 text-green-400" />
-                  <span className="text-sm font-medium text-green-400">{syncProgress.synced}</span>
-                </div>
-                <p className="text-xs text-text/50 mt-1">Synced</p>
-              </div>
-              <div className="flex-1 p-3 bg-red-500/10 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <XCircleIcon className="h-4 w-4 text-red-400" />
-                  <span className="text-sm font-medium text-red-400">{syncProgress.failed}</span>
-                </div>
-                <p className="text-xs text-text/50 mt-1">Failed</p>
-              </div>
-            </div>
-
-            {/* Recent results */}
-            {syncProgress.results.size > 0 && (
-              <div className="max-h-32 overflow-y-auto">
-                <p className="text-xs text-text/50 mb-2">Recent results:</p>
-                {Array.from(syncProgress.results.entries()).slice(-5).reverse().map(([gameId, result]) => {
-                  const game = games.find((g) => g.id === gameId)
-                  return (
-                    <div key={gameId} className="flex items-center gap-2 py-1">
-                      {result.success ? (
-                        <CheckCircle2Icon className="h-3 w-3 text-green-400 shrink-0" />
-                      ) : (
-                        <XCircleIcon className="h-3 w-3 text-red-400 shrink-0" />
-                      )}
-                      <span className="text-xs text-text/70 truncate">
-                        {game?.title || gameId}
-                      </span>
-                      {!result.success && result.error && (
-                        <span className="text-xs text-red-400/70 ml-auto shrink-0">
-                          {result.error.length > 20 ? result.error.slice(0, 20) + "..." : result.error}
-                        </span>
-                      )}
+      {/* Sync Progress Overlay — portaled to body for guaranteed viewport coverage */}
+      {(syncProgress.isRunning || syncCompleted) &&
+        createPortal(
+          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+            <div className="w-full max-w-md mx-4 p-6 bg-background border border-border rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+              {syncProgress.isRunning ? (
+                <>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="relative">
+                      <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <RefreshCwIcon className="h-4 w-4 text-primary" />
+                      </div>
                     </div>
-                  )
-                })}
+                    <div>
+                      <h3 className="font-semibold text-text">Syncing Games</h3>
+                      <p className="text-sm text-text/50">
+                        {syncProgress.current} of {syncProgress.total} games
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="mb-4">
+                    <div className="flex justify-between text-xs text-text/50 mb-1">
+                      <span>Progress</span>
+                      <span>{Math.round((syncProgress.current / syncProgress.total) * 100)}%</span>
+                    </div>
+                    <div className="h-2 bg-text/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all duration-300 ease-out"
+                        style={{ width: `${(syncProgress.current / syncProgress.total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Current game */}
+                  {syncProgress.currentGame && (
+                    <div className="mb-4 p-3 bg-text/5 rounded-lg">
+                      <p className="text-xs text-text/50 mb-1">Currently syncing:</p>
+                      <p className="text-sm font-medium text-text truncate">{syncProgress.currentGame}</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Completed state header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2Icon className="h-8 w-8 text-green-400" />
+                      <div>
+                        <h3 className="font-semibold text-text">Sync Complete</h3>
+                        <p className="text-sm text-text/50">
+                          {syncProgress.synced} synced, {syncProgress.failed} failed
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={closeSyncOverlay}
+                      className="px-3 py-1.5 rounded-md text-xs font-medium bg-text/5 text-text hover:bg-text/10 transition-colors cursor-pointer"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Stats — shown in both running and completed states */}
+              <div className="flex gap-4 mb-4">
+                <div className="flex-1 p-3 bg-green-500/10 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2Icon className="h-4 w-4 text-green-400" />
+                    <span className="text-sm font-medium text-green-400">{syncProgress.synced}</span>
+                  </div>
+                  <p className="text-xs text-text/50 mt-1">Synced</p>
+                </div>
+                <div className="flex-1 p-3 bg-red-500/10 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <XCircleIcon className="h-4 w-4 text-red-400" />
+                    <span className="text-sm font-medium text-red-400">{syncProgress.failed}</span>
+                  </div>
+                  <p className="text-xs text-text/50 mt-1">Failed</p>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
-      )}
+
+              {/* Results list — scrollable */}
+              {syncProgress.results.size > 0 && (
+                <div className="max-h-48 overflow-y-auto space-y-1">
+                  <p className="text-xs text-text/50 mb-2">
+                    {syncCompleted ? "All results:" : "Recent results:"}
+                  </p>
+                  {(syncCompleted
+                    ? Array.from(syncProgress.results.entries())
+                    : Array.from(syncProgress.results.entries()).slice(-5).reverse()
+                  ).map(([gameId, result]) => {
+                    const game = games.find((g) => g.id === gameId)
+                    return (
+                      <div key={gameId} className="flex items-center gap-2 py-1">
+                        {result.success ? (
+                          <CheckCircle2Icon className="h-3 w-3 text-green-400 shrink-0" />
+                        ) : (
+                          <XCircleIcon className="h-3 w-3 text-red-400 shrink-0" />
+                        )}
+                        <span className="text-xs text-text/70 truncate">
+                          {game?.title || gameId}
+                        </span>
+                        {!result.success && result.error && (
+                          <span className="text-xs text-red-400/70 ml-auto shrink-0">
+                            {result.error}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* Floating action bar */}
       {selectedIds.size > 0 && !syncProgress.isRunning && (
