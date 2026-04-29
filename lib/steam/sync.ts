@@ -1,6 +1,6 @@
 import { db } from "@/lib/db/index"
 import { games } from "@/lib/db/schema"
-import { eq, sql } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 
 interface SteamAppDetails {
   steam_appid: number

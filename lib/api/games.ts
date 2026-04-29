@@ -202,7 +202,7 @@ export const gameSyncRoutes = new Elysia({ prefix: "/games" })
         return { error: guard.error };
       }
 
-      let gamesToSync: { id: string; steamAppId: number }[] = [];
+      let gamesToSync: { id: string; steamAppId: number | null }[] = [];
 
       if (body.mode === "all") {
         gamesToSync = await db
@@ -248,6 +248,7 @@ export const gameSyncRoutes = new Elysia({ prefix: "/games" })
       let failed = 0;
 
       for (const game of gamesToSync) {
+        if (!game.steamAppId) continue;
         const result = await syncSteamGame(game.steamAppId, { forceRetry: true });
         if (result.success) synced++;
         else failed++;
