@@ -26,6 +26,7 @@ interface Game {
   source: "steam" | "manual" | "gog" | "epic"
   lastSync: string | null
   syncStatus: string | null
+  syncError: string | null
   createdAt: string
   updatedAt: string
 }
@@ -47,6 +48,91 @@ export function GamesClient() {
   const [offset, setOffset] = useState(0)
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
   const [resyncingIds, setResyncingIds] = useState<Set<string>>(new Set())
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [syncing, setSyncing] = useState(false)
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(games.map((g) => g.id)))
+    } else {
+      setSelectedIds(new Set())
+    }
+  }
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (checked) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }
+
+  const handleSyncSelected = async () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+
+    setSyncing(true)
+    try {
+      const res = await fetch("/api/games/sync/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameIds: ids, mode: "selected" }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        alert(data.message)
+        setSelectedIds(new Set())
+        // Refresh games list
+        const refreshRes = await fetch(
+          `/api/games?limit=${LIMIT}&offset=${offset}&search=${encodeURIComponent(search)}`
+        )
+        if (refreshRes.ok) {
+          const json = await refreshRes.json()
+          setGames(json.data)
+          setTotal(json.total)
+        }
+      }
+    } catch (error) {
+      console.error("Bulk sync failed:", error)
+      alert("Sync failed. Check console for details.")
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  const handleSyncAll = async () => {
+    if (!confirm("This will sync all Steam games. Continue?")) return
+
+    setSyncing(true)
+    try {
+      const res = await fetch("/api/games/sync/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "all" }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        alert(data.message)
+        // Refresh games list
+        const refreshRes = await fetch(
+          `/api/games?limit=${LIMIT}&offset=${offset}&search=${encodeURIComponent(search)}`
+        )
+        if (refreshRes.ok) {
+          const json = await refreshRes.json()
+          setGames(json.data)
+          setTotal(json.total)
+        }
+      }
+    } catch (error) {
+      console.error("Sync all failed:", error)
+      alert("Sync failed. Check console for details.")
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   const isSearchChangeRef = useRef(false)
 
@@ -144,15 +230,31 @@ export function GamesClient() {
   return (
     <div className="space-y-4">
       {/* Search */}
-      <div className="relative">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text/40" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          placeholder="Search games..."
-          className="w-full pl-9 pr-4 py-2 rounded-md bg-text/5 border border-border text-sm text-text placeholder:text-text/40 focus:outline-none focus:border-primary/60 transition-colors"
-        />
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text/40" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Search games..."
+            className="w-full pl-9 pr-4 py-2 rounded-md bg-text/5 border border-border text-sm text-text placeholder:text-text/40 focus:outline-none focus:border-primary/60 transition-colors"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSyncAll}
+            disabled={syncing}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            {syncing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCwIcon className="h-4 w-4" />
+            )}
+            Sync All
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -160,6 +262,14 @@ export function GamesClient() {
         <table className="w-full text-sm">
           <thead className="bg-text/[0.03]">
             <tr>
+              <th className="text-left px-4 py-3 w-10">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size === games.length && games.length > 0}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="rounded border-border"
+                />
+              </th>
               <th className="text-left px-4 py-3 text-xs font-medium uppercase tracking-wider text-text/50 w-14">
                 Cover
               </th>
@@ -183,13 +293,13 @@ export function GamesClient() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-text/50">
+                <td colSpan={7} className="px-4 py-8 text-center text-text/50">
                   <Loader2 className="h-5 w-5 animate-spin mx-auto" />
                 </td>
               </tr>
             ) : games.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-text/50">
+                <td colSpan={7} className="px-4 py-8 text-center text-text/50">
                   No games found.
                 </td>
               </tr>
@@ -199,6 +309,14 @@ export function GamesClient() {
                   key={game.id}
                   className="border-t border-border hover:bg-text/[0.02] transition-colors"
                 >
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(game.id)}
+                      onChange={(e) => handleSelectOne(game.id, e.target.checked)}
+                      className="rounded border-border"
+                    />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="h-10 w-10 rounded overflow-hidden bg-text/5 flex items-center justify-center">
                       {game.capsuleImage || game.headerImage ? (
@@ -243,17 +361,22 @@ export function GamesClient() {
                       className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${
                         game.syncStatus === "synced"
                           ? "bg-green-500/10 text-green-400"
-                          : "bg-yellow-500/10 text-yellow-400"
+                          : game.syncStatus === "failed"
+                            ? "bg-red-500/10 text-red-400"
+                            : "bg-yellow-500/10 text-yellow-400"
                       }`}
+                      title={game.syncStatus === "failed" ? game.syncError || undefined : undefined}
                     >
                       <span
                         className={`h-1.5 w-1.5 rounded-full ${
                           game.syncStatus === "synced"
                             ? "bg-green-400"
-                            : "bg-yellow-400"
+                            : game.syncStatus === "failed"
+                              ? "bg-red-400"
+                              : "bg-yellow-400"
                         }`}
                       />
-                      {game.syncStatus === "synced" ? "Synced" : "Stale"}
+                      {game.syncStatus === "synced" ? "Synced" : game.syncStatus === "failed" ? "Failed" : "Stale"}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -297,6 +420,41 @@ export function GamesClient() {
           </tbody>
         </table>
       </div>
+
+      {/* Floating action bar */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 bg-background border border-border rounded-xl shadow-lg">
+          <span className="text-sm text-text/70">
+            {selectedIds.size} game{selectedIds.size !== 1 ? "s" : ""} selected
+          </span>
+          <button
+            onClick={handleSyncSelected}
+            disabled={syncing}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors text-sm font-medium cursor-pointer disabled:opacity-50"
+          >
+            {syncing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCwIcon className="h-4 w-4" />
+            )}
+            Resync Selected
+          </button>
+          <button
+            onClick={handleSyncAll}
+            disabled={syncing}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-text/5 text-text hover:bg-text/10 transition-colors text-sm font-medium cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCwIcon className="h-4 w-4" />
+            Resync All
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="px-3 py-2 rounded-lg text-sm text-text/50 hover:text-text/70 transition-colors cursor-pointer"
+          >
+            Clear
+          </button>
+        </div>
+      )}
 
       {/* Pagination */}
       {games.length > 0 && (
