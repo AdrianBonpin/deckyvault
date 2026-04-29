@@ -189,7 +189,93 @@ export const gameVersionsRoutes = new Elysia({ prefix: "/games/:gameId/versions"
   )
 
 // ── Game Sync Routes ────────────────────────────────────────────────
+const MAX_BULK_SYNC = 100
+
 export const gameSyncRoutes = new Elysia({ prefix: "/games" })
+  // Bulk sync (defined before /:gameId/sync to avoid route conflict)
+  .post(
+    "/sync/bulk",
+    async ({ body, request, set }) => {
+      const guard = await requireRole(request.headers, ["admin"]);
+      if (!guard.ok) {
+        set.status = guard.status;
+        return { error: guard.error };
+      }
+
+      let gamesToSync: { id: string; steamAppId: number }[] = [];
+
+      if (body.mode === "all") {
+        gamesToSync = await db
+          .select({ id: games.id, steamAppId: games.steamAppId })
+          .from(games)
+          .where(sql`${games.steamAppId} IS NOT NULL`)
+          .limit(MAX_BULK_SYNC);
+      } else if (body.mode === "stale") {
+        gamesToSync = await db
+          .select({ id: games.id, steamAppId: games.steamAppId })
+          .from(games)
+          .where(
+            and(
+              sql`${games.steamAppId} IS NOT NULL`,
+              or(
+                sql`${games.lastSync} IS NULL`,
+                sql`${games.lastSync} < NOW() - INTERVAL '7 days'`
+              )
+            )
+          )
+          .limit(MAX_BULK_SYNC);
+      } else {
+        const gameIds = (body.gameIds || []).slice(0, MAX_BULK_SYNC);
+        if (gameIds.length > 0) {
+          gamesToSync = await db
+            .select({ id: games.id, steamAppId: games.steamAppId })
+            .from(games)
+            .where(
+              and(
+                sql`${games.steamAppId} IS NOT NULL`,
+                sql`${games.id} IN (${sql.join(gameIds.map(id => sql`${id}`), sql`, `)})`
+              )
+            );
+        }
+      }
+
+      if (gamesToSync.length === 0) {
+        return { total: 0, synced: 0, failed: 0, message: "No games to sync" };
+      }
+
+      // Process syncs sequentially with delay
+      let synced = 0;
+      let failed = 0;
+
+      for (const game of gamesToSync) {
+        const result = await syncSteamGame(game.steamAppId, { forceRetry: true });
+        if (result.success) synced++;
+        else failed++;
+        
+        // Rate limit protection (skip delay on last item)
+        if (game !== gamesToSync[gamesToSync.length - 1]) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+      }
+
+      return {
+        total: gamesToSync.length,
+        synced,
+        failed,
+        message: `Synced ${synced} games, ${failed} failed`,
+      };
+    },
+    {
+      body: t.Object({
+        gameIds: t.Optional(t.Array(t.String())),
+        mode: t.Union([
+          t.Literal("selected"),
+          t.Literal("all"),
+          t.Literal("stale"),
+        ]),
+      }),
+    }
+  )
   // Single game sync
   .post(
     "/:gameId/sync",
@@ -217,94 +303,15 @@ export const gameSyncRoutes = new Elysia({ prefix: "/games" })
       }
 
       const result = await syncSteamGame(game.steamAppId, { forceRetry: true });
-
+      
       if (!result.success) {
-        set.status = 500;
+        set.status = 502;
         return { status: "failed", error: result.error };
       }
 
-      return { status: "synced" };
+      return { status: "synced", gameId: params.gameId };
     },
     {
       params: t.Object({ gameId: t.String() }),
-    }
-  )
-  // Bulk sync
-  .post(
-    "/sync/bulk",
-    async ({ body, request, set }) => {
-      const guard = await requireRole(request.headers, ["admin"]);
-      if (!guard.ok) {
-        set.status = guard.status;
-        return { error: guard.error };
-      }
-
-      let gameIds: string[] = [];
-
-      if (body.mode === "all") {
-        const allGames = await db
-          .select({ id: games.id })
-          .from(games)
-          .where(sql`${games.steamAppId} IS NOT NULL`);
-        gameIds = allGames.map((g) => g.id);
-      } else if (body.mode === "stale") {
-        const staleGames = await db
-          .select({ id: games.id })
-          .from(games)
-          .where(
-            and(
-              sql`${games.steamAppId} IS NOT NULL`,
-              or(
-                sql`${games.lastSync} IS NULL`,
-                sql`${games.lastSync} < NOW() - INTERVAL '7 days'`
-              )
-            )
-          );
-        gameIds = staleGames.map((g) => g.id);
-      } else {
-        gameIds = body.gameIds || [];
-      }
-
-      if (gameIds.length === 0) {
-        return { queued: 0, message: "No games to sync" };
-      }
-
-      // Process syncs sequentially with delay
-      let synced = 0;
-      let failed = 0;
-
-      for (const gameId of gameIds) {
-        const [game] = await db
-          .select({ steamAppId: games.steamAppId })
-          .from(games)
-          .where(eq(games.id, gameId))
-          .limit(1);
-
-        if (game?.steamAppId) {
-          const result = await syncSteamGame(game.steamAppId, { forceRetry: true });
-          if (result.success) synced++;
-          else failed++;
-
-          // Rate limit protection
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        }
-      }
-
-      return {
-        queued: gameIds.length,
-        synced,
-        failed,
-        message: `Synced ${synced} games, ${failed} failed`,
-      };
-    },
-    {
-      body: t.Object({
-        gameIds: t.Optional(t.Array(t.String())),
-        mode: t.Union([
-          t.Literal("selected"),
-          t.Literal("all"),
-          t.Literal("stale"),
-        ]),
-      }),
     }
   );
