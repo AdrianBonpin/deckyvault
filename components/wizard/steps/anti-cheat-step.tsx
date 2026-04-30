@@ -21,21 +21,24 @@ const statusConfig = {
     label: "Supported",
     color: "border-green-500/30 bg-green-500/10",
     textColor: "text-green-400",
-    message: "This game's anti-cheat supports Linux/SteamOS. Multiplayer should work.",
+    message:
+      "This game's anti-cheat supports Linux/SteamOS. Multiplayer should work.",
   },
   unsupported: {
     icon: ShieldX,
     label: "Unsupported",
     color: "border-red-500/30 bg-red-500/10",
     textColor: "text-red-400",
-    message: "This game's anti-cheat does not support Linux/SteamOS. Multiplayer may not work.",
+    message:
+      "This game's anti-cheat does not support Linux/SteamOS. Multiplayer may not work.",
   },
   unknown: {
     icon: ShieldQuestion,
     label: "Unknown",
     color: "border-yellow-500/30 bg-yellow-500/10",
     textColor: "text-yellow-400",
-    message: "Anti-cheat compatibility is unknown. Multiplayer may or may not work.",
+    message:
+      "Anti-cheat compatibility is unknown. Multiplayer may or may not work.",
   },
   none: {
     icon: Shield,
@@ -46,28 +49,44 @@ const statusConfig = {
   },
 } as const
 
-export function AntiCheatStep({ hardwareSlug, platformSupport }: AntiCheatStepProps) {
-  const support = platformSupport.find((p) => p.hardwareSlug === hardwareSlug)
+export function AntiCheatStep({
+  hardwareSlug,
+  platformSupport,
+}: AntiCheatStepProps) {
+  // Anti-cheat is a game-level property, not device-specific.
+  // Find the first entry with anti-cheat info (any device).
+  const antiCheatEntry = platformSupport.find((p) => p.antiCheatRelevant)
 
-  if (!hardwareSlug) {
+  if (!antiCheatEntry) {
     return (
-      <div className="flex flex-col items-center justify-center py-16">
-        <Shield className="h-8 w-8 text-text/30 mb-4" />
-        <p className="text-sm text-text/60">Please select a hardware device first.</p>
+      <div className="space-y-6">
+        <div className="flex items-start gap-3">
+          <Shield className="h-4 w-4 text-text mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="text-sm font-semibold text-text">
+              Anti-Cheat Status
+            </h3>
+            <p className="text-xs text-text/60 mt-1">
+              Check the anti-cheat compatibility before submitting.
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-zinc-500/30 bg-zinc-500/10 p-4">
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-zinc-400" />
+            <h4 className="font-medium">No Anti-Cheat</h4>
+          </div>
+          <p className="mt-2 text-sm text-zinc-400">
+            This game does not use anti-cheat software. Multiplayer (if
+            available) should work without issues.
+          </p>
+        </div>
       </div>
     )
   }
 
-  if (!support || !support.antiCheatRelevant) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16">
-        <Shield className="h-8 w-8 text-text/30 mb-4" />
-        <p className="text-sm text-text/60">No anti-cheat information for this hardware device.</p>
-      </div>
-    )
-  }
-
-  const config = statusConfig[support.antiCheatStatus]
+  const config = statusConfig[antiCheatEntry.antiCheatStatus]
   const Icon = config.icon
 
   return (
@@ -77,7 +96,7 @@ export function AntiCheatStep({ hardwareSlug, platformSupport }: AntiCheatStepPr
         <div>
           <h3 className="text-sm font-semibold text-text">Anti-Cheat Status</h3>
           <p className="text-xs text-text/60 mt-1">
-            Check the anti-cheat compatibility for your selected hardware before submitting.
+            Check the anti-cheat compatibility before submitting.
           </p>
         </div>
       </div>
@@ -86,7 +105,7 @@ export function AntiCheatStep({ hardwareSlug, platformSupport }: AntiCheatStepPr
         <div className="flex items-center gap-2">
           <Icon className={cn("h-5 w-5", config.textColor)} />
           <h4 className="font-medium">
-            Anti-Cheat: {support.antiCheatName || config.label}
+            Anti-Cheat: {antiCheatEntry.antiCheatName || config.label}
           </h4>
         </div>
         <p className={cn("mt-2 text-sm", config.textColor)}>{config.message}</p>
