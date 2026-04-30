@@ -1,0 +1,75 @@
+# Changelog
+
+All notable changes to DeckyVault will be documented in this file.
+
+## [Unreleased] - 2026-04-30
+
+### Added
+
+#### Anti-Cheat Tracking
+- Per-game anti-cheat status display on game details page
+- Anti-cheat badges on games list and search results
+- Anti-cheat filter in games list
+- Anti-cheat awareness step in benchmark submission wizard
+- Anti-cheat status shown per device in platform support section
+
+#### Steam Reviews Integration
+- Steam review score and sentiment stored on game records
+- Steam review fetching integrated into game sync flow
+- Embedded Steam review snippets on game details page
+- Steam review score filter in games list
+- Steam review score shown in game metadata
+
+#### Playability Indicators
+- Auto-calculated playability status (Plays Great / Playable / Needs Tweaks / Unplayable)
+- Per-device playability with aggregate game-level status
+- Manual override capability for admins/contributors
+- Color-coded playability badges across all game views
+- "Plays Great" quick-filter in games list
+
+#### Games List Revamp
+- FPS range filter (min/max)
+- FSR support filter
+- Proton/Native runtime filter
+- Anti-cheat status filter
+- Playability status filter
+- Steam review score minimum filter
+- Free-to-play filter
+- Multiplayer filter
+- New sort options: Best Performance, Most Popular, Release Date, Steam Reviews
+- Saved/bookmarked filter presets
+
+#### Community Suggestions
+- "Suggest Edit" button on game details page
+- Community suggestion submission for editable fields
+- Moderation queue for pending suggestions
+- Approve/reject workflow with review notes
+- Discord webhook notifications for new suggestions
+
+#### Manage Dashboard
+- Overview dashboard replacing simple redirect
+- Total games, benchmarks, and users stats cards
+- Pending reports and suggestions counters
+- 30-day activity metrics
+- Top contributors leaderboard
+- Playability distribution chart
+- Steam sync health overview
+
+#### Benchmark Peer Review
+- Enhanced report system for flagging incorrect presets
+- Report status tracking (open/reviewed/dismissed)
+- Verified badge on peer-reviewed benchmarks
+
+### Changed
+- Manage page now shows dashboard by default instead of redirecting to users
+- Games list now supports 12 filter dimensions and 7 sort options
+- Game details page now shows anti-cheat, playability, and Steam reviews
+
+### Technical
+- Added `steamReviewScore`, `steamReviewSentiment`, `steamReviewCount` to games table
+- Added `playabilityStatus`, `playabilityOverride`, `playabilityCalculatedAt` to games and gamePlatformSupport tables
+- Created `community_suggestions` table for moderation workflow
+- Created `saved_filters` table for user filter presets
+- Added playability auto-calculation engine
+- Added Steam reviews caching API
+- Added admin dashboard stats API
