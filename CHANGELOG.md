@@ -70,6 +70,9 @@ All notable changes to DeckyVault will be documented in this file.
 - Added custom system indicator
 
 ### Changed
+- Sync All now processes games in parallel (5 concurrent) instead of one-by-one
+- Removed 100-game limit for Sync All (now syncs all Steam games)
+- Sync Selected now uses bulk endpoint for faster processing
 - Manage page now shows dashboard by default instead of redirecting to users
 - Games list now supports 12 filter dimensions and 7 sort options
 - Game details page now shows anti-cheat, playability, and Steam reviews prominently

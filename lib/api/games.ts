@@ -189,7 +189,60 @@ export const gameVersionsRoutes = new Elysia({ prefix: "/games/:gameId/versions"
   )
 
 // ── Game Sync Routes ────────────────────────────────────────────────
-const MAX_BULK_SYNC = 100
+const MAX_BULK_SYNC = 1000
+const SYNC_CONCURRENCY = 5 // Number of parallel syncs
+const SYNC_BATCH_DELAY_MS = 100 // Delay between batches to respect rate limits
+
+/**
+ * Process syncs in parallel with controlled concurrency.
+ * Processes items in batches of `concurrency` size.
+ */
+async function syncInParallel(
+  gamesToSync: { id: string; steamAppId: number | null }[],
+  concurrency: number = SYNC_CONCURRENCY
+): Promise<{ synced: number; failed: number; results: Map<string, { success: boolean; error?: string }> }> {
+  let synced = 0
+  let failed = 0
+  const results = new Map<string, { success: boolean; error?: string }>()
+
+  // Process in batches
+  for (let i = 0; i < gamesToSync.length; i += concurrency) {
+    const batch = gamesToSync.slice(i, i + concurrency)
+
+    // Process batch in parallel
+    const batchResults = await Promise.allSettled(
+      batch
+        .filter((g) => g.steamAppId)
+        .map(async (game) => {
+          const result = await syncSteamGame(game.steamAppId!, { forceRetry: true })
+          return { gameId: game.id, ...result }
+        })
+    )
+
+    // Collect results
+    for (const result of batchResults) {
+      if (result.status === "fulfilled") {
+        const { gameId, success, error } = result.value
+        if (success) {
+          synced++
+          results.set(gameId, { success: true })
+        } else {
+          failed++
+          results.set(gameId, { success: false, error })
+        }
+      } else {
+        failed++
+      }
+    }
+
+    // Small delay between batches to avoid hammering Steam API
+    if (i + concurrency < gamesToSync.length) {
+      await new Promise((resolve) => setTimeout(resolve, SYNC_BATCH_DELAY_MS))
+    }
+  }
+
+  return { synced, failed, results }
+}
 
 export const gameSyncRoutes = new Elysia({ prefix: "/games" })
   // Bulk sync (defined before /:gameId/sync to avoid route conflict)
@@ -208,8 +261,7 @@ export const gameSyncRoutes = new Elysia({ prefix: "/games" })
         gamesToSync = await db
           .select({ id: games.id, steamAppId: games.steamAppId })
           .from(games)
-          .where(sql`${games.steamAppId} IS NOT NULL`)
-          .limit(MAX_BULK_SYNC);
+          .where(sql`${games.steamAppId} IS NOT NULL`);
       } else if (body.mode === "stale") {
         gamesToSync = await db
           .select({ id: games.id, steamAppId: games.steamAppId })
@@ -222,8 +274,7 @@ export const gameSyncRoutes = new Elysia({ prefix: "/games" })
                 sql`${games.lastSync} < NOW() - INTERVAL '7 days'`
               )
             )
-          )
-          .limit(MAX_BULK_SYNC);
+          );
       } else {
         const gameIds = (body.gameIds || []).slice(0, MAX_BULK_SYNC);
         if (gameIds.length > 0) {
@@ -243,21 +294,8 @@ export const gameSyncRoutes = new Elysia({ prefix: "/games" })
         return { total: 0, synced: 0, failed: 0, message: "No games to sync" };
       }
 
-      // Process syncs sequentially with delay
-      let synced = 0;
-      let failed = 0;
-
-      for (const game of gamesToSync) {
-        if (!game.steamAppId) continue;
-        const result = await syncSteamGame(game.steamAppId, { forceRetry: true });
-        if (result.success) synced++;
-        else failed++;
-        
-        // Rate limit protection (skip delay on last item)
-        if (game !== gamesToSync[gamesToSync.length - 1]) {
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        }
-      }
+      // Process syncs in parallel with controlled concurrency
+      const { synced, failed } = await syncInParallel(gamesToSync, SYNC_CONCURRENCY);
 
       return {
         total: gamesToSync.length,

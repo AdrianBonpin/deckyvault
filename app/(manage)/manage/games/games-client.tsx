@@ -107,179 +107,81 @@ export function GamesClient() {
       isRunning: true,
       current: 0,
       total: gamesToSync.length,
-      currentGame: null,
+      currentGame: "Preparing sync...",
       synced: 0,
       failed: 0,
       results: new Map(),
     })
 
-    let synced = 0
-    let failed = 0
-    const results = new Map<string, { success: boolean; error?: string }>()
+    try {
+      // Use the bulk sync endpoint with selected game IDs
+      const res = await fetch("/api/games/sync/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "selected",
+          gameIds: gamesToSync.map((g) => g.id),
+        }),
+      })
 
-    for (let i = 0; i < gamesToSync.length; i++) {
-      const game = gamesToSync[i]
-      setSyncProgress((prev) => ({
-        ...prev,
-        current: i + 1,
-        currentGame: game.title,
-      }))
-
-      try {
-        const res = await fetch(`/api/games/${game.id}/sync`, { method: "POST" })
-        if (res.ok) {
-          const data = await res.json()
-          if (data.status === "synced") {
-            synced++
-            results.set(game.id, { success: true })
-          } else {
-            failed++
-            results.set(game.id, { success: false, error: data.error })
-          }
-        } else {
-          failed++
-          results.set(game.id, { success: false, error: `HTTP ${res.status}` })
-        }
-      } catch (error) {
-        failed++
-        results.set(game.id, { success: false, error: String(error) })
+      if (!res.ok) {
+        throw new Error(`Sync failed: HTTP ${res.status}`)
       }
+
+      const data = await res.json()
 
       setSyncProgress((prev) => ({
         ...prev,
-        synced,
-        failed,
-        results: new Map(results),
+        isRunning: false,
+        synced: data.synced,
+        failed: data.failed,
+        currentGame: null,
       }))
-
-      // Update the game in the list immediately
-      const result = results.get(game.id)
-      if (result?.success) {
-        setGames((prev) =>
-          prev.map((g) =>
-            g.id === game.id
-              ? { ...g, syncStatus: "synced", lastSync: new Date().toISOString(), syncError: null }
-              : g
-          )
-        )
-      } else {
-        setGames((prev) =>
-          prev.map((g) =>
-            g.id === game.id
-              ? { ...g, syncStatus: "failed", syncError: result?.error || "Sync failed" }
-              : g
-          )
-        )
-      }
-
-      // Rate limit: 500ms between syncs (skip on last)
-      if (i < gamesToSync.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 500))
-      }
+      setSyncCompleted(true)
+      setSelectedIds(new Set())
+    } catch (error) {
+      console.error("Sync selected failed:", error)
+      alert("Sync failed. Check console for details.")
+    } finally {
+      setSyncing(false)
     }
-
-    setSyncProgress((prev) => ({
-      ...prev,
-      isRunning: false,
-      currentGame: null,
-    }))
-    setSyncing(false)
-    setSelectedIds(new Set())
-    setSyncCompleted(true)
   }
 
   const handleSyncAll = async () => {
     if (!confirm("This will sync all Steam games. Continue?")) return
 
-    // Fetch all Steam games
     setSyncing(true)
+    setSyncCompleted(false)
+    setSyncProgress({
+      isRunning: true,
+      current: 0,
+      total: 0,
+      currentGame: "Preparing sync...",
+      synced: 0,
+      failed: 0,
+      results: new Map(),
+    })
+
     try {
-      const res = await fetch("/api/games?limit=1000&filter_source=steam")
-      if (!res.ok) {
-        alert("Failed to fetch games list")
-        setSyncing(false)
-        return
-      }
-      const data = await res.json()
-      const allSteamGames = data.data.filter((g: Game) => g.steamAppId)
-
-      if (allSteamGames.length === 0) {
-        alert("No Steam games to sync")
-        setSyncing(false)
-        return
-      }
-
-      setSyncCompleted(false)
-      setSyncProgress({
-        isRunning: true,
-        current: 0,
-        total: allSteamGames.length,
-        currentGame: null,
-        synced: 0,
-        failed: 0,
-        results: new Map(),
+      // Use the bulk sync endpoint (processes in parallel)
+      const res = await fetch("/api/games/sync/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "all" }),
       })
 
-      let synced = 0
-      let failed = 0
-      const results = new Map<string, { success: boolean; error?: string }>()
-
-      for (let i = 0; i < allSteamGames.length; i++) {
-        const game = allSteamGames[i]
-        setSyncProgress((prev) => ({
-          ...prev,
-          current: i + 1,
-          currentGame: game.title,
-        }))
-
-        try {
-          const syncRes = await fetch(`/api/games/${game.id}/sync`, { method: "POST" })
-          if (syncRes.ok) {
-            const syncData = await syncRes.json()
-            if (syncData.status === "synced") {
-              synced++
-              results.set(game.id, { success: true })
-            } else {
-              failed++
-              results.set(game.id, { success: false, error: syncData.error })
-            }
-          } else {
-            failed++
-            results.set(game.id, { success: false, error: `HTTP ${syncRes.status}` })
-          }
-        } catch (error) {
-          failed++
-          results.set(game.id, { success: false, error: String(error) })
-        }
-
-        setSyncProgress((prev) => ({
-          ...prev,
-          synced,
-          failed,
-          results: new Map(results),
-        }))
-
-        // Update the game in the list if it's currently visible
-        const result = results.get(game.id)
-        setGames((prev) =>
-          prev.map((g) =>
-            g.id === game.id
-              ? result?.success
-                ? { ...g, syncStatus: "synced", lastSync: new Date().toISOString(), syncError: null }
-                : { ...g, syncStatus: "failed", syncError: result?.error || "Sync failed" }
-              : g
-          )
-        )
-
-        // Rate limit: 500ms between syncs (skip on last)
-        if (i < allSteamGames.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 500))
-        }
+      if (!res.ok) {
+        throw new Error(`Sync failed: HTTP ${res.status}`)
       }
+
+      const data = await res.json()
 
       setSyncProgress((prev) => ({
         ...prev,
         isRunning: false,
+        total: data.total,
+        synced: data.synced,
+        failed: data.failed,
         currentGame: null,
       }))
       setSyncCompleted(true)
