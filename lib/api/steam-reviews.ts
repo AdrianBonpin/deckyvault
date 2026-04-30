@@ -77,8 +77,9 @@ export const steamReviewRoutes = new Elysia({ prefix: "/steam-reviews" })
       }
 
       try {
+        // Steam API uses cursor-based pagination, but for simplicity we fetch more and slice
         const response = await fetch(
-          `https://store.steampowered.com/appreviews/${game.steamAppId}?json=1&language=${language}&purchase_type=all&num_per_page=${limit}&cursor=${encodeURIComponent(Buffer.from(`${offset}`).toString("base64"))}&filter=recent&review_type=all`,
+          `https://store.steampowered.com/appreviews/${game.steamAppId}?json=1&language=${language}&purchase_type=all&num_per_page=${offset + limit}&filter=recent&review_type=all`,
           { signal: AbortSignal.timeout(10000) }
         )
 
@@ -89,10 +90,16 @@ export const steamReviewRoutes = new Elysia({ prefix: "/steam-reviews" })
 
         const data: SteamReviewResponse = await response.json()
 
-        // Cache the result
-        reviewCache.set(cacheKey, { data, expires: Date.now() + CACHE_TTL })
+        // Slice reviews for the requested page
+        const slicedData = {
+          ...data,
+          reviews: (data.reviews ?? []).slice(offset, offset + limit),
+        }
 
-        return data
+        // Cache the result
+        reviewCache.set(cacheKey, { data: slicedData, expires: Date.now() + CACHE_TTL })
+
+        return slicedData
       } catch (error) {
         set.status = 502
         return { error: "Steam review API unavailable" }
