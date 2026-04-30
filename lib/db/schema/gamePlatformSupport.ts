@@ -6,7 +6,7 @@ import {
   timestamp,
   unique,
 } from "drizzle-orm/pg-core"
-import { games } from "./games"
+import { games, playabilityStatusEnum } from "./games"
 import { hardware } from "./hardware"
 
 export const protonStatusEnum = pgEnum("proton_status", [
@@ -51,6 +51,11 @@ export const gamePlatformSupport = pgTable(
     antiCheatStatus: antiCheatStatusEnum("anti_cheat_status")
       .default("unknown")
       .notNull(),
+
+    // Per-device playability
+    playabilityStatus: playabilityStatusEnum("playability_status").default("unknown"),
+    playabilityOverride: boolean("playability_override").default(false),
+    playabilityCalculatedAt: timestamp("playability_calculated_at"),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),

@@ -33,6 +33,14 @@ export const steamReviewSentimentEnum = pgEnum("steam_review_sentiment", [
   "overwhelmingly_negative",
 ])
 
+export const playabilityStatusEnum = pgEnum("playability_status", [
+  "great",
+  "playable",
+  "needs_tweaks",
+  "unplayable",
+  "unknown",
+])
+
 export const games = pgTable(
   "games",
   {
@@ -64,6 +72,11 @@ export const games = pgTable(
     steamReviewScore: integer("steam_review_score"),       // 0-100 normalized score
     steamReviewSentiment: steamReviewSentimentEnum("steam_review_sentiment"),
     steamReviewCount: integer("steam_review_count"),        // Total review count from Steam
+
+    // Playability (aggregate from all devices)
+    playabilityStatus: playabilityStatusEnum("playability_status").default("unknown"),
+    playabilityOverride: boolean("playability_override").default(false), // true = manually set
+    playabilityCalculatedAt: timestamp("playability_calculated_at"),     // when auto-calculated
     priceCurrent: integer("price_current"),
     priceInitial: integer("price_initial"),
     priceCurrency: text("price_currency"),
