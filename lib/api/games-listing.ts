@@ -8,6 +8,7 @@ import {
   hardware,
 } from "@/lib/db/schema"
 import { ilike, or, sql, eq, and, desc, asc, inArray, gte, lte } from "drizzle-orm"
+import { fuzzySearchTerm } from "@/lib/db/search"
 
 const MAX_OFFSET = 10000
 const PAGE_SIZE = 24
@@ -39,10 +40,11 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
 
     // Search filter (title, developer, publisher)
     if (search) {
+      const titleTerm = fuzzySearchTerm(search)
       const term = `%${search}%`
       conditions.push(
         or(
-          ilike(games.title, term),
+          ilike(games.title, titleTerm),
           ilike(games.developer, term),
           ilike(games.publisher, term),
         )!,

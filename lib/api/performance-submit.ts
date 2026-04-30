@@ -4,8 +4,9 @@ import {
   performanceEntries,
   gameVersions,
   hardware,
+  gamePlatformSupport,
 } from "@/lib/db/schema"
-import { eq, sql } from "drizzle-orm"
+import { eq, and, sql } from "drizzle-orm"
 import { requireRole } from "@/lib/auth/guard"
 import { recalculatePlayability } from "./playability"
 
@@ -72,7 +73,7 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
 
       // Verify the game version exists
       const [version] = await db
-        .select({ id: gameVersions.id })
+        .select({ id: gameVersions.id, gameId: gameVersions.gameId })
         .from(gameVersions)
         .where(eq(gameVersions.id, body.versionId))
         .limit(1)
@@ -120,17 +121,47 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
         })
         .returning()
 
-      // Recalculate playability for this game (fire and forget)
-      const [gameVersion] = await db
-        .select({ gameId: gameVersions.gameId })
-        .from(gameVersions)
-        .where(eq(gameVersions.id, body.versionId))
-        .limit(1)
-      if (gameVersion) {
-        recalculatePlayability(gameVersion.gameId).catch((err) =>
-          console.error("Failed to recalculate playability:", err),
+      // Update or create gamePlatformSupport with anti-cheat info
+      const [existingSupport] = await db
+        .select()
+        .from(gamePlatformSupport)
+        .where(
+          and(
+            eq(gamePlatformSupport.gameId, version.gameId),
+            eq(gamePlatformSupport.hardwareSlug, body.hardwareSlug),
+          ),
         )
+        .limit(1)
+
+      if (existingSupport) {
+        await db
+          .update(gamePlatformSupport)
+          .set({
+            antiCheatRelevant: body.antiCheatRelevant ?? existingSupport.antiCheatRelevant,
+            antiCheatName: body.antiCheatRelevant
+              ? (body.antiCheatName ?? existingSupport.antiCheatName)
+              : null,
+            antiCheatStatus: body.antiCheatStatus ?? existingSupport.antiCheatStatus,
+            updatedAt: new Date(),
+          })
+          .where(eq(gamePlatformSupport.id, existingSupport.id))
+      } else {
+        await db.insert(gamePlatformSupport).values({
+          gameId: version.gameId,
+          hardwareSlug: body.hardwareSlug,
+          isSupported: true,
+          protonStatus: "unknown",
+          antiCheatRelevant: body.antiCheatRelevant ?? false,
+          antiCheatName: body.antiCheatRelevant ? body.antiCheatName ?? null : null,
+          antiCheatStatus: body.antiCheatStatus ?? "unknown",
+          playabilityStatus: "unknown",
+        })
       }
+
+      // Recalculate playability for this game (fire and forget)
+      recalculatePlayability(version.gameId).catch((err) =>
+        console.error("Failed to recalculate playability:", err),
+      )
 
       set.status = 201
       return {
@@ -190,6 +221,16 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
           ]),
         ),
         userNotes: t.Optional(t.Union([t.String(), t.Null()])),
+        antiCheatRelevant: t.Optional(t.Boolean()),
+        antiCheatName: t.Optional(t.Union([t.String(), t.Null()])),
+        antiCheatStatus: t.Optional(
+          t.Union([
+            t.Literal("none"),
+            t.Literal("supported"),
+            t.Literal("unsupported"),
+            t.Literal("unknown"),
+          ]),
+        ),
       }),
     },
   )

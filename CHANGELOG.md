@@ -2,7 +2,7 @@
 
 All notable changes to DeckyVault will be documented in this file.
 
-## [Unreleased] - 2026-04-30
+## [2026.0.95] - 2026-04-30
 
 ### Added
 

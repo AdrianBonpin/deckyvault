@@ -8,6 +8,7 @@ import {
   user,
 } from "@/lib/db/schema"
 import { eq, desc, sql, and, ilike, isNull, isNotNull, or } from "drizzle-orm"
+import { fuzzySearchTerm } from "@/lib/db/search"
 import {
   requireContributorOrAdmin,
   requireAdmin,
@@ -47,7 +48,7 @@ export const adminPerformanceRoutes = new Elysia({ prefix: "/admin" })
         conditions.push(
           or(
             ilike(user.name, `%${searchTerm}%`),
-            ilike(games.title, `%${searchTerm}%`),
+            ilike(games.title, fuzzySearchTerm(searchTerm)),
           ),
         )
       }

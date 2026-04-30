@@ -7,6 +7,7 @@ import {
   gameComments,
 } from "@/lib/db/schema"
 import { ilike, or, sql, eq, inArray, and } from "drizzle-orm"
+import { fuzzySearchTerm } from "@/lib/db/search"
 
 interface SteamSearchItem {
   id: number
@@ -31,6 +32,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
       return { error: "Query must be at least 2 characters" }
     }
 
+    const titleTerm = fuzzySearchTerm(query.q)
     const term = `%${query.q}%`
 
     // ── 1. Search local database ────────────────────────────────────
@@ -39,7 +41,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
       .from(games)
       .where(
         or(
-          ilike(games.title, term),
+          ilike(games.title, titleTerm),
           ilike(games.developer, term),
           ilike(games.publisher, term),
         ),
@@ -281,6 +283,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
         genres: g.genres,
         source: g.source,
         counts,
+        platforms: g.platforms,
         platformSupport: platform
           ? {
               isSupported: platform.isSupported,
@@ -289,7 +292,19 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
               antiCheatName: platform.antiCheatName,
               antiCheatStatus: platform.antiCheatStatus,
             }
-          : null,
+          : g.platforms
+            ? {
+                isSupported: g.platforms.linux || g.platforms.windows || false,
+                protonStatus: g.platforms.linux
+                  ? "native"
+                  : g.platforms.windows
+                    ? "proton"
+                    : "unsupported",
+                antiCheatRelevant: false,
+                antiCheatName: null,
+                antiCheatStatus: "unknown",
+              }
+            : null,
         isRawPerformer: rawPerformerMap.get(g.id) ?? false,
         isPoorPerformance: poorPerformerMap.get(g.id) ?? false,
         bestFps: bestFpsMap.get(g.id) ?? null,

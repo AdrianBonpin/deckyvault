@@ -17,6 +17,7 @@ import {
   or,
 } from "drizzle-orm"
 import { requireRole } from "@/lib/auth/guard"
+import { fuzzySearchTerm } from "@/lib/db/search"
 
 /** Which columns are text-searchable via ilike */
 export type CrudSearchConfig = {
@@ -94,10 +95,15 @@ export function createCrudRoutes<T extends AnyPgTable>(
 
       // Search
       if (query.search && search) {
+        const searchStr = query.search
         const searchConditions = search.fields
           .map((field) => {
             const col = columns[field]
-            return col ? ilike(col, `%${query.search}%`) : null
+            if (!col) return null
+            const pattern = field === "title"
+              ? fuzzySearchTerm(searchStr)
+              : `%${searchStr}%`
+            return ilike(col, pattern)
           })
           .filter(Boolean) as SQL[]
         if (searchConditions.length > 0) {

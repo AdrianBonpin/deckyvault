@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "motion/react"
-import { Send, Loader2, AlertCircle, Monitor, Gauge, SlidersHorizontal, Terminal, FileText } from "lucide-react"
+import { Send, Loader2, AlertCircle, Monitor, Gauge, SlidersHorizontal, Terminal, FileText, GitBranch, Shield } from "lucide-react"
 import { TiptapEditor } from "@/components/tiptap-editor"
 import type { SettingCategory } from "@/components/wizard/settings-editor"
 import type { PerformanceData } from "./performance-step"
@@ -11,6 +11,12 @@ import { UPSCALER_TYPE_OPTIONS, FRAME_GEN_OPTIONS } from "./environment-step"
 export interface ReviewData {
   hardwareSlug: string
   hardwareName: string
+  gameVersionLabel: string
+  antiCheat: {
+    antiCheatRelevant: boolean
+    antiCheatName: string
+    antiCheatStatus: "none" | "supported" | "unsupported" | "unknown"
+  }
   performance: PerformanceData
   settings: SettingCategory[]
   environment: EnvironmentData
@@ -56,7 +62,7 @@ export function ReviewStep({
   isSubmitting,
   error,
 }: ReviewStepProps) {
-  const { hardwareName, performance, environment, settings } = data
+  const { hardwareName, gameVersionLabel, antiCheat, performance, environment, settings } = data
 
   const upscalerLabel = (() => {
     if (!data.environment.upscalerType || data.environment.upscalerType === "none") return "None"
@@ -85,10 +91,24 @@ export function ReviewStep({
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Hardware */}
+        {/* Setup: Hardware + Version + Anti-Cheat */}
         <div className="rounded-lg border border-border bg-text/5 p-4">
-          <SectionHeader icon={Monitor} label="Hardware" />
+          <SectionHeader icon={Monitor} label="Setup" />
           <SummaryRow label="Device" value={hardwareName || data.hardwareSlug || "Not selected"} />
+          <SummaryRow label="Game Version" value={gameVersionLabel} />
+          {antiCheat.antiCheatRelevant && (
+            <>
+              <SummaryRow label="Anti-Cheat" value={antiCheat.antiCheatName || "Unknown"} />
+              <SummaryRow label="Anti-Cheat Status" value={
+                antiCheat.antiCheatStatus === "supported" ? "Supported" :
+                antiCheat.antiCheatStatus === "unsupported" ? "Unsupported" :
+                antiCheat.antiCheatStatus === "unknown" ? "Unknown" : "None"
+              } />
+            </>
+          )}
+          {!antiCheat.antiCheatRelevant && (
+            <SummaryRow label="Anti-Cheat" value="None" />
+          )}
         </div>
 
         {/* Performance */}

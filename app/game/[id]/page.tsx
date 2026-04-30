@@ -254,16 +254,25 @@ export default async function GamePage({
             .orderBy(desc(performanceEntries.isPinned), desc(performanceEntries.upvotes)),
     ])
 
-    // ── Sync logic: force or stale-while-revalidate ─────────────────
+    // ── Sync logic: force or stale-while-revalidate ────────────────
     const shouldSync =
         game.source === "steam" &&
         game.steamAppId &&
         (forceSync || isSyncStale(game.lastSync))
 
     if (shouldSync) {
-        after(async () => {
+        if (forceSync) {
+            // Block render on forced sync so user sees fresh data immediately
             await syncSteamGame(game.steamAppId!)
-        })
+            // Re-fetch game after sync so serialized data is fresh
+            const refreshed = await resolveGame(game.steamAppId!.toString())
+            if (refreshed) game = refreshed
+        } else {
+            // Stale sync happens after response so page isn't delayed
+            after(async () => {
+                await syncSteamGame(game.steamAppId!)
+            })
+        }
     }
 
     // Serialize for client component (Dates → strings)
@@ -293,6 +302,9 @@ export default async function GamePage({
         releaseDate: game.releaseDate,
         categories: game.categories,
         platforms: game.platforms,
+        steamReviewScore: game.steamReviewScore,
+        steamReviewSentiment: game.steamReviewSentiment,
+        steamReviewCount: game.steamReviewCount,
     }
 
     const serializedPresets = presetRows.map((p) => ({

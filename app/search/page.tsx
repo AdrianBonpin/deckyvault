@@ -245,7 +245,7 @@ function SearchResultCard({
       transition={{ duration: 0.3, delay: index * 0.02 }}
       whileHover={{ scale: 1.005 }}
       whileTap={{ scale: 0.995 }}
-      className="group relative bg-text/[0.03] border border-border rounded-xl p-4 sm:p-5 transition-colors duration-200 hover:border-text/30 hover:bg-text/[0.06] cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-text/20 focus-within:ring-offset-2 focus-within:ring-offset-background"
+      className="group relative bg-text/3 border border-border rounded-xl p-4 sm:p-5 transition-colors duration-200 hover:border-text/30 hover:bg-text/[0.06] cursor-pointer focus-within:outline-none focus-within:ring-2 focus-within:ring-text/20 focus-within:ring-offset-2 focus-within:ring-offset-background"
       title={isLocal
         ? "Click to view game details, benchmarks, and settings"
         : "Click to add this game to DeckyVault and view its page"

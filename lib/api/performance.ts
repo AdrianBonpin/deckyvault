@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia"
 import { createCrudRoutes } from "./crud-builder"
-import { performanceEntries, games, gameVersions, hardware, user } from "@/lib/db/schema"
+import { performanceEntries, games, gameVersions, hardware, user, gamePlatformSupport } from "@/lib/db/schema"
 import { db } from "@/lib/db/index"
 import { eq, and, desc, sql } from "drizzle-orm"
 import { requireRole } from "@/lib/auth/guard"
@@ -268,10 +268,10 @@ export const performanceVerifyRoutes = new Elysia({
         updatedAt: new Date(),
       }
 
-      if (body.fpsAvg !== undefined) updateData.fpsAvg = body.fpsAvg
-      if (body.fpsOnePercentLow !== undefined) updateData.fpsOnePercentLow = body.fpsOnePercentLow
-      if (body.fpsLow !== undefined) updateData.fpsLow = body.fpsLow
-      if (body.fpsHigh !== undefined) updateData.fpsHigh = body.fpsHigh
+      if (body.fpsAvg !== undefined) updateData.fpsAvg = body.fpsAvg ?? undefined
+      if (body.fpsOnePercentLow !== undefined) updateData.fpsOnePercentLow = body.fpsOnePercentLow ?? undefined
+      if (body.fpsLow !== undefined) updateData.fpsLow = body.fpsLow ?? undefined
+      if (body.fpsHigh !== undefined) updateData.fpsHigh = body.fpsHigh ?? undefined
       if (body.protonVersion !== undefined)
         updateData.protonVersion = body.protonVersion
       if (body.osVersion !== undefined)
@@ -295,15 +295,82 @@ export const performanceVerifyRoutes = new Elysia({
         .where(eq(performanceEntries.id, params.id))
         .returning()
 
+      // Update gamePlatformSupport anti-cheat info if provided
+      if (
+        body.antiCheatRelevant !== undefined ||
+        body.antiCheatName !== undefined ||
+        body.antiCheatStatus !== undefined
+      ) {
+        // Need versionId to resolve gameId
+        const [entryVersion] = await db
+          .select({ versionId: performanceEntries.versionId })
+          .from(performanceEntries)
+          .where(eq(performanceEntries.id, params.id))
+          .limit(1)
+
+        if (entryVersion) {
+          const [gv] = await db
+            .select({ gameId: gameVersions.gameId })
+            .from(gameVersions)
+            .where(eq(gameVersions.id, entryVersion.versionId))
+            .limit(1)
+
+          if (gv) {
+            const [existingSupport] = await db
+              .select()
+              .from(gamePlatformSupport)
+              .where(
+                and(
+                  eq(gamePlatformSupport.gameId, gv.gameId),
+                  eq(gamePlatformSupport.hardwareSlug, updated.hardwareSlug),
+                ),
+              )
+              .limit(1)
+
+            if (existingSupport) {
+              await db
+                .update(gamePlatformSupport)
+                .set({
+                  antiCheatRelevant:
+                    body.antiCheatRelevant !== undefined
+                      ? body.antiCheatRelevant
+                      : existingSupport.antiCheatRelevant,
+                  antiCheatName:
+                    body.antiCheatName !== undefined
+                      ? body.antiCheatName
+                      : existingSupport.antiCheatName,
+                  antiCheatStatus:
+                    body.antiCheatStatus !== undefined
+                      ? (body.antiCheatStatus ?? "unknown")
+                      : existingSupport.antiCheatStatus,
+                  updatedAt: new Date(),
+                })
+                .where(eq(gamePlatformSupport.id, existingSupport.id))
+            } else {
+              await db.insert(gamePlatformSupport).values({
+                gameId: gv.gameId,
+                hardwareSlug: updated.hardwareSlug,
+                isSupported: true,
+                protonStatus: "unknown",
+                antiCheatRelevant: body.antiCheatRelevant ?? false,
+                antiCheatName: body.antiCheatName ?? null,
+                antiCheatStatus: (body.antiCheatStatus ?? "unknown"),
+                playabilityStatus: "unknown",
+              })
+            }
+          }
+        }
+      }
+
       return updated
     },
     {
       params: t.Object({ id: t.String() }),
       body: t.Object({
-        fpsAvg: t.Optional(t.Number()),
-        fpsOnePercentLow: t.Optional(t.Number()),
-        fpsLow: t.Optional(t.Number()),
-        fpsHigh: t.Optional(t.Number()),
+        fpsAvg: t.Optional(t.Union([t.Number(), t.Null()])),
+        fpsOnePercentLow: t.Optional(t.Union([t.Number(), t.Null()])),
+        fpsLow: t.Optional(t.Union([t.Number(), t.Null()])),
+        fpsHigh: t.Optional(t.Union([t.Number(), t.Null()])),
         protonVersion: t.Optional(t.Union([t.String(), t.Null()])),
         osVersion: t.Optional(t.Union([t.String(), t.Null()])),
         upscalerType: t.Optional(
@@ -331,6 +398,17 @@ export const performanceVerifyRoutes = new Elysia({
         launchOptions: t.Optional(t.Union([t.String(), t.Null()])),
         settingsJson: t.Optional(t.Union([t.Array(t.Any()), t.Null()])),
         userNotes: t.Optional(t.Union([t.String(), t.Null()])),
+        antiCheatRelevant: t.Optional(t.Boolean()),
+        antiCheatName: t.Optional(t.Union([t.String(), t.Null()])),
+        antiCheatStatus: t.Optional(
+          t.Union([
+            t.Literal("none"),
+            t.Literal("supported"),
+            t.Literal("unsupported"),
+            t.Literal("unknown"),
+            t.Null(),
+          ]),
+        ),
       }),
     },
   )

@@ -21,6 +21,7 @@ interface CommentsApiResponse {
 
 export function CommentSection({ gameId, initialCount }: CommentSectionProps) {
   const { data: session } = useSession()
+  const [mounted, setMounted] = useState(false)
   const [comments, setComments] = useState<CommentData[]>([])
   const [total, setTotal] = useState(initialCount)
   const [offset, setOffset] = useState(0)
@@ -28,6 +29,10 @@ export function CommentSection({ gameId, initialCount }: CommentSectionProps) {
   const [commentContent, setCommentContent] = useState<Record<string, unknown> | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const limit = 20
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Initial load
   useEffect(() => {
@@ -125,8 +130,8 @@ export function CommentSection({ gameId, initialCount }: CommentSectionProps) {
         <span className="text-sm text-text/50">({total})</span>
       </div>
 
-      {/* Compose */}
-      {session ? (
+      {/* Compose — suppress until mounted to avoid hydration mismatch */}
+      {mounted && session ? (
         <div className="flex flex-col gap-2">
           <TiptapEditor
             placeholder="Leave a comment..."
@@ -149,7 +154,7 @@ export function CommentSection({ gameId, initialCount }: CommentSectionProps) {
             </button>
           </div>
         </div>
-      ) : (
+      ) : mounted ? (
         <div className="p-4 rounded-lg border border-border bg-text/3 text-center">
           <p className="text-sm text-text/70">
             <Link
@@ -161,6 +166,8 @@ export function CommentSection({ gameId, initialCount }: CommentSectionProps) {
             to leave a comment
           </p>
         </div>
+      ) : (
+        <div className="h-[72px] rounded-lg border border-border bg-text/[0.02] animate-pulse" />
       )}
 
       {/* Comment list */}

@@ -326,7 +326,7 @@ export function GamesClient() {
       setLoading(true)
       try {
         const res = await fetch(
-          `/api/games?limit=${LIMIT}&offset=${offset}&search=${encodeURIComponent(search)}`
+          `/api/games?limit=${LIMIT}&offset=${offset}&search=${encodeURIComponent(search)}&sort=createdAt&order=desc`
         )
         if (res.ok && !cancelled) {
           const json = (await res.json()) as GamesApiResponse

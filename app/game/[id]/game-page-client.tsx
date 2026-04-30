@@ -79,6 +79,7 @@ interface Game {
     playabilityStatus?: "great" | "playable" | "needs_tweaks" | "unplayable" | "unknown" | null
     steamReviewScore?: number | null
     steamReviewSentiment?: string | null
+    steamReviewCount?: number | null
 }
 
 interface Counts {

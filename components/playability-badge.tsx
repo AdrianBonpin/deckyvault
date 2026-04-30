@@ -68,7 +68,7 @@ export function PlayabilityBadge({
         )}
         title={config.label}
       >
-        <span className={cn("h-2 w-2 rounded-full", config.dotColor)} />
+        <Icon className="h-3 w-3" />
         {showLabel && config.label}
       </span>
     );

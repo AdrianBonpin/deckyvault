@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import { db } from "@/lib/db/index"
 import { games, gameVersions, performanceEntries, gamePlatformSupport } from "@/lib/db/schema"
 import { eq, sql } from "drizzle-orm"
-import { GameEntryWizard } from "@/components/wizard/game-entry-wizard"
+import { GameEntryWizard, type GameVersionInfo } from "@/components/wizard/game-entry-wizard"
 
 // This page needs live data — skip static generation at build time
 export const dynamic = "force-dynamic"
@@ -47,37 +47,34 @@ export default async function SubmitBenchmarkPage({
     notFound()
   }
 
-  // Get or create the latest game version
-  let [version] = await db
-    .select()
+  // Fetch all game versions for version selection
+  const allVersions = await db
+    .select({
+      id: gameVersions.id,
+      versionString: gameVersions.versionString,
+      buildId: gameVersions.buildId,
+      isLatest: gameVersions.isLatest,
+    })
     .from(gameVersions)
-    .where(
-      eq(gameVersions.gameId, game.id),
-    )
+    .where(eq(gameVersions.gameId, game.id))
     .orderBy(sql`${gameVersions.createdAt} DESC`)
-    .limit(1)
 
   // Create a default version if none exists
-  if (!version) {
-    [version] = await db
+  if (allVersions.length === 0) {
+    const [newVersion] = await db
       .insert(gameVersions)
       .values({
         gameId: game.id,
         isLatest: true,
       })
       .returning()
-  }
-
-  // Fetch platform support for anti-cheat awareness
-  const platformSupport = await db
-    .select({
-      hardwareSlug: gamePlatformSupport.hardwareSlug,
-      antiCheatRelevant: gamePlatformSupport.antiCheatRelevant,
-      antiCheatName: gamePlatformSupport.antiCheatName,
-      antiCheatStatus: gamePlatformSupport.antiCheatStatus,
+    allVersions.push({
+      id: newVersion.id,
+      versionString: newVersion.versionString,
+      buildId: newVersion.buildId,
+      isLatest: newVersion.isLatest,
     })
-    .from(gamePlatformSupport)
-    .where(eq(gamePlatformSupport.gameId, game.id))
+  }
 
   // If editing, fetch the existing performance entry
   let editEntry = null
@@ -89,6 +86,26 @@ export default async function SubmitBenchmarkPage({
       .limit(1)
     editEntry = entry ?? null
   }
+
+  // Determine default version: when editing, use the entry's version;
+  // otherwise, use the latest (first in DESC order)
+  let defaultVersionId = allVersions[0].id
+  if (editEntry?.versionId) {
+    defaultVersionId = editEntry.versionId
+  }
+
+  const gameVersionInfos: GameVersionInfo[] = allVersions
+
+  // Fetch platform support for anti-cheat awareness
+  const platformSupport = await db
+    .select({
+      hardwareSlug: gamePlatformSupport.hardwareSlug,
+      antiCheatRelevant: gamePlatformSupport.antiCheatRelevant,
+      antiCheatName: gamePlatformSupport.antiCheatName,
+      antiCheatStatus: gamePlatformSupport.antiCheatStatus,
+    })
+    .from(gamePlatformSupport)
+    .where(eq(gamePlatformSupport.gameId, game.id))
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 w-full">
@@ -104,7 +121,8 @@ export default async function SubmitBenchmarkPage({
 
       <GameEntryWizard
         gameId={game.id}
-        gameVersionId={version.id}
+        gameVersions={gameVersionInfos}
+        defaultVersionId={defaultVersionId}
         editEntry={editEntry}
         platformSupport={platformSupport}
       />

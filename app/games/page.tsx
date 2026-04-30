@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { after } from "next/server"
 import { db } from "@/lib/db/index"
 import {
   games,
@@ -8,6 +9,7 @@ import {
   hardware,
 } from "@/lib/db/schema"
 import { sql, eq, and, desc, inArray } from "drizzle-orm"
+import { isSyncStale, syncSteamGame } from "@/lib/steam/sync"
 import { GamesPageClient } from "./games-page-client"
 
 // This page needs live data — skip static generation at build time
@@ -51,6 +53,7 @@ export default async function GamesPage() {
       steamReviewScore: games.steamReviewScore,
       playabilityStatus: games.playabilityStatus,
       onlineMultiplayerStatus: games.onlineMultiplayerStatus,
+      lastSync: games.lastSync,
     })
     .from(games)
     .orderBy(desc(games.createdAt))
@@ -162,6 +165,25 @@ export default async function GamesPage() {
 
   const allGenres = Array.from(genreSet).sort()
   const allDevices = deviceRows
+
+  // ── Background sync for stale games ────────────────────────────────
+  const staleSteamAppIds = gamesData
+    .filter((g) => g.source === "steam" && g.steamAppId && isSyncStale(g.lastSync))
+    .map((g) => g.steamAppId!)
+
+  if (staleSteamAppIds.length > 0) {
+    after(async () => {
+      // Sync stale games sequentially with a small delay to avoid rate-limiting
+      for (const appId of staleSteamAppIds) {
+        try {
+          await syncSteamGame(appId)
+        } catch {
+          // Stale sync failure is non-fatal — data will be refreshed on next visit
+        }
+        await new Promise((r) => setTimeout(r, 1500))
+      }
+    })
+  }
 
   // JSON-LD ItemList
   const jsonLd = {
