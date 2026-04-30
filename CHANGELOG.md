@@ -74,6 +74,7 @@ All notable changes to DeckyVault will be documented in this file.
 - Anti-cheat step in wizard now shows game-level status, not per-device
 
 ### Fixed
+- Steam reviews now display correctly (fixed pagination issue with Steam API cursor)
 - Steam reviews component now handles missing/error data gracefully
 - Anti-cheat badge no longer shows for games without anti-cheat
 - Playability calculation only considers anti-cheat if game actually uses it
