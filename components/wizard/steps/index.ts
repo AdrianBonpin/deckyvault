@@ -1,4 +1,5 @@
 export { HardwareStep } from "./hardware-step"
+export { AntiCheatStep } from "./anti-cheat-step"
 export { PerformanceStep, type PerformanceData } from "./performance-step"
 export { SettingsStep } from "./settings-step"
 export { EnvironmentStep, type EnvironmentData } from "./environment-step"

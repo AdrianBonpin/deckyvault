@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import { StepIndicator } from "@/components/wizard/step-indicator"
 import { HardwareStep } from "@/components/wizard/steps/hardware-step"
+import { AntiCheatStep } from "@/components/wizard/steps/anti-cheat-step"
 import { PerformanceStep, type PerformanceData } from "@/components/wizard/steps/performance-step"
 import { SettingsStep } from "@/components/wizard/steps/settings-step"
 import { EnvironmentStep, type EnvironmentData } from "@/components/wizard/steps/environment-step"
@@ -14,19 +15,28 @@ import { performanceEntries } from "@/lib/db/schema"
 
 const STEPS = [
   { label: "Hardware", tooltip: "Choose the hardware you tested this game on" },
+  { label: "Anti-Cheat", tooltip: "Review anti-cheat compatibility for your selected hardware" },
   { label: "Performance", tooltip: "Enter the performance metrics you observed. FPS Average is required." },
   { label: "Settings", tooltip: "Configure the game settings you used. Add categories and settings to help others replicate your setup." },
   { label: "Environment", tooltip: "Specify the software environment and any launch options used" },
   { label: "Review", tooltip: "Review your entry before submitting. Add any additional notes." },
 ]
 
+interface PlatformSupportEntry {
+  hardwareSlug: string
+  antiCheatRelevant: boolean
+  antiCheatStatus: "none" | "supported" | "unsupported" | "unknown"
+  antiCheatName: string | null
+}
+
 interface GameEntryWizardProps {
   gameId: string
   gameVersionId: string
   editEntry?: typeof performanceEntries.$inferSelect | null
+  platformSupport: PlatformSupportEntry[]
 }
 
-export function GameEntryWizard({ gameId, gameVersionId, editEntry }: GameEntryWizardProps) {
+export function GameEntryWizard({ gameId, gameVersionId, editEntry, platformSupport }: GameEntryWizardProps) {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -37,7 +47,8 @@ export function GameEntryWizard({ gameId, gameVersionId, editEntry }: GameEntryW
   const [hardwareSlug, setHardwareSlug] = useState(editEntry?.hardwareSlug ?? "")
   const [hardwareName, setHardwareName] = useState("")
 
-  // Step 2: Performance
+  // Step 2: Anti-Cheat (informational)
+  // Step 3: Performance
   const [performance, setPerformance] = useState<PerformanceData>(
     editEntry
       ? {
@@ -51,12 +62,12 @@ export function GameEntryWizard({ gameId, gameVersionId, editEntry }: GameEntryW
       : {},
   )
 
-  // Step 3: Settings
+  // Step 4: Settings
   const [settingsJson, setSettingsJson] = useState<SettingCategory[]>(
     editEntry?.settingsJson ?? [],
   )
 
-  // Step 4: Environment
+  // Step 5: Environment
   const [environment, setEnvironment] = useState<EnvironmentData>(
     editEntry
       ? {
@@ -75,7 +86,7 @@ export function GameEntryWizard({ gameId, gameVersionId, editEntry }: GameEntryW
         },
   )
 
-  // Step 5: Notes
+  // Step 6: Notes
   const [userNotes, setUserNotes] = useState(editEntry?.userNotes ?? "")
 
   // Fetch hardware name when slug changes
@@ -122,12 +133,14 @@ export function GameEntryWizard({ gameId, gameVersionId, editEntry }: GameEntryW
       case 0:
         return hardwareSlug !== ""
       case 1:
-        return performance.fpsAvg !== undefined && performance.fpsAvg > 0
+        return true // Anti-cheat is informational
       case 2:
-        return true // Settings are optional
+        return performance.fpsAvg !== undefined && performance.fpsAvg > 0
       case 3:
-        return true // Environment is optional
+        return true // Settings are optional
       case 4:
+        return true // Environment is optional
+      case 5:
         return true
       default:
         return false
@@ -250,15 +263,18 @@ export function GameEntryWizard({ gameId, gameVersionId, editEntry }: GameEntryW
             <HardwareStep value={hardwareSlug} onChange={handleHardwareChange} />
           )}
           {currentStep === 1 && (
-            <PerformanceStep value={performance} onChange={setPerformance} />
+            <AntiCheatStep hardwareSlug={hardwareSlug} platformSupport={platformSupport} />
           )}
           {currentStep === 2 && (
-            <SettingsStep value={settingsJson} onChange={setSettingsJson} />
+            <PerformanceStep value={performance} onChange={setPerformance} />
           )}
           {currentStep === 3 && (
-            <EnvironmentStep value={environment} onChange={setEnvironment} />
+            <SettingsStep value={settingsJson} onChange={setSettingsJson} />
           )}
           {currentStep === 4 && (
+            <EnvironmentStep value={environment} onChange={setEnvironment} />
+          )}
+          {currentStep === 5 && (
             <ReviewStep
               data={{
                 hardwareSlug,
@@ -278,7 +294,7 @@ export function GameEntryWizard({ gameId, gameVersionId, editEntry }: GameEntryW
       </AnimatePresence>
 
       {/* Navigation Buttons */}
-      {currentStep < 4 && (
+      {currentStep < 5 && (
         <div className="flex justify-between">
           <button
             type="button"

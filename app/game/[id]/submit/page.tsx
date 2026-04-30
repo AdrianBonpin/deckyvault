@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import { db } from "@/lib/db/index"
-import { games, gameVersions, performanceEntries } from "@/lib/db/schema"
+import { games, gameVersions, performanceEntries, gamePlatformSupport } from "@/lib/db/schema"
 import { eq, sql } from "drizzle-orm"
 import { GameEntryWizard } from "@/components/wizard/game-entry-wizard"
 
@@ -68,6 +68,17 @@ export default async function SubmitBenchmarkPage({
       .returning()
   }
 
+  // Fetch platform support for anti-cheat awareness
+  const platformSupport = await db
+    .select({
+      hardwareSlug: gamePlatformSupport.hardwareSlug,
+      antiCheatRelevant: gamePlatformSupport.antiCheatRelevant,
+      antiCheatName: gamePlatformSupport.antiCheatName,
+      antiCheatStatus: gamePlatformSupport.antiCheatStatus,
+    })
+    .from(gamePlatformSupport)
+    .where(eq(gamePlatformSupport.gameId, game.id))
+
   // If editing, fetch the existing performance entry
   let editEntry = null
   if (edit) {
@@ -95,6 +106,7 @@ export default async function SubmitBenchmarkPage({
         gameId={game.id}
         gameVersionId={version.id}
         editEntry={editEntry}
+        platformSupport={platformSupport}
       />
     </div>
   )
