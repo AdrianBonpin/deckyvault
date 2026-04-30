@@ -14,11 +14,14 @@ All notable changes to DeckyVault will be documented in this file.
 - Anti-cheat is game-level property (not per-device)
 
 #### Steam Reviews Integration
+- Steam review score badge in game details hero section
+- Steam review score display on games list cards
+- Steam review score display on search results
 - Steam review score and sentiment stored on game records
 - Steam review fetching integrated into game sync flow
 - Embedded Steam review snippets on game details page
-- Steam review score filter in games list
-- Steam review score shown in game metadata
+- Steam review score filter in games list (min %)
+- Steam review score sort option in games list
 
 #### Playability Indicators
 - Auto-calculated playability status (Plays Great / Playable / Needs Tweaks / Unplayable)
@@ -69,9 +72,12 @@ All notable changes to DeckyVault will be documented in this file.
 ### Changed
 - Manage page now shows dashboard by default instead of redirecting to users
 - Games list now supports 12 filter dimensions and 7 sort options
-- Game details page now shows anti-cheat, playability, and Steam reviews
+- Game details page now shows anti-cheat, playability, and Steam reviews prominently
 - "Suggest Edit" only appears for non-Steam games (manual, GOG, Epic sources)
 - Anti-cheat step in wizard now shows game-level status, not per-device
+- Steam sync now sets `syncStatus: "error"` on failure (was missing before)
+- Steam sync now handles HTTP 429 rate limiting with Retry-After support
+- Steam sync now rejects non-game types (DLC, soundtracks, demos)
 
 ### Fixed
 - Steam reviews now display correctly (fixed pagination issue with Steam API cursor)
@@ -80,6 +86,7 @@ All notable changes to DeckyVault will be documented in this file.
 - Playability calculation only considers anti-cheat if game actually uses it
 - API routes registered correctly (removed duplicate `/api` prefix)
 - Dashboard and saved-filters routes now accessible
+- Sync logic extracted duplicated retry/backoff code into reusable helper
 
 ### Technical
 - Added `steamReviewScore`, `steamReviewSentiment`, `steamReviewCount` to games table
@@ -89,3 +96,4 @@ All notable changes to DeckyVault will be documented in this file.
 - Added playability auto-calculation engine with `recalculatePlayability()` export
 - Added Steam reviews caching API
 - Added admin dashboard stats API
+- Extracted `recordSyncFailure()` helper for consistent sync error handling
