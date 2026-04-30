@@ -245,7 +245,7 @@ async function syncInParallel(
 }
 
 export const gameSyncRoutes = new Elysia({ prefix: "/games" })
-  // Bulk sync (defined before /:gameId/sync to avoid route conflict)
+  // Bulk sync with streaming progress (defined before /:gameId/sync to avoid route conflict)
   .post(
     "/sync/bulk",
     async ({ body, request, set }) => {
@@ -294,19 +294,73 @@ export const gameSyncRoutes = new Elysia({ prefix: "/games" })
         return { total: 0, synced: 0, failed: 0, message: "No games to sync" };
       }
 
-      console.log(`[Bulk Sync] Starting sync of ${gamesToSync.length} games with concurrency ${SYNC_CONCURRENCY}`)
+      // Return streaming response for real-time progress
+      const encoder = new TextEncoder()
+      const stream = new ReadableStream({
+        async start(controller) {
+          const send = (data: any) => {
+            controller.enqueue(encoder.encode(JSON.stringify(data) + "\n"))
+          }
 
-      // Process syncs in parallel with controlled concurrency
-      const { synced, failed } = await syncInParallel(gamesToSync, SYNC_CONCURRENCY);
+          // Send initial progress
+          send({ type: "progress", current: 0, total: gamesToSync.length, synced: 0, failed: 0, currentGame: null })
 
-      console.log(`[Bulk Sync] Complete: ${synced} synced, ${failed} failed`)
+          let synced = 0
+          let failed = 0
+          const batchSize = SYNC_CONCURRENCY
 
-      return {
-        total: gamesToSync.length,
-        synced,
-        failed,
-        message: `Synced ${synced} games, ${failed} failed`,
-      };
+          for (let i = 0; i < gamesToSync.length; i += batchSize) {
+            const batch = gamesToSync.slice(i, i + batchSize)
+
+            // Process batch in parallel
+            const batchResults = await Promise.allSettled(
+              batch
+                .filter((g) => g.steamAppId)
+                .map(async (game) => {
+                  const result = await syncSteamGame(game.steamAppId!, { forceRetry: true })
+                  return { gameId: game.id, gameTitle: game.id, ...result }
+                })
+            )
+
+            // Collect results and send progress
+            for (const result of batchResults) {
+              if (result.status === "fulfilled") {
+                if (result.value.success) synced++
+                else failed++
+              } else {
+                failed++
+              }
+            }
+
+            // Send progress update after each batch
+            send({
+              type: "progress",
+              current: Math.min(i + batchSize, gamesToSync.length),
+              total: gamesToSync.length,
+              synced,
+              failed,
+              currentGame: null,
+            })
+
+            // Small delay between batches
+            if (i + batchSize < gamesToSync.length) {
+              await new Promise((resolve) => setTimeout(resolve, SYNC_BATCH_DELAY_MS))
+            }
+          }
+
+          // Send completion
+          send({ type: "complete", total: gamesToSync.length, synced, failed })
+          controller.close()
+        }
+      })
+
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        },
+      })
     },
     {
       body: t.Object({

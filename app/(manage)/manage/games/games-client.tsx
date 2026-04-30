@@ -114,7 +114,7 @@ export function GamesClient() {
     })
 
     try {
-      // Use the bulk sync endpoint with selected game IDs
+      // Use the bulk sync endpoint with streaming progress
       const res = await fetch("/api/games/sync/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -129,17 +129,52 @@ export function GamesClient() {
         throw new Error(errorData?.error || `Sync failed: HTTP ${res.status}`)
       }
 
-      const data = await res.json()
+      // Read streaming response
+      const reader = res.body?.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ""
 
-      setSyncProgress((prev) => ({
-        ...prev,
-        isRunning: false,
-        synced: data.synced || 0,
-        failed: data.failed || 0,
-        currentGame: null,
-      }))
-      setSyncCompleted(true)
-      setSelectedIds(new Set())
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split("\n")
+          buffer = lines.pop() || ""
+
+          for (const line of lines) {
+            if (!line.trim()) continue
+            try {
+              const data = JSON.parse(line)
+
+              if (data.type === "progress") {
+                setSyncProgress((prev) => ({
+                  ...prev,
+                  current: data.current,
+                  total: data.total,
+                  synced: data.synced,
+                  failed: data.failed,
+                  currentGame: data.currentGame,
+                }))
+              } else if (data.type === "complete") {
+                setSyncProgress((prev) => ({
+                  ...prev,
+                  isRunning: false,
+                  total: data.total,
+                  synced: data.synced,
+                  failed: data.failed,
+                  currentGame: null,
+                }))
+                setSyncCompleted(true)
+                setSelectedIds(new Set())
+              }
+            } catch (e) {
+              // Ignore parse errors
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error("Sync selected failed:", error)
       alert(`Sync failed: ${error instanceof Error ? error.message : String(error)}`)
@@ -169,7 +204,7 @@ export function GamesClient() {
     })
 
     try {
-      // Use the bulk sync endpoint (processes in parallel)
+      // Use the bulk sync endpoint with streaming progress
       const res = await fetch("/api/games/sync/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -181,17 +216,51 @@ export function GamesClient() {
         throw new Error(errorData?.error || `Sync failed: HTTP ${res.status}`)
       }
 
-      const data = await res.json()
+      // Read streaming response
+      const reader = res.body?.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ""
 
-      setSyncProgress((prev) => ({
-        ...prev,
-        isRunning: false,
-        total: data.total || 0,
-        synced: data.synced || 0,
-        failed: data.failed || 0,
-        currentGame: null,
-      }))
-      setSyncCompleted(true)
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split("\n")
+          buffer = lines.pop() || ""
+
+          for (const line of lines) {
+            if (!line.trim()) continue
+            try {
+              const data = JSON.parse(line)
+
+              if (data.type === "progress") {
+                setSyncProgress((prev) => ({
+                  ...prev,
+                  current: data.current,
+                  total: data.total,
+                  synced: data.synced,
+                  failed: data.failed,
+                  currentGame: data.currentGame,
+                }))
+              } else if (data.type === "complete") {
+                setSyncProgress((prev) => ({
+                  ...prev,
+                  isRunning: false,
+                  total: data.total,
+                  synced: data.synced,
+                  failed: data.failed,
+                  currentGame: null,
+                }))
+                setSyncCompleted(true)
+              }
+            } catch (e) {
+              // Ignore parse errors
+            }
+          }
+        }
+      }
     } catch (error) {
       console.error("Sync all failed:", error)
       alert(`Sync failed: ${error instanceof Error ? error.message : String(error)}`)
