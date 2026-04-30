@@ -191,52 +191,39 @@ export const gameVersionsRoutes = new Elysia({ prefix: "/games/:gameId/versions"
 // ── Game Sync Routes ────────────────────────────────────────────────
 const MAX_BULK_SYNC = 1000
 const SYNC_CONCURRENCY = 5 // Number of parallel syncs
-const SYNC_BATCH_DELAY_MS = 100 // Delay between batches to respect rate limits
+const SYNC_BATCH_DELAY_MS = 2000 // Delay between batches to respect rate limits (2 seconds)
 
 /**
- * Process syncs in parallel with controlled concurrency.
- * Processes items in batches of `concurrency` size.
+ * Process syncs sequentially with delay to avoid Steam rate limiting.
+ * Steam API has aggressive rate limiting - parallel requests get blocked quickly.
  */
-async function syncInParallel(
-  gamesToSync: { id: string; steamAppId: number | null }[],
-  concurrency: number = SYNC_CONCURRENCY
+async function syncSequentially(
+  gamesToSync: { id: string; steamAppId: number | null }[]
 ): Promise<{ synced: number; failed: number; results: Map<string, { success: boolean; error?: string }> }> {
   let synced = 0
   let failed = 0
   const results = new Map<string, { success: boolean; error?: string }>()
 
-  // Process in batches
-  for (let i = 0; i < gamesToSync.length; i += concurrency) {
-    const batch = gamesToSync.slice(i, i + concurrency)
+  for (let i = 0; i < gamesToSync.length; i++) {
+    const game = gamesToSync[i]
+    if (!game.steamAppId) continue
 
-    // Process batch in parallel
-    const batchResults = await Promise.allSettled(
-      batch
-        .filter((g) => g.steamAppId)
-        .map(async (game) => {
-          const result = await syncSteamGame(game.steamAppId!, { forceRetry: true })
-          return { gameId: game.id, ...result }
-        })
-    )
-
-    // Collect results
-    for (const result of batchResults) {
-      if (result.status === "fulfilled") {
-        const { gameId, success, error } = result.value
-        if (success) {
-          synced++
-          results.set(gameId, { success: true })
-        } else {
-          failed++
-          results.set(gameId, { success: false, error })
-        }
+    try {
+      const result = await syncSteamGame(game.steamAppId, { forceRetry: true })
+      if (result.success) {
+        synced++
+        results.set(game.id, { success: true })
       } else {
         failed++
+        results.set(game.id, { success: false, error: result.error })
       }
+    } catch (e) {
+      failed++
+      results.set(game.id, { success: false, error: String(e) })
     }
 
-    // Small delay between batches to avoid hammering Steam API
-    if (i + concurrency < gamesToSync.length) {
+    // Delay between syncs to avoid rate limiting
+    if (i < gamesToSync.length - 1) {
       await new Promise((resolve) => setTimeout(resolve, SYNC_BATCH_DELAY_MS))
     }
   }
@@ -309,42 +296,32 @@ export const gameSyncRoutes = new Elysia({ prefix: "/games" })
           let failed = 0
           const batchSize = SYNC_CONCURRENCY
 
-          for (let i = 0; i < gamesToSync.length; i += batchSize) {
-            const batch = gamesToSync.slice(i, i + batchSize)
+          // Process syncs sequentially with delay to avoid rate limiting
+          for (let i = 0; i < gamesToSync.length; i++) {
+            const game = gamesToSync[i]
+            if (!game.steamAppId) continue
 
-            // Process batch in parallel
-            const batchResults = await Promise.allSettled(
-              batch
-                .filter((g) => g.steamAppId)
-                .map(async (game) => {
-                  const result = await syncSteamGame(game.steamAppId!, { forceRetry: true })
-                  return { gameId: game.id, gameTitle: game.id, ...result }
-                })
-            )
-
-            // Collect results and send progress
-            for (const result of batchResults) {
-              if (result.status === "fulfilled") {
-                if (result.value.success) synced++
-                else failed++
-              } else {
-                failed++
-              }
+            try {
+              const result = await syncSteamGame(game.steamAppId, { forceRetry: true })
+              if (result.success) synced++
+              else failed++
+            } catch (e) {
+              failed++
             }
 
-            // Send progress update after each batch
+            // Send progress update
             send({
               type: "progress",
-              current: Math.min(i + batchSize, gamesToSync.length),
+              current: i + 1,
               total: gamesToSync.length,
               synced,
               failed,
               currentGame: null,
             })
 
-            // Small delay between batches
-            if (i + batchSize < gamesToSync.length) {
-              await new Promise((resolve) => setTimeout(resolve, SYNC_BATCH_DELAY_MS))
+            // Delay between syncs to avoid rate limiting (1.5 seconds)
+            if (i < gamesToSync.length - 1) {
+              await new Promise((resolve) => setTimeout(resolve, 1500))
             }
           }
 

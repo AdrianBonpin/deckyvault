@@ -171,8 +171,12 @@ export async function syncSteamGame(
     url.searchParams.set("l", "en")
 
     const res = await fetch(url.toString(), {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(10000),
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "DeckyVault/1.0",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+      signal: AbortSignal.timeout(15000),
     })
 
     if (res.status === 429) {
