@@ -18,6 +18,9 @@ type NavItem =
   | { type: "link"; href: string; label: string; icon: React.ElementType }
 
 const navItems: NavItem[] = [
+  { type: "section", label: "Overview" },
+  { type: "link", href: "/manage", label: "Dashboard", icon: LayoutDashboardIcon },
+  { type: "divider" },
   { type: "section", label: "Management" },
   { type: "link", href: "/manage/users", label: "Users", icon: UsersIcon },
   { type: "link", href: "/manage/hardware", label: "Hardware", icon: CpuIcon },
