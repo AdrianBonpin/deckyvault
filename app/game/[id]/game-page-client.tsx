@@ -30,6 +30,11 @@ import { PresetDetailModal } from "./preset-detail-modal"
 import { BookmarkButton } from "@/components/saved-games/bookmark-button"
 import { WindowsIcon, MacIcon, LinuxIcon } from "@/app/components/PlatformIcons"
 
+import { AntiCheatBadge } from "@/components/anti-cheat-badge"
+import { PlayabilityBadge } from "@/components/playability-badge"
+import { SteamReviews } from "@/components/steam-reviews"
+import { CommunitySuggestionForm } from "@/components/community-suggestion-form"
+
 // Chart imports
 import { HistoricalAreaChart } from "@/components/charts/HistoricalAreaChart"
 import { UpscalerBarChart } from "@/components/charts/UpscalerBarChart"
@@ -71,6 +76,9 @@ interface Game {
     releaseDate: string | null
     categories: string[] | null
     platforms: { windows: boolean; mac: boolean; linux: boolean } | null
+    playabilityStatus?: "great" | "playable" | "needs_tweaks" | "unplayable" | "unknown" | null
+    steamReviewScore?: number | null
+    steamReviewSentiment?: string | null
 }
 
 interface Counts {
@@ -85,6 +93,10 @@ interface PlatformSupport {
     hardwareSlug: string
     isSupported: boolean
     protonStatus: string
+    playabilityStatus: "great" | "playable" | "needs_tweaks" | "unplayable" | "unknown" | null
+    antiCheatRelevant: boolean
+    antiCheatStatus: "none" | "supported" | "unsupported" | "unknown" | null
+    antiCheatName: string | null
 }
 
 interface Preset {
@@ -481,6 +493,24 @@ export function GamePageClient({
                                     ⚠ Poor Performance
                                 </span>
                             )}
+
+                            {/* Playability badge */}
+                            {game.playabilityStatus && (
+                                <PlayabilityBadge status={game.playabilityStatus} />
+                            )}
+
+                            {/* Anti-cheat badge */}
+                            {platformSupport?.some((p) => p.antiCheatRelevant) && (
+                                <AntiCheatBadge
+                                    antiCheatRelevant={true}
+                                    antiCheatStatus={
+                                        platformSupport.find((p) => p.antiCheatRelevant)?.antiCheatStatus ?? "unknown"
+                                    }
+                                    antiCheatName={
+                                        platformSupport.find((p) => p.antiCheatRelevant)?.antiCheatName
+                                    }
+                                />
+                            )}
                         </div>
 
                         {/* Subtitle */}
@@ -608,6 +638,17 @@ export function GamePageClient({
                                         Add Benchmark
                                     </Link>
                                 )}
+                                <CommunitySuggestionForm
+                                    gameId={game.id}
+                                    gameTitle={game.title}
+                                    editableFields={[
+                                        { name: "title", label: "Title", currentValue: game.title },
+                                        { name: "description", label: "Description", currentValue: game.description || "" },
+                                        { name: "developer", label: "Developer", currentValue: game.developer || "" },
+                                        { name: "publisher", label: "Publisher", currentValue: game.publisher || "" },
+                                        { name: "storeUrl", label: "Store URL", currentValue: game.storeUrl || "" },
+                                    ]}
+                                />
                             </div>
                         )}
                     </div>
@@ -721,6 +762,14 @@ export function GamePageClient({
                                 />
                             )}
                             {game.releaseDate && <MetaItem label="Release Date" value={game.releaseDate} />}
+                            {game.steamReviewScore != null && (
+                                <div>
+                                    <span className="text-xs text-zinc-500">Steam Reviews</span>
+                                    <p className="text-sm">
+                                        {game.steamReviewSentiment} ({game.steamReviewScore}%)
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Platforms */}
@@ -780,6 +829,24 @@ export function GamePageClient({
                                                 <span className='text-[10px] text-text/50 capitalize'>
                                                     {ps.protonStatus}
                                                 </span>
+
+                                                {/* Per-device playability */}
+                                                {ps.playabilityStatus && (
+                                                    <PlayabilityBadge
+                                                        status={ps.playabilityStatus}
+                                                        compact
+                                                    />
+                                                )}
+
+                                                {/* Per-device anti-cheat */}
+                                                {ps.antiCheatRelevant && (
+                                                    <AntiCheatBadge
+                                                        antiCheatRelevant={true}
+                                                        antiCheatStatus={ps.antiCheatStatus}
+                                                        antiCheatName={ps.antiCheatName}
+                                                        compact
+                                                    />
+                                                )}
                                             </div>
                                         </div>
                                     ))}
@@ -1333,6 +1400,15 @@ export function GamePageClient({
 
                 </div>
             </motion.div>
+
+            {/* Steam Reviews */}
+            {game.steamAppId && (
+                <section className="space-y-4 px-4 md:px-[10svw]">
+                    <div className="max-w-7xl mx-auto">
+                        <SteamReviews gameId={game.id} steamAppId={game.steamAppId} />
+                    </div>
+                </section>
+            )}
 
             {/* Section 6: Comments */}
             <motion.div
