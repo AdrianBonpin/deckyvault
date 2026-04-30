@@ -31,6 +31,8 @@ import { steamReviewRoutes } from "@/lib/api/steam-reviews"
 import { communitySuggestionRoutes } from "@/lib/api/community-suggestions"
 import { gamesListingRoutes } from "@/lib/api/games-listing"
 import { steamgridProxyRoutes } from "@/lib/api/steamgrid-proxy"
+import { dashboardRoutes } from "@/lib/api/dashboard"
+import { savedFilterRoutes } from "@/lib/api/saved-filters"
 
 const betterAuth = new Elysia({ name: "better-auth" })
   .mount(auth.handler)
@@ -110,6 +112,10 @@ export const app = new Elysia({ prefix: "/api" })
   .use(steamReviewRoutes)
   // Community suggestions
   .use(communitySuggestionRoutes)
+  // Saved filters
+  .use(savedFilterRoutes)
+  // Dashboard
+  .use(dashboardRoutes)
   // Root
   .get("/", () => ({
     name: "DeckyVault API",
