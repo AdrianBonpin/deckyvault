@@ -101,6 +101,7 @@ interface PlatformSupport {
 
 interface Preset {
     id: string
+    gameId?: string
     hardwareSlug: string
     hardwareName: string
     upvotes: number
@@ -117,6 +118,10 @@ interface Preset {
     protonVersion: string | null
     osVersion: string | null
     launchOptions: string | null
+    loadTimeSsd: number | null
+    loadTimeSd: number | null
+    estimatedBatteryMin: number | null
+    customSystem: boolean
     userNotes: string | null
     userId: string
     userName: string | null
@@ -638,17 +643,19 @@ export function GamePageClient({
                                         Add Benchmark
                                     </Link>
                                 )}
-                                <CommunitySuggestionForm
-                                    gameId={game.id}
-                                    gameTitle={game.title}
-                                    editableFields={[
-                                        { name: "title", label: "Title", currentValue: game.title },
-                                        { name: "description", label: "Description", currentValue: game.description || "" },
-                                        { name: "developer", label: "Developer", currentValue: game.developer || "" },
-                                        { name: "publisher", label: "Publisher", currentValue: game.publisher || "" },
-                                        { name: "storeUrl", label: "Store URL", currentValue: game.storeUrl || "" },
-                                    ]}
-                                />
+                                {game.source !== "steam" && (
+                                    <CommunitySuggestionForm
+                                        gameId={game.id}
+                                        gameTitle={game.title}
+                                        editableFields={[
+                                            { name: "title", label: "Title", currentValue: game.title },
+                                            { name: "description", label: "Description", currentValue: game.description || "" },
+                                            { name: "developer", label: "Developer", currentValue: game.developer || "" },
+                                            { name: "publisher", label: "Publisher", currentValue: game.publisher || "" },
+                                            { name: "storeUrl", label: "Store URL", currentValue: game.storeUrl || "" },
+                                        ]}
+                                    />
+                                )}
                             </div>
                         )}
                     </div>

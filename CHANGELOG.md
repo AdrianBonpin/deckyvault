@@ -11,7 +11,7 @@ All notable changes to DeckyVault will be documented in this file.
 - Anti-cheat badges on games list and search results
 - Anti-cheat filter in games list
 - Anti-cheat awareness step in benchmark submission wizard
-- Anti-cheat status shown per device in platform support section
+- Anti-cheat is game-level property (not per-device)
 
 #### Steam Reviews Integration
 - Steam review score and sentiment stored on game records
@@ -26,6 +26,7 @@ All notable changes to DeckyVault will be documented in this file.
 - Manual override capability for admins/contributors
 - Color-coded playability badges across all game views
 - "Plays Great" quick-filter in games list
+- Auto-recalculates on benchmark submission and Steam sync
 
 #### Games List Revamp
 - FPS range filter (min/max)
@@ -40,7 +41,7 @@ All notable changes to DeckyVault will be documented in this file.
 - Saved/bookmarked filter presets
 
 #### Community Suggestions
-- "Suggest Edit" button on game details page
+- "Suggest Edit" button on game details page (non-Steam games only)
 - Community suggestion submission for editable fields
 - Moderation queue for pending suggestions
 - Approve/reject workflow with review notes
@@ -60,16 +61,30 @@ All notable changes to DeckyVault will be documented in this file.
 - Report status tracking (open/reviewed/dismissed)
 - Verified badge on peer-reviewed benchmarks
 
+#### Preset Detail Modal
+- Added load times (SSD/SD) display
+- Added battery life estimate display
+- Added custom system indicator
+
 ### Changed
 - Manage page now shows dashboard by default instead of redirecting to users
 - Games list now supports 12 filter dimensions and 7 sort options
 - Game details page now shows anti-cheat, playability, and Steam reviews
+- "Suggest Edit" only appears for non-Steam games (manual, GOG, Epic sources)
+- Anti-cheat step in wizard now shows game-level status, not per-device
+
+### Fixed
+- Steam reviews component now handles missing/error data gracefully
+- Anti-cheat badge no longer shows for games without anti-cheat
+- Playability calculation only considers anti-cheat if game actually uses it
+- API routes registered correctly (removed duplicate `/api` prefix)
+- Dashboard and saved-filters routes now accessible
 
 ### Technical
 - Added `steamReviewScore`, `steamReviewSentiment`, `steamReviewCount` to games table
 - Added `playabilityStatus`, `playabilityOverride`, `playabilityCalculatedAt` to games and gamePlatformSupport tables
 - Created `community_suggestions` table for moderation workflow
 - Created `saved_filters` table for user filter presets
-- Added playability auto-calculation engine
+- Added playability auto-calculation engine with `recalculatePlayability()` export
 - Added Steam reviews caching API
 - Added admin dashboard stats API

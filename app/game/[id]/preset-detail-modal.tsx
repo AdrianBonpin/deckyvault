@@ -40,6 +40,10 @@ interface Preset {
     protonVersion: string | null
     osVersion: string | null
     launchOptions: string | null
+    loadTimeSsd: number | null
+    loadTimeSd: number | null
+    estimatedBatteryMin: number | null
+    customSystem: boolean
     userNotes: string | null
     userId: string
     userName: string | null
@@ -346,6 +350,18 @@ export function PresetDetailModal({
                                         }
                                     />
                                     <MetaItem label="Launch Options" value={preset.launchOptions} />
+                                    {preset.loadTimeSsd !== null && (
+                                        <MetaItem label="Load Time (SSD)" value={`${preset.loadTimeSsd}s`} />
+                                    )}
+                                    {preset.loadTimeSd !== null && (
+                                        <MetaItem label="Load Time (SD)" value={`${preset.loadTimeSd}s`} />
+                                    )}
+                                    {preset.estimatedBatteryMin !== null && (
+                                        <MetaItem label="Battery Life" value={`${preset.estimatedBatteryMin} min`} />
+                                    )}
+                                    {preset.customSystem && (
+                                        <MetaItem label="Custom System" value="Yes" />
+                                    )}
                                 </div>
 
                                 <div className="h-px bg-border" />

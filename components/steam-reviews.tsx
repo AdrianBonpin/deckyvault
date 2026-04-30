@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ThumbsUp, ThumbsDown, ExternalLink } from "lucide-react";
+import { ThumbsUp, ThumbsDown, ExternalLink, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SteamReview {
@@ -51,7 +51,10 @@ export function SteamReviews({ gameId, steamAppId, className }: SteamReviewsProp
         `/api/steam-reviews/${gameId}?offset=${newOffset}&limit=5&language=english`
       );
 
-      if (!res.ok) throw new Error("Failed to load reviews");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.error || `HTTP ${res.status}`);
+      }
 
       const result = await res.json();
       setData(result);
@@ -67,6 +70,7 @@ export function SteamReviews({ gameId, steamAppId, className }: SteamReviewsProp
     fetchReviews(0);
   }, [gameId]);
 
+  // Loading skeleton
   if (loading && !data) {
     return (
       <div className={cn("animate-pulse space-y-4", className)}>
@@ -80,15 +84,46 @@ export function SteamReviews({ gameId, steamAppId, className }: SteamReviewsProp
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className={cn("rounded-lg border border-zinc-800 p-4", className)}>
-        <p className="text-sm text-zinc-400">Failed to load Steam reviews</p>
+        <div className="flex items-center gap-2 text-zinc-400">
+          <MessageSquare className="h-4 w-4" />
+          <p className="text-sm">Steam reviews unavailable</p>
+        </div>
+        <p className="mt-1 text-xs text-zinc-500">{error}</p>
+        <a
+          href={`https://store.steampowered.com/app/${steamAppId}#app_reviews_hash`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300"
+        >
+          View on Steam <ExternalLink className="h-3 w-3" />
+        </a>
       </div>
     );
   }
 
-  if (!data?.query_summary) return null;
+  // No data or no summary
+  if (!data?.query_summary) {
+    return (
+      <div className={cn("rounded-lg border border-zinc-800 p-4", className)}>
+        <div className="flex items-center gap-2 text-zinc-400">
+          <MessageSquare className="h-4 w-4" />
+          <p className="text-sm">No Steam reviews available</p>
+        </div>
+        <a
+          href={`https://store.steampowered.com/app/${steamAppId}#app_reviews_hash`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300"
+        >
+          View on Steam <ExternalLink className="h-3 w-3" />
+        </a>
+      </div>
+    );
+  }
 
   const { query_summary: summary } = data;
   const totalReviews = summary.total_reviews ?? 0;
@@ -97,6 +132,26 @@ export function SteamReviews({ gameId, steamAppId, className }: SteamReviewsProp
     totalReviews > 0
       ? Math.round((totalPositive / totalReviews) * 100)
       : 0;
+
+  // No reviews case
+  if (totalReviews === 0) {
+    return (
+      <div className={cn("rounded-lg border border-zinc-800 p-4", className)}>
+        <div className="flex items-center gap-2 text-zinc-400">
+          <MessageSquare className="h-4 w-4" />
+          <p className="text-sm">No reviews yet</p>
+        </div>
+        <a
+          href={`https://store.steampowered.com/app/${steamAppId}#app_reviews_hash`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300"
+        >
+          Be the first to review on Steam <ExternalLink className="h-3 w-3" />
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -155,22 +210,27 @@ export function SteamReviews({ gameId, steamAppId, className }: SteamReviewsProp
       </div>
 
       {/* Pagination */}
-      <div className="flex justify-between">
-        <button
-          onClick={() => fetchReviews(Math.max(0, offset - 5))}
-          disabled={offset === 0 || loading}
-          className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
-        >
-          Previous
-        </button>
-        <button
-          onClick={() => fetchReviews(offset + 5)}
-          disabled={loading}
-          className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
-        >
-          Next
-        </button>
-      </div>
+      {totalReviews > 5 && (
+        <div className="flex justify-between">
+          <button
+            onClick={() => fetchReviews(Math.max(0, offset - 5))}
+            disabled={offset === 0 || loading}
+            className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-xs text-zinc-500 self-center">
+            Showing {offset + 1}-{Math.min(offset + 5, totalReviews)} of {totalReviews}
+          </span>
+          <button
+            onClick={() => fetchReviews(offset + 5)}
+            disabled={offset + 5 >= totalReviews || loading}
+            className="rounded-md border border-zinc-700 px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }
