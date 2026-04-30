@@ -63,6 +63,7 @@ interface SteamAppDetails {
   recommendations?: { total: number }
   price_overview?: { currency: string; initial: number; final: number }
   is_free?: boolean
+  type?: string
   release_date?: { coming_soon: boolean; date: string }
   categories?: { id: string; description: string }[]
   platforms?: { windows: boolean; mac: boolean; linux: boolean }
@@ -71,6 +72,26 @@ interface SteamAppDetails {
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
 const ONE_HOUR_MS = 60 * 60 * 1000
 const MAX_RETRY_DELAY_MS = SEVEN_DAYS_MS
+
+async function recordSyncFailure(steamAppId: number, errorMsg: string): Promise<void> {
+  const [currentGame] = await db
+    .select({ retryCount: games.syncRetryCount })
+    .from(games)
+    .where(eq(games.steamAppId, steamAppId))
+    .limit(1)
+  const retryCount = (currentGame?.retryCount ?? 0) + 1
+  const backoffMs = Math.min(ONE_HOUR_MS * Math.pow(2, retryCount - 1), MAX_RETRY_DELAY_MS)
+  await db
+    .update(games)
+    .set({
+      syncStatus: "error",
+      syncError: errorMsg,
+      syncRetryCount: retryCount,
+      syncNextRetry: new Date(Date.now() + backoffMs),
+      updatedAt: new Date(),
+    })
+    .where(eq(games.steamAppId, steamAppId))
+}
 
 export function isSyncStale(lastSync: Date | null): boolean {
   if (!lastSync) return true
@@ -154,25 +175,17 @@ export async function syncSteamGame(
       signal: AbortSignal.timeout(10000),
     })
 
+    if (res.status === 429) {
+      const retryAfterHeader = res.headers.get("Retry-After");
+      const retryAfterSec = retryAfterHeader ? parseInt(retryAfterHeader, 10) : 60;
+      const errorMsg = `Rate limited by Steam (429). Retry after ${retryAfterSec}s`;
+      await recordSyncFailure(steamAppId, errorMsg);
+      return { success: false, error: errorMsg };
+    }
+
     if (!res.ok) {
       const errorMsg = `Steam API returned ${res.status}`
-      // Get current retry count for exponential backoff
-      const [currentGame] = await db
-        .select({ retryCount: games.syncRetryCount })
-        .from(games)
-        .where(eq(games.steamAppId, steamAppId))
-        .limit(1)
-      const retryCount = (currentGame?.retryCount ?? 0) + 1
-      const backoffMs = Math.min(ONE_HOUR_MS * Math.pow(2, retryCount - 1), MAX_RETRY_DELAY_MS)
-      await db
-        .update(games)
-        .set({
-          syncError: errorMsg,
-          syncRetryCount: retryCount,
-          syncNextRetry: new Date(Date.now() + backoffMs),
-          updatedAt: new Date(),
-        })
-        .where(eq(games.steamAppId, steamAppId))
+      await recordSyncFailure(steamAppId, errorMsg)
       return { success: false, error: errorMsg }
     }
 
@@ -184,27 +197,18 @@ export async function syncSteamGame(
 
     if (!entry?.success || !entry.data) {
       const errorMsg = `No data returned from Steam for app ${steamAppId}`
-      // Get current retry count for exponential backoff
-      const [currentGame] = await db
-        .select({ retryCount: games.syncRetryCount })
-        .from(games)
-        .where(eq(games.steamAppId, steamAppId))
-        .limit(1)
-      const retryCount = (currentGame?.retryCount ?? 0) + 1
-      const backoffMs = Math.min(ONE_HOUR_MS * Math.pow(2, retryCount - 1), MAX_RETRY_DELAY_MS)
-      await db
-        .update(games)
-        .set({
-          syncError: errorMsg,
-          syncRetryCount: retryCount,
-          syncNextRetry: new Date(Date.now() + backoffMs),
-          updatedAt: new Date(),
-        })
-        .where(eq(games.steamAppId, steamAppId))
+      await recordSyncFailure(steamAppId, errorMsg)
       return { success: false, error: errorMsg }
     }
 
     const d = entry.data
+
+    // Reject non-game types (DLC, soundtrack, demo, etc.)
+    if (d.type && d.type !== "game") {
+      const errorMsg = `Steam app ${steamAppId} is not a game (type: ${d.type})`;
+      await recordSyncFailure(steamAppId, errorMsg);
+      return { success: false, error: errorMsg };
+    }
 
     // Fetch review data
     const reviewData = await fetchSteamReviews(steamAppId);
@@ -273,25 +277,8 @@ export async function syncSteamGame(
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err)
     try {
-      // Get current retry count for exponential backoff
-      const [currentGame] = await db
-        .select({ retryCount: games.syncRetryCount })
-        .from(games)
-        .where(eq(games.steamAppId, steamAppId))
-        .limit(1)
-      const retryCount = (currentGame?.retryCount ?? 0) + 1
-      const backoffMs = Math.min(ONE_HOUR_MS * Math.pow(2, retryCount - 1), MAX_RETRY_DELAY_MS)
-      await db
-        .update(games)
-        .set({
-          syncError: errorMsg,
-          syncRetryCount: retryCount,
-          syncNextRetry: new Date(Date.now() + backoffMs),
-          updatedAt: new Date(),
-        })
-        .where(eq(games.steamAppId, steamAppId))
+      await recordSyncFailure(steamAppId, errorMsg)
     } catch {
-      // If DB update fails too, just log it
       console.error(`Failed to update error tracking for ${steamAppId}`)
     }
     return { success: false, error: errorMsg }
