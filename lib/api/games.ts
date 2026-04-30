@@ -294,8 +294,12 @@ export const gameSyncRoutes = new Elysia({ prefix: "/games" })
         return { total: 0, synced: 0, failed: 0, message: "No games to sync" };
       }
 
+      console.log(`[Bulk Sync] Starting sync of ${gamesToSync.length} games with concurrency ${SYNC_CONCURRENCY}`)
+
       // Process syncs in parallel with controlled concurrency
       const { synced, failed } = await syncInParallel(gamesToSync, SYNC_CONCURRENCY);
+
+      console.log(`[Bulk Sync] Complete: ${synced} synced, ${failed} failed`)
 
       return {
         total: gamesToSync.length,

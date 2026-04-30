@@ -125,7 +125,8 @@ export function GamesClient() {
       })
 
       if (!res.ok) {
-        throw new Error(`Sync failed: HTTP ${res.status}`)
+        const errorData = await res.json().catch(() => null)
+        throw new Error(errorData?.error || `Sync failed: HTTP ${res.status}`)
       }
 
       const data = await res.json()
@@ -133,15 +134,20 @@ export function GamesClient() {
       setSyncProgress((prev) => ({
         ...prev,
         isRunning: false,
-        synced: data.synced,
-        failed: data.failed,
+        synced: data.synced || 0,
+        failed: data.failed || 0,
         currentGame: null,
       }))
       setSyncCompleted(true)
       setSelectedIds(new Set())
     } catch (error) {
       console.error("Sync selected failed:", error)
-      alert("Sync failed. Check console for details.")
+      alert(`Sync failed: ${error instanceof Error ? error.message : String(error)}`)
+      setSyncProgress((prev) => ({
+        ...prev,
+        isRunning: false,
+        currentGame: null,
+      }))
     } finally {
       setSyncing(false)
     }
@@ -171,7 +177,8 @@ export function GamesClient() {
       })
 
       if (!res.ok) {
-        throw new Error(`Sync failed: HTTP ${res.status}`)
+        const errorData = await res.json().catch(() => null)
+        throw new Error(errorData?.error || `Sync failed: HTTP ${res.status}`)
       }
 
       const data = await res.json()
@@ -179,15 +186,20 @@ export function GamesClient() {
       setSyncProgress((prev) => ({
         ...prev,
         isRunning: false,
-        total: data.total,
-        synced: data.synced,
-        failed: data.failed,
+        total: data.total || 0,
+        synced: data.synced || 0,
+        failed: data.failed || 0,
         currentGame: null,
       }))
       setSyncCompleted(true)
     } catch (error) {
       console.error("Sync all failed:", error)
-      alert("Sync failed. Check console for details.")
+      alert(`Sync failed: ${error instanceof Error ? error.message : String(error)}`)
+      setSyncProgress((prev) => ({
+        ...prev,
+        isRunning: false,
+        currentGame: null,
+      }))
     } finally {
       setSyncing(false)
     }
@@ -527,7 +539,10 @@ export function GamesClient() {
                     <div>
                       <h3 id="sync-overlay-title" className="font-semibold text-text">Syncing Games</h3>
                       <p className="text-sm text-text/50">
-                        {syncProgress.current} of {syncProgress.total} games
+                        {syncProgress.total > 0
+                          ? `${syncProgress.current} of ${syncProgress.total} games`
+                          : "Preparing to sync..."
+                        }
                       </p>
                     </div>
                   </div>
@@ -536,7 +551,7 @@ export function GamesClient() {
                   <div className="mb-4">
                     <div className="flex justify-between text-xs text-text/50 mb-1">
                       <span>Progress</span>
-                      <span>{Math.round((syncProgress.current / syncProgress.total) * 100)}%</span>
+                      <span>{syncProgress.total > 0 ? Math.round((syncProgress.current / syncProgress.total) * 100) : 0}%</span>
                     </div>
                     <div className="h-2 bg-text/10 rounded-full overflow-hidden">
                       <div
