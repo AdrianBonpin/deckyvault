@@ -1,6 +1,7 @@
 import { db } from "@/lib/db/index"
 import { games } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
+import { recalculatePlayability } from "@/lib/api/playability"
 
 interface SteamReviewData {
   reviewScore: number | null;
@@ -255,6 +256,18 @@ export async function syncSteamGame(
         updatedAt: new Date(),
       })
       .where(eq(games.steamAppId, steamAppId))
+
+    // Recalculate playability after sync (fire and forget)
+    const [game] = await db
+      .select({ id: games.id })
+      .from(games)
+      .where(eq(games.steamAppId, steamAppId))
+      .limit(1)
+    if (game) {
+      recalculatePlayability(game.id).catch((err) =>
+        console.error("Failed to recalculate playability after sync:", err),
+      )
+    }
 
     return { success: true }
   } catch (err) {

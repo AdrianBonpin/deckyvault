@@ -7,6 +7,7 @@ import {
 } from "@/lib/db/schema"
 import { eq, sql } from "drizzle-orm"
 import { requireRole } from "@/lib/auth/guard"
+import { recalculatePlayability } from "./playability"
 
 export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
   .get(
@@ -118,6 +119,18 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
           userNotes: body.userNotes ?? null,
         })
         .returning()
+
+      // Recalculate playability for this game (fire and forget)
+      const [gameVersion] = await db
+        .select({ gameId: gameVersions.gameId })
+        .from(gameVersions)
+        .where(eq(gameVersions.id, body.versionId))
+        .limit(1)
+      if (gameVersion) {
+        recalculatePlayability(gameVersion.gameId).catch((err) =>
+          console.error("Failed to recalculate playability:", err),
+        )
+      }
 
       set.status = 201
       return {
