@@ -91,9 +91,11 @@ export function SteamReviews({ gameId, steamAppId, className }: SteamReviewsProp
   if (!data?.query_summary) return null;
 
   const { query_summary: summary } = data;
+  const totalReviews = summary.total_reviews ?? 0;
+  const totalPositive = summary.total_positive ?? 0;
   const positivePercent =
-    summary.total_reviews > 0
-      ? Math.round((summary.total_positive / summary.total_reviews) * 100)
+    totalReviews > 0
+      ? Math.round((totalPositive / totalReviews) * 100)
       : 0;
 
   return (
@@ -103,7 +105,7 @@ export function SteamReviews({ gameId, steamAppId, className }: SteamReviewsProp
         <div>
           <h3 className="text-lg font-semibold">Steam Reviews</h3>
           <p className="text-sm text-zinc-400">
-            {summary.review_score_desc} — {positivePercent}% positive ({summary.total_reviews.toLocaleString()} reviews)
+            {summary.review_score_desc ?? "No reviews"} — {positivePercent}% positive ({totalReviews.toLocaleString()} reviews)
           </p>
         </div>
         <a
@@ -118,7 +120,7 @@ export function SteamReviews({ gameId, steamAppId, className }: SteamReviewsProp
 
       {/* Review cards */}
       <div className="space-y-3">
-        {data.reviews.map((review) => (
+        {(data.reviews ?? []).map((review) => (
           <div
             key={review.recommendationid}
             className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4"
@@ -138,7 +140,7 @@ export function SteamReviews({ gameId, steamAppId, className }: SteamReviewsProp
                 </span>
               </div>
               <span className="text-xs text-zinc-500">
-                {Math.floor(review.author.playtime_forever / 60)}h played
+                {Math.floor((review.author?.playtime_forever ?? 0) / 60)}h played
               </span>
             </div>
             <p className="text-sm text-zinc-300 line-clamp-4">{review.review}</p>
