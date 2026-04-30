@@ -74,8 +74,8 @@ export const games = pgTable(
     steamReviewCount: integer("steam_review_count"),        // Total review count from Steam
 
     // Playability (aggregate from all devices)
-    playabilityStatus: playabilityStatusEnum("playability_status").default("unknown"),
-    playabilityOverride: boolean("playability_override").default(false), // true = manually set
+    playabilityStatus: playabilityStatusEnum("playability_status").default("unknown").notNull(),
+    playabilityOverride: boolean("playability_override").default(false).notNull(), // true = manually set
     playabilityCalculatedAt: timestamp("playability_calculated_at"),     // when auto-calculated
     priceCurrent: integer("price_current"),
     priceInitial: integer("price_initial"),

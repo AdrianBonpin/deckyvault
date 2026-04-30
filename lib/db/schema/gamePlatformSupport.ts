@@ -53,8 +53,8 @@ export const gamePlatformSupport = pgTable(
       .notNull(),
 
     // Per-device playability
-    playabilityStatus: playabilityStatusEnum("playability_status").default("unknown"),
-    playabilityOverride: boolean("playability_override").default(false),
+    playabilityStatus: playabilityStatusEnum("playability_status").default("unknown").notNull(),
+    playabilityOverride: boolean("playability_override").default(false).notNull(),
     playabilityCalculatedAt: timestamp("playability_calculated_at"),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
