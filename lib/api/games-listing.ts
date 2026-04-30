@@ -7,7 +7,7 @@ import {
   gamePlatformSupport,
   hardware,
 } from "@/lib/db/schema"
-import { ilike, or, sql, eq, and, desc, asc, inArray } from "drizzle-orm"
+import { ilike, or, sql, eq, and, desc, asc, inArray, gte, lte } from "drizzle-orm"
 
 const MAX_OFFSET = 10000
 const PAGE_SIZE = 24
@@ -23,9 +23,21 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
     const sort = query.sort || "recent"
     const order = query.order === "asc" ? asc : desc
 
+    // ── New filter parameters ─────────────────────────────────────
+    const minFps = query.minFps
+    const maxFps = query.maxFps
+    const fsrSupport = query.fsrSupport
+    const protonNative = query.protonNative
+    const antiCheatStatus = query.antiCheatStatus
+    const playabilityStatus = query.playabilityStatus
+    const steamReviewScore = query.steamReviewScore
+    const isFree = query.isFree
+    const hasMultiplayer = query.hasMultiplayer
+
     // Build where conditions
     const conditions = []
 
+    // Search filter (title, developer, publisher)
     if (search) {
       const term = `%${search}%`
       conditions.push(
@@ -37,10 +49,12 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
       )
     }
 
+    // Genre filter
     if (genre) {
       conditions.push(sql`${games.genres} @> ${JSON.stringify([genre])}::jsonb`)
     }
 
+    // Device filter
     if (device) {
       // Get games with platform support
       const supportedIds = await db
@@ -74,6 +88,104 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
       }
     }
 
+    // ── FPS range filter (games with benchmarks in this range) ────
+    if (minFps || maxFps) {
+      const fpsConditions = [
+        eq(performanceEntries.isRemoved, false),
+        minFps ? gte(performanceEntries.fpsAvg, Number(minFps)) : undefined,
+        maxFps ? lte(performanceEntries.fpsAvg, Number(maxFps)) : undefined,
+      ].filter(Boolean) as any[]
+
+      const fpsSubquery = db
+        .select({ gameId: gameVersions.gameId })
+        .from(performanceEntries)
+        .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+        .where(and(...fpsConditions))
+        .groupBy(gameVersions.gameId)
+
+      conditions.push(sql`${games.id} IN (SELECT "gameId" FROM (${fpsSubquery}) AS fps_sub)`)
+    }
+
+    // ── FSR support filter ────────────────────────────────────────
+    if (fsrSupport === "true") {
+      const fsrSubquery = db
+        .select({ gameId: gameVersions.gameId })
+        .from(performanceEntries)
+        .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+        .where(
+          and(
+            eq(performanceEntries.isRemoved, false),
+            eq(performanceEntries.upscalerType, "fsr"),
+          ),
+        )
+        .groupBy(gameVersions.gameId)
+
+      conditions.push(sql`${games.id} IN (SELECT "gameId" FROM (${fsrSubquery}) AS fsr_sub)`)
+    }
+
+    // ── Proton / Native filter ────────────────────────────────────
+    if (protonNative && ["proton", "native", "both"].includes(protonNative)) {
+      const protonConditions: any[] = []
+
+      if (protonNative === "proton" || protonNative === "both") {
+        protonConditions.push(eq(gamePlatformSupport.protonStatus, "proton"))
+      }
+      if (protonNative === "native" || protonNative === "both") {
+        protonConditions.push(eq(gamePlatformSupport.protonStatus, "native"))
+      }
+
+      const protonSubquery = db
+        .select({ gameId: gamePlatformSupport.gameId })
+        .from(gamePlatformSupport)
+        .where(or(...protonConditions))
+        .groupBy(gamePlatformSupport.gameId)
+
+      conditions.push(sql`${games.id} IN (SELECT "gameId" FROM (${protonSubquery}) AS proton_sub)`)
+    }
+
+    // ── Anti-cheat status filter ──────────────────────────────────
+    const validAcStatuses = ["supported", "unsupported", "unknown", "none"]
+    if (antiCheatStatus && antiCheatStatus !== "any" && validAcStatuses.includes(antiCheatStatus)) {
+      const acConditions: any[] = [
+        eq(gamePlatformSupport.antiCheatRelevant, true),
+        eq(gamePlatformSupport.antiCheatStatus, antiCheatStatus as "none" | "supported" | "unsupported" | "unknown"),
+      ]
+
+      const acSubquery = db
+        .select({ gameId: gamePlatformSupport.gameId })
+        .from(gamePlatformSupport)
+        .where(and(...acConditions))
+        .groupBy(gamePlatformSupport.gameId)
+
+      conditions.push(sql`${games.id} IN (SELECT "gameId" FROM (${acSubquery}) AS ac_sub)`)
+    }
+
+    // ── Playability status filter ─────────────────────────────────
+    const validPlayStatuses = ["great", "playable", "needs_tweaks", "unplayable", "unknown"]
+    if (playabilityStatus && validPlayStatuses.includes(playabilityStatus)) {
+      conditions.push(eq(games.playabilityStatus, playabilityStatus as "great" | "playable" | "needs_tweaks" | "unplayable" | "unknown"))
+    }
+
+    // ── Steam review score filter (minimum score) ─────────────────
+    if (steamReviewScore) {
+      conditions.push(gte(games.steamReviewScore, Number(steamReviewScore)))
+    }
+
+    // ── Free-to-play filter ───────────────────────────────────────
+    if (isFree === "true") {
+      conditions.push(eq(games.isFree, true))
+    }
+
+    // ── Has multiplayer filter ────────────────────────────────────
+    if (hasMultiplayer === "true") {
+      conditions.push(
+        or(
+          eq(games.onlineMultiplayerStatus, "supported"),
+          eq(games.onlineMultiplayerStatus, "unknown"),
+        )!,
+      )
+    }
+
     const where = conditions.length > 0 ? and(...conditions) : undefined
 
     // Fetch all genres (for filter options)
@@ -105,11 +217,44 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
 
     // Determine sort order
     let orderBy
+    let needsPostSort = false
+    let postSortField: string | null = null
+
     switch (sort) {
       case "name":
         orderBy = order(games.title)
         break
+      case "popularity":
+        orderBy = order(games.recommendationsTotal)
+        break
+      case "release_date":
+        orderBy = order(games.releaseDate)
+        break
+      case "steam_reviews":
+        orderBy = order(games.steamReviewScore)
+        break
+      case "performance":
+        // Performance sort requires a subquery — use SQL ORDER BY directly
+        orderBy = sql`(
+          SELECT AVG(pe."fps_avg")
+          FROM ${performanceEntries} pe
+          JOIN ${gameVersions} gv ON pe."version_id" = gv.id
+          WHERE gv."game_id" = ${games.id} AND pe."is_removed" = false
+        ) DESC NULLS LAST`
+        if (query.order === "asc") {
+          orderBy = sql`(
+            SELECT AVG(pe."fps_avg")
+            FROM ${performanceEntries} pe
+            JOIN ${gameVersions} gv ON pe."version_id" = gv.id
+            WHERE gv."game_id" = ${games.id} AND pe."is_removed" = false
+          ) ASC NULLS LAST`
+        }
+        break
       case "benchmarks":
+        needsPostSort = true
+        postSortField = "benchmarkCount"
+        orderBy = order(games.createdAt)
+        break
       case "recent":
       default:
         orderBy = order(games.createdAt)
@@ -128,6 +273,12 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
         genres: games.genres,
         source: games.source,
         createdAt: games.createdAt,
+        isFree: games.isFree,
+        releaseDate: games.releaseDate,
+        steamReviewScore: games.steamReviewScore,
+        recommendationsTotal: games.recommendationsTotal,
+        playabilityStatus: games.playabilityStatus,
+        onlineMultiplayerStatus: games.onlineMultiplayerStatus,
       })
       .from(games)
       .where(where)
@@ -190,12 +341,18 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
       headerImage: g.headerImage,
       genres: g.genres,
       source: g.source,
+      isFree: g.isFree,
+      releaseDate: g.releaseDate,
+      steamReviewScore: g.steamReviewScore,
+      recommendationsTotal: g.recommendationsTotal,
+      playabilityStatus: g.playabilityStatus,
+      onlineMultiplayerStatus: g.onlineMultiplayerStatus,
       benchmarkCount: benchmarkMap.get(g.id) ?? 0,
       deckStatus: platformMap.get(g.id) ?? null,
     }))
 
     // If sorting by benchmarks, re-sort the enriched data
-    if (sort === "benchmarks") {
+    if (needsPostSort && postSortField === "benchmarkCount") {
       const sortFn = query.order === "asc"
         ? (a: { benchmarkCount: number }, b: { benchmarkCount: number }) => a.benchmarkCount - b.benchmarkCount
         : (a: { benchmarkCount: number }, b: { benchmarkCount: number }) => b.benchmarkCount - a.benchmarkCount
@@ -222,6 +379,16 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
       device: t.Optional(t.String()),
       sort: t.Optional(t.String()),
       order: t.Optional(t.String()),
+      // New filter parameters
+      minFps: t.Optional(t.String()),
+      maxFps: t.Optional(t.String()),
+      fsrSupport: t.Optional(t.String()),
+      protonNative: t.Optional(t.String()),
+      antiCheatStatus: t.Optional(t.String()),
+      playabilityStatus: t.Optional(t.String()),
+      steamReviewScore: t.Optional(t.String()),
+      isFree: t.Optional(t.String()),
+      hasMultiplayer: t.Optional(t.String()),
     }),
   },
 )
