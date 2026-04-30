@@ -10,7 +10,7 @@ import {
 import { eq, count, sql, gte, and, desc } from "drizzle-orm";
 import { requireContributorOrAdmin } from "@/lib/auth/guard";
 
-export const dashboardRoutes = new Elysia({ prefix: "/api/dashboard" }).get(
+export const dashboardRoutes = new Elysia({ prefix: "/dashboard" }).get(
   "/stats",
   async ({ request, set }) => {
     const guard = await requireContributorOrAdmin(request.headers);

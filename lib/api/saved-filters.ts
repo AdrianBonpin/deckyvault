@@ -4,7 +4,7 @@ import { savedFilters } from "@/lib/db/schema"
 import { eq, and, desc } from "drizzle-orm"
 import { requireAuth } from "@/lib/auth/guard"
 
-export const savedFilterRoutes = new Elysia({ prefix: "/api/saved-filters" })
+export const savedFilterRoutes = new Elysia({ prefix: "/saved-filters" })
 
   // Get user's saved filters
   .get("/", async ({ request, set }) => {

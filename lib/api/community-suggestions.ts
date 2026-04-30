@@ -57,7 +57,7 @@ const allowedFields = [
 ]
 
 export const communitySuggestionRoutes = new Elysia({
-  prefix: "/api/community-suggestions",
+  prefix: "/community-suggestions",
 })
 
   // Submit a suggestion
