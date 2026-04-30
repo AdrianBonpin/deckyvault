@@ -1,0 +1,2 @@
+CREATE TYPE "public"."steam_review_sentiment" AS ENUM('overwhelmingly_positive', 'very_positive', 'positive', 'mostly_positive', 'mixed', 'mostly_negative', 'negative', 'very_negative', 'overwhelmingly_negative');--> statement-breakpoint
+ALTER TABLE "games" ALTER COLUMN "steam_review_sentiment" SET DATA TYPE "public"."steam_review_sentiment" USING "steam_review_sentiment"::"public"."steam_review_sentiment";

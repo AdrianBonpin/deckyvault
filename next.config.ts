@@ -24,6 +24,16 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "cdn2.steamgriddb.com",
+      },
+      // Google
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com'
+      },
+      // Discord
+      {
+        protocol: 'https',
+        hostname: 'cdn.discordapp.com'
       }
     ],
   },

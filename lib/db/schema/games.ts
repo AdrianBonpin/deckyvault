@@ -21,6 +21,18 @@ export const onlineMultiplayerStatusEnum = pgEnum(
   ["none", "supported", "unknown"],
 )
 
+export const steamReviewSentimentEnum = pgEnum("steam_review_sentiment", [
+  "overwhelmingly_positive",
+  "very_positive",
+  "positive",
+  "mostly_positive",
+  "mixed",
+  "mostly_negative",
+  "negative",
+  "very_negative",
+  "overwhelmingly_negative",
+])
+
 export const games = pgTable(
   "games",
   {
@@ -50,7 +62,7 @@ export const games = pgTable(
     metacriticUrl: text("metacritic_url"),
     recommendationsTotal: integer("recommendations_total"),
     steamReviewScore: integer("steam_review_score"),       // 0-100 normalized score
-    steamReviewSentiment: text("steam_review_sentiment"),   // "Overwhelmingly Positive", etc.
+    steamReviewSentiment: steamReviewSentimentEnum("steam_review_sentiment"),
     steamReviewCount: integer("steam_review_count"),        // Total review count from Steam
     priceCurrent: integer("price_current"),
     priceInitial: integer("price_initial"),
