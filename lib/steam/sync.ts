@@ -2,6 +2,52 @@ import { db } from "@/lib/db/index"
 import { games } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 
+interface SteamReviewData {
+  reviewScore: number | null;
+  reviewSentiment: string | null;
+  reviewCount: number | null;
+}
+
+async function fetchSteamReviews(steamAppId: number): Promise<SteamReviewData> {
+  try {
+    const response = await fetch(
+      `https://store.steampowered.com/appreviews/${steamAppId}?json=1&language=all&purchase_type=all`,
+      { signal: AbortSignal.timeout(10000) }
+    );
+
+    if (!response.ok) return { reviewScore: null, reviewSentiment: null, reviewCount: null };
+
+    const data = await response.json();
+    if (!data.query_summary) return { reviewScore: null, reviewSentiment: null, reviewCount: null };
+
+    const summary = data.query_summary;
+    const totalReviews = summary.total_reviews;
+    const positiveReviews = summary.total_positive;
+    const reviewScore = totalReviews > 0 ? Math.round((positiveReviews / totalReviews) * 100) : null;
+
+    // Map Steam's review_desc to our enum values
+    const sentimentMap: Record<string, string> = {
+      "Overwhelmingly Positive": "overwhelmingly_positive",
+      "Very Positive": "very_positive",
+      "Positive": "positive",
+      "Mostly Positive": "mostly_positive",
+      "Mixed": "mixed",
+      "Mostly Negative": "mostly_negative",
+      "Negative": "negative",
+      "Very Negative": "very_negative",
+      "Overwhelmingly Negative": "overwhelmingly_negative",
+    };
+
+    return {
+      reviewScore,
+      reviewSentiment: sentimentMap[summary.review_score_desc] ?? null,
+      reviewCount: totalReviews,
+    };
+  } catch {
+    return { reviewScore: null, reviewSentiment: null, reviewCount: null };
+  }
+}
+
 interface SteamAppDetails {
   steam_appid: number
   name: string
@@ -159,6 +205,9 @@ export async function syncSteamGame(
 
     const d = entry.data
 
+    // Fetch review data
+    const reviewData = await fetchSteamReviews(steamAppId);
+
     // Build capsule image URL and validate it
     const capsuleUrl = `https://cdn.akamai.steamstatic.com/steam/apps/${steamAppId}/library_600x900.jpg`
     let finalCapsuleUrl: string | null = capsuleUrl
@@ -188,6 +237,9 @@ export async function syncSteamGame(
         metacriticScore: d.metacritic?.score ?? null,
         metacriticUrl: d.metacritic?.url ?? null,
         recommendationsTotal: d.recommendations?.total ?? null,
+        steamReviewScore: reviewData.reviewScore,
+        steamReviewSentiment: reviewData.reviewSentiment as any,
+        steamReviewCount: reviewData.reviewCount,
         priceCurrent: d.price_overview?.final ?? null,
         priceInitial: d.price_overview?.initial ?? null,
         priceCurrency: d.price_overview?.currency ?? null,
