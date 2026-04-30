@@ -28,6 +28,7 @@ import { gamesManualRoutes } from "@/lib/api/games-manual"
 import { compareRoutes } from "@/lib/api/compare"
 import { playabilityRoutes } from "@/lib/api/playability"
 import { steamReviewRoutes } from "@/lib/api/steam-reviews"
+import { communitySuggestionRoutes } from "@/lib/api/community-suggestions"
 import { gamesListingRoutes } from "@/lib/api/games-listing"
 import { steamgridProxyRoutes } from "@/lib/api/steamgrid-proxy"
 
@@ -107,6 +108,8 @@ export const app = new Elysia({ prefix: "/api" })
   .use(playabilityRoutes)
   // Steam reviews
   .use(steamReviewRoutes)
+  // Community suggestions
+  .use(communitySuggestionRoutes)
   // Root
   .get("/", () => ({
     name: "DeckyVault API",
