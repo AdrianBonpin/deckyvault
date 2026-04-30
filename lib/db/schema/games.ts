@@ -49,6 +49,9 @@ export const games = pgTable(
     metacriticScore: integer("metacritic_score"),
     metacriticUrl: text("metacritic_url"),
     recommendationsTotal: integer("recommendations_total"),
+    steamReviewScore: integer("steam_review_score"),       // 0-100 normalized score
+    steamReviewSentiment: text("steam_review_sentiment"),   // "Overwhelmingly Positive", etc.
+    steamReviewCount: integer("steam_review_count"),        // Total review count from Steam
     priceCurrent: integer("price_current"),
     priceInitial: integer("price_initial"),
     priceCurrency: text("price_currency"),

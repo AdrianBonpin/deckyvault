@@ -106,6 +106,13 @@
       "when": 1777429918273,
       "tag": "0014_purple_firebird",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1777545844610,
+      "tag": "0015_nappy_the_phantom",
+      "breakpoints": true
     }
   ]
 }
