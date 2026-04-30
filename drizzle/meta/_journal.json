@@ -141,6 +141,20 @@
       "when": 1777547264277,
       "tag": "0019_tiresome_genesis",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1777547665970,
+      "tag": "0020_flaky_lilith",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1777547793864,
+      "tag": "0021_demonic_texas_twister",
+      "breakpoints": true
     }
   ]
 }
