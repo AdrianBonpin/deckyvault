@@ -17,6 +17,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { useSession } from "@/lib/auth-client"
 import { WindowsIcon, MacIcon, LinuxIcon } from "@/app/components/PlatformIcons"
+import { AntiCheatBadge } from "@/components/anti-cheat-badge"
+import { PlayabilityBadge } from "@/components/playability-badge"
 
 interface UnifiedResult {
   kind: "local" | "steam"
@@ -46,6 +48,13 @@ interface UnifiedResult {
   bestFps?: number | null
   latestVersion?: string | null
   tinyImage?: string | null
+  // Badges & review fields
+  playabilityStatus?: "great" | "playable" | "needs_tweaks" | "unplayable" | "unknown" | null
+  steamReviewScore?: number | null
+  steamReviewSentiment?: string | null
+  antiCheatRelevant?: boolean
+  antiCheatStatus?: string | null
+  antiCheatName?: string | null
 }
 
 function SearchContent() {
@@ -476,6 +485,28 @@ function SearchResultCard({
             label="Version"
             value={result.latestVersion ?? "—"}
           />
+
+          {/* Playability badge */}
+          {result.playabilityStatus && (
+            <PlayabilityBadge status={result.playabilityStatus} compact />
+          )}
+
+          {/* Anti-cheat badge */}
+          {result.antiCheatRelevant && result.antiCheatStatus === "unsupported" && (
+            <AntiCheatBadge
+              antiCheatRelevant={true}
+              antiCheatStatus={result.antiCheatStatus}
+              antiCheatName={result.antiCheatName}
+              compact
+            />
+          )}
+
+          {/* Steam review score */}
+          {result.steamReviewScore != null && (
+            <span className="text-xs text-zinc-400">
+              {result.steamReviewScore}% positive
+            </span>
+          )}
         </div>
       </div>
     </motion.article>

@@ -294,6 +294,12 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
         isPoorPerformance: poorPerformerMap.get(g.id) ?? false,
         bestFps: bestFpsMap.get(g.id) ?? null,
         latestVersion: latestVersionMap.get(g.id) ?? null,
+        playabilityStatus: g.playabilityStatus,
+        steamReviewScore: g.steamReviewScore,
+        steamReviewSentiment: g.steamReviewSentiment,
+        antiCheatRelevant: platform?.antiCheatRelevant ?? null,
+        antiCheatStatus: platform?.antiCheatStatus ?? null,
+        antiCheatName: platform?.antiCheatName ?? null,
       })
     }
 
