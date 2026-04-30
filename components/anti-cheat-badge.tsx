@@ -1,5 +1,5 @@
 import { Shield, ShieldCheck, ShieldX, ShieldQuestion } from "lucide-react";
-import { cn } from "~/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface AntiCheatBadgeProps {
   antiCheatRelevant: boolean;
