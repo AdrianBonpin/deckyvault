@@ -31,7 +31,9 @@ export const communitySuggestions = pgTable(
     proposedValue: text("proposed_value").notNull(), // proposed new value
     reason: text("reason"), // optional explanation
     status: suggestionStatusEnum("status").default("pending").notNull(),
-    reviewedBy: text("reviewed_by").references(() => user.id),
+    reviewedBy: text("reviewed_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
     reviewedAt: timestamp("reviewed_at"),
     reviewNote: text("review_note"), // reviewer's note
     createdAt: timestamp("created_at").defaultNow().notNull(),
