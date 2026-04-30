@@ -48,6 +48,9 @@ export default async function GamesPage() {
       genres: games.genres,
       source: games.source,
       createdAt: games.createdAt,
+      steamReviewScore: games.steamReviewScore,
+      playabilityStatus: games.playabilityStatus,
+      onlineMultiplayerStatus: games.onlineMultiplayerStatus,
     })
     .from(games)
     .orderBy(desc(games.createdAt))
@@ -90,17 +93,30 @@ export default async function GamesPage() {
           gameId: gamePlatformSupport.gameId,
           hardwareSlug: gamePlatformSupport.hardwareSlug,
           protonStatus: gamePlatformSupport.protonStatus,
+          antiCheatRelevant: gamePlatformSupport.antiCheatRelevant,
+          antiCheatStatus: gamePlatformSupport.antiCheatStatus,
         })
         .from(gamePlatformSupport)
         .where(inArray(gamePlatformSupport.gameId, gameIds))
     : []
 
   const platformMap = new Map<string, string>()
+  const antiCheatMap = new Map<string, { antiCheatRelevant: boolean; antiCheatStatus: "none" | "supported" | "unsupported" | "unknown" | null }>()
   for (const row of platformRows) {
     const isSteamDeck = row.hardwareSlug.startsWith("steamdeck")
     const existing = platformMap.get(row.gameId)
     if (!existing || (!existing.startsWith("steamdeck") && isSteamDeck)) {
       platformMap.set(row.gameId, row.protonStatus)
+    }
+
+    const existingAc = antiCheatMap.get(row.gameId)
+    if (row.antiCheatRelevant) {
+      if (!existingAc || (!existingAc.antiCheatRelevant && isSteamDeck) || (!existingAc.antiCheatRelevant)) {
+        antiCheatMap.set(row.gameId, {
+          antiCheatRelevant: row.antiCheatRelevant,
+          antiCheatStatus: row.antiCheatStatus,
+        })
+      }
     }
   }
 
@@ -135,8 +151,13 @@ export default async function GamesPage() {
     headerImage: g.headerImage,
     genres: g.genres,
     source: g.source,
+    steamReviewScore: g.steamReviewScore,
+    playabilityStatus: g.playabilityStatus,
+    onlineMultiplayerStatus: g.onlineMultiplayerStatus,
     benchmarkCount: benchmarkMap.get(g.id) ?? 0,
     deckStatus: platformMap.get(g.id) ?? null,
+    antiCheatRelevant: antiCheatMap.get(g.id)?.antiCheatRelevant ?? false,
+    antiCheatStatus: antiCheatMap.get(g.id)?.antiCheatStatus ?? null,
   }))
 
   const allGenres = Array.from(genreSet).sort()

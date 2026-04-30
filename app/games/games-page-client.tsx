@@ -11,6 +11,9 @@ import {
   XIcon,
   Loader2Icon,
 } from "lucide-react"
+import { AntiCheatBadge } from "@/components/anti-cheat-badge"
+import { PlayabilityBadge } from "@/components/playability-badge"
+import { SavedFilters } from "@/components/saved-filters"
 
 interface GamesListItem {
   id: string
@@ -21,8 +24,13 @@ interface GamesListItem {
   headerImage: string | null
   genres: string[] | null
   source: string
+  steamReviewScore: number | null
+  playabilityStatus: "great" | "playable" | "needs_tweaks" | "unplayable" | "unknown" | null
+  onlineMultiplayerStatus: "none" | "supported" | "unknown" | null
   benchmarkCount: number
   deckStatus: string | null
+  antiCheatRelevant: boolean
+  antiCheatStatus: "none" | "supported" | "unsupported" | "unknown" | null
 }
 
 interface DeviceOption {
@@ -30,7 +38,7 @@ interface DeviceOption {
   name: string
 }
 
-type SortOption = "recent" | "name" | "benchmarks"
+type SortOption = "recent" | "name" | "benchmarks" | "performance" | "popularity" | "release_date" | "steam_reviews"
 type SortDirection = "asc" | "desc"
 
 const DECK_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
@@ -42,8 +50,12 @@ const DECK_STATUS_CONFIG: Record<string, { label: string; className: string }> =
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "recent", label: "Recently Added" },
-  { value: "name", label: "Name A\u2013Z" },
+  { value: "name", label: "Name A–Z" },
   { value: "benchmarks", label: "Most Benchmarks" },
+  { value: "performance", label: "Best Performance" },
+  { value: "popularity", label: "Most Popular" },
+  { value: "release_date", label: "Release Date" },
+  { value: "steam_reviews", label: "Steam Reviews" },
 ]
 
 export function GamesPageClient({
@@ -67,6 +79,15 @@ export function GamesPageClient({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
+  const [minFps, setMinFps] = useState<string>("")
+  const [maxFps, setMaxFps] = useState<string>("")
+  const [fsrSupport, setFsrSupport] = useState<boolean>(false)
+  const [protonNative, setProtonNative] = useState<string>("any")
+  const [antiCheatStatus, setAntiCheatStatus] = useState<string>("any")
+  const [playabilityStatus, setPlayabilityStatus] = useState<string>("")
+  const [steamReviewMin, setSteamReviewMin] = useState<string>("")
+  const [isFree, setIsFree] = useState<boolean>(false)
+  const [hasMultiplayer, setHasMultiplayer] = useState<boolean>(false)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
@@ -82,9 +103,22 @@ export function GamesPageClient({
       if (search) params.set("search", search)
       if (selectedDevice) params.set("device", selectedDevice)
       if (selectedGenres.length === 1) params.set("genre", selectedGenres[0])
+      if (minFps) params.set("minFps", minFps)
+      if (maxFps) params.set("maxFps", maxFps)
+      if (fsrSupport) params.set("fsrSupport", "true")
+      if (protonNative !== "any") params.set("protonNative", protonNative)
+      if (antiCheatStatus !== "any") params.set("antiCheatStatus", antiCheatStatus)
+      if (playabilityStatus) params.set("playabilityStatus", playabilityStatus)
+      if (steamReviewMin) params.set("steamReviewScore", steamReviewMin)
+      if (isFree) params.set("isFree", "true")
+      if (hasMultiplayer) params.set("hasMultiplayer", "true")
       return `/api/games/listing?${params.toString()}`
     },
-    [sort, sortDirection, search, selectedDevice, selectedGenres],
+    [
+      sort, sortDirection, search, selectedDevice, selectedGenres,
+      minFps, maxFps, fsrSupport, protonNative, antiCheatStatus,
+      playabilityStatus, steamReviewMin, isFree, hasMultiplayer,
+    ],
   )
 
   // Load more function for infinite scroll
@@ -230,15 +264,46 @@ export function GamesPageClient({
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`px-3 py-2 rounded-md text-sm transition-colors cursor-pointer border ${
-                showFilters || selectedDevice || selectedGenres.length > 0
+                showFilters ||
+                selectedDevice ||
+                selectedGenres.length > 0 ||
+                minFps ||
+                maxFps ||
+                fsrSupport ||
+                protonNative !== "any" ||
+                antiCheatStatus !== "any" ||
+                playabilityStatus ||
+                steamReviewMin ||
+                isFree ||
+                hasMultiplayer
                   ? "bg-primary/10 text-primary border-primary/30"
                   : "bg-text/5 text-text/60 hover:text-text/80 border-border hover:border-border-active"
               }`}
             >
               Filters
-              {(selectedDevice || selectedGenres.length > 0) && (
+              {(selectedDevice ||
+                selectedGenres.length > 0 ||
+                minFps ||
+                maxFps ||
+                fsrSupport ||
+                protonNative !== "any" ||
+                antiCheatStatus !== "any" ||
+                playabilityStatus ||
+                steamReviewMin ||
+                isFree ||
+                hasMultiplayer) && (
                 <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-background text-[10px] font-bold">
-                  {selectedGenres.length + (selectedDevice ? 1 : 0)}
+                  {selectedGenres.length +
+                    (selectedDevice ? 1 : 0) +
+                    (minFps ? 1 : 0) +
+                    (maxFps ? 1 : 0) +
+                    (fsrSupport ? 1 : 0) +
+                    (protonNative !== "any" ? 1 : 0) +
+                    (antiCheatStatus !== "any" ? 1 : 0) +
+                    (playabilityStatus ? 1 : 0) +
+                    (steamReviewMin ? 1 : 0) +
+                    (isFree ? 1 : 0) +
+                    (hasMultiplayer ? 1 : 0)}
                 </span>
               )}
             </button>
@@ -308,12 +373,160 @@ export function GamesPageClient({
                 </div>
               </div>
 
+              {/* Performance Filters */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-zinc-300">Performance</h4>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="Min FPS"
+                    value={minFps}
+                    onChange={(e) => setMinFps(e.target.value)}
+                    className="w-24 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Max FPS"
+                    value={maxFps}
+                    onChange={(e) => setMaxFps(e.target.value)}
+                    className="w-24 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm"
+                  />
+                </div>
+                <select
+                  value={playabilityStatus}
+                  onChange={(e) => setPlayabilityStatus(e.target.value)}
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm"
+                >
+                  <option value="">Any Playability</option>
+                  <option value="great">Plays Great</option>
+                  <option value="playable">Playable</option>
+                  <option value="needs_tweaks">Needs Tweaks</option>
+                  <option value="unplayable">Unplayable</option>
+                </select>
+              </div>
+
+              {/* Compatibility Filters */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-zinc-300">Compatibility</h4>
+                <select
+                  value={protonNative}
+                  onChange={(e) => setProtonNative(e.target.value)}
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm"
+                >
+                  <option value="any">Any Runtime</option>
+                  <option value="native">Native</option>
+                  <option value="proton">Proton</option>
+                </select>
+                <select
+                  value={antiCheatStatus}
+                  onChange={(e) => setAntiCheatStatus(e.target.value)}
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm"
+                >
+                  <option value="any">Any Anti-Cheat</option>
+                  <option value="supported">AC Supported</option>
+                  <option value="unsupported">AC Unsupported</option>
+                  <option value="unknown">AC Unknown</option>
+                </select>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={fsrSupport}
+                    onChange={(e) => setFsrSupport(e.target.checked)}
+                    className="rounded border-zinc-600"
+                  />
+                  FSR Support
+                </label>
+              </div>
+
+              {/* Other Filters */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-zinc-300">Other</h4>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={isFree}
+                    onChange={(e) => setIsFree(e.target.checked)}
+                    className="rounded border-zinc-600"
+                  />
+                  Free to Play
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={hasMultiplayer}
+                    onChange={(e) => setHasMultiplayer(e.target.checked)}
+                    className="rounded border-zinc-600"
+                  />
+                  Has Multiplayer
+                </label>
+                <input
+                  type="number"
+                  placeholder="Min Steam Review %"
+                  value={steamReviewMin}
+                  onChange={(e) => setSteamReviewMin(e.target.value)}
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm"
+                />
+              </div>
+
+              {/* Saved Filters */}
+              <SavedFilters
+                currentFilters={{
+                  minFps,
+                  maxFps,
+                  fsrSupport,
+                  protonNative,
+                  antiCheatStatus,
+                  playabilityStatus,
+                  steamReviewMin,
+                  isFree,
+                  hasMultiplayer,
+                  genre: selectedGenres[0] || "",
+                  device: selectedDevice,
+                  sortBy: sort,
+                }}
+                onLoad={(filters) => {
+                  setMinFps(filters.minFps || "")
+                  setMaxFps(filters.maxFps || "")
+                  setFsrSupport(filters.fsrSupport || false)
+                  setProtonNative(filters.protonNative || "any")
+                  setAntiCheatStatus(filters.antiCheatStatus || "any")
+                  setPlayabilityStatus(filters.playabilityStatus || "")
+                  setSteamReviewMin(filters.steamReviewMin || "")
+                  setIsFree(filters.isFree || false)
+                  setHasMultiplayer(filters.hasMultiplayer || false)
+                  if (filters.genre) setSelectedGenres([filters.genre])
+                  else setSelectedGenres([])
+                  if (filters.device) setSelectedDevice(filters.device)
+                  else setSelectedDevice("")
+                  if (filters.sortBy) setSort(filters.sortBy as SortOption)
+                }}
+              />
+
               {/* Clear filters */}
-              {(selectedDevice || selectedGenres.length > 0) && (
+              {(selectedDevice ||
+                selectedGenres.length > 0 ||
+                minFps ||
+                maxFps ||
+                fsrSupport ||
+                protonNative !== "any" ||
+                antiCheatStatus !== "any" ||
+                playabilityStatus ||
+                steamReviewMin ||
+                isFree ||
+                hasMultiplayer) && (
                 <button
                   onClick={() => {
                     setSelectedDevice("")
                     setSelectedGenres([])
+                    setMinFps("")
+                    setMaxFps("")
+                    setFsrSupport(false)
+                    setProtonNative("any")
+                    setAntiCheatStatus("any")
+                    setPlayabilityStatus("")
+                    setSteamReviewMin("")
+                    setIsFree(false)
+                    setHasMultiplayer(false)
                   }}
                   className="text-xs text-text/50 hover:text-primary transition-colors cursor-pointer self-start"
                 >
@@ -356,16 +569,47 @@ export function GamesPageClient({
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Gamepad2Icon className="h-12 w-12 text-text/20" />
             <p className="text-text/40 text-sm">
-              {search || selectedDevice || selectedGenres.length > 0
+              {search ||
+              selectedDevice ||
+              selectedGenres.length > 0 ||
+              minFps ||
+              maxFps ||
+              fsrSupport ||
+              protonNative !== "any" ||
+              antiCheatStatus !== "any" ||
+              playabilityStatus ||
+              steamReviewMin ||
+              isFree ||
+              hasMultiplayer
                 ? "No games match your filters"
                 : "No games found"}
             </p>
-            {(search || selectedDevice || selectedGenres.length > 0) && (
+            {(search ||
+              selectedDevice ||
+              selectedGenres.length > 0 ||
+              minFps ||
+              maxFps ||
+              fsrSupport ||
+              protonNative !== "any" ||
+              antiCheatStatus !== "any" ||
+              playabilityStatus ||
+              steamReviewMin ||
+              isFree ||
+              hasMultiplayer) && (
               <button
                 onClick={() => {
                   setSearch("")
                   setSelectedDevice("")
                   setSelectedGenres([])
+                  setMinFps("")
+                  setMaxFps("")
+                  setFsrSupport(false)
+                  setProtonNative("any")
+                  setAntiCheatStatus("any")
+                  setPlayabilityStatus("")
+                  setSteamReviewMin("")
+                  setIsFree(false)
+                  setHasMultiplayer(false)
                 }}
                 className="text-xs text-primary hover:text-primary/80 transition-colors cursor-pointer"
               >
@@ -431,6 +675,18 @@ function GameCard({ game }: { game: GamesListItem }) {
         <h3 className="text-xs sm:text-sm font-semibold text-text group-hover:text-primary transition-colors line-clamp-2 leading-tight">
           {game.title}
         </h3>
+        <div className="flex flex-wrap gap-1 mt-1">
+          {game.playabilityStatus && (
+            <PlayabilityBadge status={game.playabilityStatus} compact showLabel={false} />
+          )}
+          {game.antiCheatRelevant && game.antiCheatStatus === "unsupported" && (
+            <AntiCheatBadge
+              antiCheatRelevant={true}
+              antiCheatStatus={game.antiCheatStatus}
+              compact
+            />
+          )}
+        </div>
         <div className="mt-1.5 flex items-center gap-2 flex-wrap">
           {game.benchmarkCount > 0 ? (
             <span className="inline-flex items-center gap-1 text-[10px] text-text/50">

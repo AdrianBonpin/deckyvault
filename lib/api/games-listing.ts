@@ -313,12 +313,15 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
 
     // Fetch platform support for the returned games (prioritise Steam Deck)
     const platformMap = new Map<string, string>()
+    const antiCheatMap = new Map<string, { antiCheatRelevant: boolean; antiCheatStatus: string | null }>()
     if (gameIds.length > 0) {
       const platformRows = await db
         .select({
           gameId: gamePlatformSupport.gameId,
           hardwareSlug: gamePlatformSupport.hardwareSlug,
           protonStatus: gamePlatformSupport.protonStatus,
+          antiCheatRelevant: gamePlatformSupport.antiCheatRelevant,
+          antiCheatStatus: gamePlatformSupport.antiCheatStatus,
         })
         .from(gamePlatformSupport)
         .where(inArray(gamePlatformSupport.gameId, gameIds))
@@ -328,6 +331,16 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
         const existing = platformMap.get(row.gameId)
         if (!existing || (!existing.startsWith("steamdeck") && isSteamDeck)) {
           platformMap.set(row.gameId, row.protonStatus)
+        }
+
+        const existingAc = antiCheatMap.get(row.gameId)
+        if (row.antiCheatRelevant) {
+          if (!existingAc || (!existingAc.antiCheatRelevant && isSteamDeck) || (!existingAc.antiCheatRelevant)) {
+            antiCheatMap.set(row.gameId, {
+              antiCheatRelevant: row.antiCheatRelevant,
+              antiCheatStatus: row.antiCheatStatus,
+            })
+          }
         }
       }
     }
@@ -349,6 +362,8 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
       onlineMultiplayerStatus: g.onlineMultiplayerStatus,
       benchmarkCount: benchmarkMap.get(g.id) ?? 0,
       deckStatus: platformMap.get(g.id) ?? null,
+      antiCheatRelevant: antiCheatMap.get(g.id)?.antiCheatRelevant ?? false,
+      antiCheatStatus: antiCheatMap.get(g.id)?.antiCheatStatus ?? null,
     }))
 
     // If sorting by benchmarks, re-sort the enriched data
