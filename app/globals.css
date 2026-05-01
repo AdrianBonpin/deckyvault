@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@plugin "@tailwindcss/typography";
 
 @theme inline {
     /* Colors */
@@ -15,23 +14,6 @@
     /* Defaults */
     --default-transition-duration: 0.3s;
 
-    /* Prose */
-    --prose-body: var(--color-text);
-    --prose-headings: var(--color-text);
-    --prose-links: var(--color-primary);
-    --prose-bold: var(--color-text);
-    --prose-counters: var(--color-text);
-    --prose-bullets: var(--color-text);
-    --prose-hr: var(--color-border);
-    --prose-quotes: var(--color-text);
-    --prose-quote-borders: var(--color-border);
-    --prose-captions: var(--color-text);
-    --prose-code: var(--color-accent);
-    --prose-pre-code: var(--color-text);
-    --prose-pre-bg: var(--color-foreground);
-    --prose-th-borders: var(--color-border);
-    --prose-td-borders: var(--color-border);
-
     /* Fonts */
     --font-sans: var(--font-lexend);
 }
@@ -42,4 +24,143 @@
 }
 .scrollbar-hide::-webkit-scrollbar {
     display: none;
+}
+
+/* Markdown content styles */
+.update-content {
+    color: var(--color-text);
+}
+
+.update-content h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--color-text);
+}
+
+.update-content h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--color-text);
+}
+
+.update-content p {
+    margin-bottom: 0.75rem;
+    line-height: 1.7;
+    color: rgba(235, 228, 241, 0.8);
+}
+
+.update-content ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.update-content ol {
+    list-style-type: decimal;
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.update-content li {
+    margin-bottom: 0.375rem;
+    line-height: 1.6;
+}
+
+.update-content li > ul,
+.update-content li > ol {
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.update-content a {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+.update-content a:hover {
+    text-decoration: underline;
+    opacity: 0.8;
+}
+
+/* Hide anchor link icons from rehype-autolink-headings by default */
+.update-content a[aria-hidden="true"] {
+    text-decoration: none;
+    margin-right: 0.375rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.update-content h2:hover a[aria-hidden="true"],
+.update-content h3:hover a[aria-hidden="true"] {
+    opacity: 0.4;
+}
+
+.update-content a[aria-hidden="true"]::before {
+    content: "#";
+    font-size: 0.75rem;
+    font-weight: 400;
+}
+
+.update-content code {
+    color: var(--color-accent);
+    background: rgba(235, 228, 241, 0.06);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.update-content pre {
+    background: rgba(235, 228, 241, 0.06);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.update-content pre code {
+    background: transparent;
+    padding: 0;
+}
+
+.update-content strong {
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+.update-content hr {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 2rem 0;
+}
+
+.update-content blockquote {
+    border-left: 3px solid var(--color-primary);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: rgba(235, 228, 241, 0.7);
+    font-style: italic;
+}
+
+.update-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+.update-content th,
+.update-content td {
+    border: 1px solid var(--color-border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+}
+
+.update-content th {
+    font-weight: 600;
+    background: rgba(235, 228, 241, 0.05);
 }

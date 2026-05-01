@@ -18,7 +18,14 @@ export function UpdateViewer({
   return (
     <>
       <ReadingProgressBar />
-      <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-row gap-8">
+      <div className="w-full max-w-7xl mx-auto px-4 py-8 flex flex-row gap-8">
+        {/* Chapter navigation sidebar (desktop) */}
+        <aside className="hidden md:block w-48 shrink-0">
+          <div className="sticky top-20">
+            <ChapterNav headings={update.headings} />
+          </div>
+        </aside>
+
         {/* Main content */}
         <article className="flex-1 min-w-0">
           <header className="mb-8">
@@ -31,17 +38,10 @@ export function UpdateViewer({
             <h1 className="text-2xl md:text-3xl font-bold">{update.meta.title}</h1>
           </header>
           <div
-            className="prose prose-invert prose-p:text-text/80 prose-headings:text-text prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-strong:text-text prose-code:text-accent prose-code:bg-text/5 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-li:text-text/80 prose-ul:list-disc prose-ol:list-decimal max-w-none"
+            className="update-content max-w-none"
             dangerouslySetInnerHTML={{ __html: update.html }}
           />
         </article>
-
-        {/* Chapter navigation sidebar (desktop) */}
-        <aside className="hidden md:block w-48 shrink-0">
-          <div className="sticky top-20">
-            <ChapterNav headings={update.headings} />
-          </div>
-        </aside>
       </div>
 
       {/* Mobile chapter nav (rendered inside viewer for context) */}
