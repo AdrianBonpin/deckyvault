@@ -2,9 +2,10 @@ import fs from "fs"
 import path from "path"
 import matter from "gray-matter"
 import { remark } from "remark"
-import remarkHtml from "remark-html"
+import remarkRehype from "remark-rehype"
 import rehypeSlug from "rehype-slug"
 import rehypeAutolinkHeadings from "rehype-autolink-headings"
+import rehypeStringify from "rehype-stringify"
 
 export interface UpdateMeta {
   slug: string
@@ -70,15 +71,16 @@ export async function getUpdateBySlug(slug: string): Promise<UpdateContent> {
   const { data, content } = matter(fileContents)
 
   const processedContent = await remark()
-    .use(remarkHtml, { sanitize: false })
+    .use(remarkRehype)
     .use(rehypeSlug)
     .use(rehypeAutolinkHeadings)
+    .use(rehypeStringify)
     .process(content)
 
   const html = processedContent.toString()
 
   // Extract headings from the rendered HTML
-  const headingRegex = /<h([2-3])[^>]*id=["']([^"']+)["'][^>]*>(.*?)<\/h[2-3]>/g
+  const headingRegex = /<h([1-6])[^>]*id=["']([^"']+)["'][^>]*>(.*?)<\/h[1-6]>/g
   const headings: UpdateHeading[] = []
   let match: RegExpExecArray | null
   while ((match = headingRegex.exec(html)) !== null) {
