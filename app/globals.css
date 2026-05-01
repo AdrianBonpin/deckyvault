@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @theme inline {
     /* Colors */
@@ -13,6 +14,23 @@
 
     /* Defaults */
     --default-transition-duration: 0.3s;
+
+    /* Prose */
+    --prose-body: var(--color-text);
+    --prose-headings: var(--color-text);
+    --prose-links: var(--color-primary);
+    --prose-bold: var(--color-text);
+    --prose-counters: var(--color-text);
+    --prose-bullets: var(--color-text);
+    --prose-hr: var(--color-border);
+    --prose-quotes: var(--color-text);
+    --prose-quote-borders: var(--color-border);
+    --prose-captions: var(--color-text);
+    --prose-code: var(--color-accent);
+    --prose-pre-code: var(--color-text);
+    --prose-pre-bg: var(--color-foreground);
+    --prose-th-borders: var(--color-border);
+    --prose-td-borders: var(--color-border);
 
     /* Fonts */
     --font-sans: var(--font-lexend);

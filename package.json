@@ -20,6 +20,7 @@
     "@better-auth/drizzle-adapter": "^1.6.9",
     "@better-auth/passkey": "^1.6.9",
     "@elysia/eden": "^1.4.10",
+    "@tailwindcss/typography": "^0.5.19",
     "@tiptap/core": "^3.22.4",
     "@tiptap/extension-link": "^3.22.4",
     "@tiptap/extension-placeholder": "^3.22.4",
