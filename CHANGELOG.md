@@ -2,6 +2,14 @@
 
 All notable changes to DeckyVault will be documented in this file.
 
+## [2026.0.96] - 2026-05-01
+
+### Added
+- Updates page listing all version release notes
+- Update viewer with auto-extracted chapter navigation and reading progress bar
+- Markdown-based content pipeline (gray-matter + remark/rehype)
+- First update post converted from existing changelog
+
 ## [2026.0.95] - 2026-04-30
 
 ### Added
