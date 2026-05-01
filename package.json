@@ -1,6 +1,6 @@
 {
   "name": "deckyvault",
-  "version": "2026.0.95",
+  "version": "2026.0.96",
   "private": true,
   "scripts": {
     "dev": "next dev --experimental-https",
@@ -32,6 +32,7 @@
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.6",
     "elysia": "^1.4.28",
+    "gray-matter": "^4.0.3",
     "lucide-react": "^1.11.0",
     "motion": "^12.38.0",
     "next": "16.2.4",
@@ -39,6 +40,10 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-icons": "^5.6.0",
+    "rehype-autolink-headings": "^7.1.0",
+    "rehype-slug": "^6.0.0",
+    "remark": "^15.0.1",
+    "remark-html": "^16.0.1",
     "resend": "^6.12.2",
     "web-haptics": "^0.0.6"
   },
