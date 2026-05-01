@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import { StepIndicator } from "@/components/wizard/step-indicator"
 import { SetupStep, type GameVersionInfo } from "@/components/wizard/steps/setup-step"
-import { AntiCheatStep, type AntiCheatData } from "@/components/wizard/steps/anti-cheat-step"
+import { type AntiCheatData } from "@/components/wizard/steps/anti-cheat-step"
 import { PerformanceStep, type PerformanceData } from "@/components/wizard/steps/performance-step"
 import { SettingsStep } from "@/components/wizard/steps/settings-step"
 import { EnvironmentStep, type EnvironmentData } from "@/components/wizard/steps/environment-step"
@@ -69,6 +69,7 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
     ) ?? platformSupport.find((p) => p.antiCheatRelevant)
 
     if (entry) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAntiCheat({
         antiCheatRelevant: entry.antiCheatRelevant,
         antiCheatName: entry.antiCheatName ?? "",

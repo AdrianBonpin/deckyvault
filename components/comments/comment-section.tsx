@@ -31,6 +31,7 @@ export function CommentSection({ gameId, initialCount }: CommentSectionProps) {
   const limit = 20
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true)
   }, [])
 

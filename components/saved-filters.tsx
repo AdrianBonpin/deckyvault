@@ -1,18 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bookmark, Plus, Trash2, Check } from "lucide-react";
+import { Bookmark, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SavedFilter {
   id: string;
   name: string;
-  filters: Record<string, any>;
+  filters: Record<string, unknown>;
 }
 
 interface SavedFiltersProps {
-  currentFilters: Record<string, any>;
-  onLoad: (filters: Record<string, any>) => void;
+  currentFilters: Record<string, unknown>;
+  onLoad: (filters: Record<string, unknown>) => void;
   className?: string;
 }
 

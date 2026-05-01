@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm"
 // In-memory cache for reviews (key -> { data, expires })
 const reviewCache = new Map<
   string,
-  { data: any; expires: number }
+  { data: SteamReviewResponse; expires: number }
 >()
 
 const CACHE_TTL = 60 * 60 * 1000 // 1 hour
@@ -100,7 +100,7 @@ export const steamReviewRoutes = new Elysia({ prefix: "/steam-reviews" })
         reviewCache.set(cacheKey, { data: slicedData, expires: Date.now() + CACHE_TTL })
 
         return slicedData
-      } catch (error) {
+      } catch {
         set.status = 502
         return { error: "Steam review API unavailable" }
       }

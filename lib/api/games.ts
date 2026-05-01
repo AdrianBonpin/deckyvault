@@ -190,46 +190,7 @@ export const gameVersionsRoutes = new Elysia({ prefix: "/games/:gameId/versions"
 
 // ── Game Sync Routes ────────────────────────────────────────────────
 const MAX_BULK_SYNC = 1000
-const SYNC_CONCURRENCY = 5 // Number of parallel syncs
-const SYNC_BATCH_DELAY_MS = 2000 // Delay between batches to respect rate limits (2 seconds)
 
-/**
- * Process syncs sequentially with delay to avoid Steam rate limiting.
- * Steam API has aggressive rate limiting - parallel requests get blocked quickly.
- */
-async function syncSequentially(
-  gamesToSync: { id: string; steamAppId: number | null }[]
-): Promise<{ synced: number; failed: number; results: Map<string, { success: boolean; error?: string }> }> {
-  let synced = 0
-  let failed = 0
-  const results = new Map<string, { success: boolean; error?: string }>()
-
-  for (let i = 0; i < gamesToSync.length; i++) {
-    const game = gamesToSync[i]
-    if (!game.steamAppId) continue
-
-    try {
-      const result = await syncSteamGame(game.steamAppId, { forceRetry: true })
-      if (result.success) {
-        synced++
-        results.set(game.id, { success: true })
-      } else {
-        failed++
-        results.set(game.id, { success: false, error: result.error })
-      }
-    } catch (e) {
-      failed++
-      results.set(game.id, { success: false, error: String(e) })
-    }
-
-    // Delay between syncs to avoid rate limiting
-    if (i < gamesToSync.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, SYNC_BATCH_DELAY_MS))
-    }
-  }
-
-  return { synced, failed, results }
-}
 
 export const gameSyncRoutes = new Elysia({ prefix: "/games" })
   // Bulk sync with streaming progress (defined before /:gameId/sync to avoid route conflict)
@@ -285,7 +246,8 @@ export const gameSyncRoutes = new Elysia({ prefix: "/games" })
       const encoder = new TextEncoder()
       const stream = new ReadableStream({
         async start(controller) {
-          const send = (data: any) => {
+          type ProgressEvent = { type: string; current?: number; total: number; synced: number; failed: number; currentGame?: string | null }
+          const send = (data: ProgressEvent) => {
             controller.enqueue(encoder.encode(JSON.stringify(data) + "\n"))
           }
 
@@ -294,7 +256,6 @@ export const gameSyncRoutes = new Elysia({ prefix: "/games" })
 
           let synced = 0
           let failed = 0
-          const batchSize = SYNC_CONCURRENCY
 
           // Process syncs sequentially with delay to avoid rate limiting
           for (let i = 0; i < gamesToSync.length; i++) {
@@ -305,7 +266,7 @@ export const gameSyncRoutes = new Elysia({ prefix: "/games" })
               const result = await syncSteamGame(game.steamAppId, { forceRetry: true })
               if (result.success) synced++
               else failed++
-            } catch (e) {
+            } catch {
               failed++
             }
 

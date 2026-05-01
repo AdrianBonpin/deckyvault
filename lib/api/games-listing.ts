@@ -7,7 +7,7 @@ import {
   gamePlatformSupport,
   hardware,
 } from "@/lib/db/schema"
-import { ilike, or, sql, eq, and, desc, asc, inArray, gte, lte } from "drizzle-orm"
+import { ilike, or, sql, eq, and, desc, asc, inArray, gte, lte, type SQL } from "drizzle-orm"
 import { fuzzySearchTerm } from "@/lib/db/search"
 
 const MAX_OFFSET = 10000
@@ -92,11 +92,11 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
 
     // ── FPS range filter (games with benchmarks in this range) ────
     if (minFps || maxFps) {
-      const fpsConditions = [
+      const fpsConditions: (SQL | undefined)[] = [
         eq(performanceEntries.isRemoved, false),
         minFps ? gte(performanceEntries.fpsAvg, Number(minFps)) : undefined,
         maxFps ? lte(performanceEntries.fpsAvg, Number(maxFps)) : undefined,
-      ].filter(Boolean) as any[]
+      ].filter((c): c is SQL => c !== undefined)
 
       const fpsSubquery = db
         .select({ gameId: gameVersions.gameId })
@@ -127,7 +127,7 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
 
     // ── Proton / Native filter ────────────────────────────────────
     if (protonNative && ["proton", "native", "both"].includes(protonNative)) {
-      const protonConditions: any[] = []
+      const protonConditions: SQL[] = []
 
       if (protonNative === "proton" || protonNative === "both") {
         protonConditions.push(eq(gamePlatformSupport.protonStatus, "proton"))
@@ -148,7 +148,7 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
     // ── Anti-cheat status filter ──────────────────────────────────
     const validAcStatuses = ["supported", "unsupported", "unknown", "none"]
     if (antiCheatStatus && antiCheatStatus !== "any" && validAcStatuses.includes(antiCheatStatus)) {
-      const acConditions: any[] = [
+      const acConditions: SQL[] = [
         eq(gamePlatformSupport.antiCheatRelevant, true),
         eq(gamePlatformSupport.antiCheatStatus, antiCheatStatus as "none" | "supported" | "unsupported" | "unknown"),
       ]

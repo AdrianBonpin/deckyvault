@@ -1,5 +1,5 @@
 import { db } from "@/lib/db/index"
-import { games } from "@/lib/db/schema"
+import { games, steamReviewSentimentEnum } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 import { recalculatePlayability } from "@/lib/api/playability"
 
@@ -247,7 +247,7 @@ export async function syncSteamGame(
         metacriticUrl: d.metacritic?.url ?? null,
         recommendationsTotal: d.recommendations?.total ?? null,
         steamReviewScore: reviewData.reviewScore,
-        steamReviewSentiment: reviewData.reviewSentiment as any,
+        steamReviewSentiment: reviewData.reviewSentiment as typeof steamReviewSentimentEnum.enumValues[number] | null,
         steamReviewCount: reviewData.reviewCount,
         priceCurrent: d.price_overview?.final ?? null,
         priceInitial: d.price_overview?.initial ?? null,

@@ -43,7 +43,7 @@ export default async function UpdatePage({
 
   return (
     <main className="w-full">
-      <div className="w-full max-w-4xl mx-auto px-4 pt-4">
+      <div className="w-full max-w-7xl mx-auto px-4 pt-4">
         <Link
           href="/updates"
           className="inline-flex items-center gap-1 text-sm text-text/60 hover:text-primary transition-colors"

@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia"
 import { db } from "@/lib/db/index"
-import { communitySuggestions, games, user } from "@/lib/db/schema"
+import { communitySuggestions, games, user, suggestionStatusEnum } from "@/lib/db/schema"
 import { eq, and, desc } from "drizzle-orm"
 import { requireAuth, requireContributorOrAdmin } from "@/lib/auth/guard"
 
@@ -109,7 +109,7 @@ export const communitySuggestionRoutes = new Elysia({
         return { error: "You already have a pending suggestion for this field" }
       }
 
-      const currentValue = String((game as any)[fieldName] ?? "")
+      const currentValue = String((game as Record<string, unknown>)[fieldName] ?? "")
 
       const [suggestion] = await db
         .insert(communitySuggestions)
@@ -149,9 +149,9 @@ export const communitySuggestionRoutes = new Elysia({
     async ({ params, query }) => {
       const status = query.status // optional filter
 
-      let conditions = [eq(communitySuggestions.gameId, params.gameId)]
+      const conditions = [eq(communitySuggestions.gameId, params.gameId)]
       if (status) {
-        conditions.push(eq(communitySuggestions.status, status as any))
+        conditions.push(eq(communitySuggestions.status, status as typeof suggestionStatusEnum.enumValues[number]))
       }
 
       const suggestions = await db
@@ -263,7 +263,7 @@ export const communitySuggestionRoutes = new Elysia({
 
       // If approved, apply the change to the game
       if (status === "approved") {
-        const updateData: Record<string, any> = {}
+        const updateData: Record<string, string> = {}
         updateData[suggestion.fieldName] = suggestion.proposedValue
 
         await db

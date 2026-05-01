@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "motion/react"
-import { Send, Loader2, AlertCircle, Monitor, Gauge, SlidersHorizontal, Terminal, FileText, GitBranch, Shield } from "lucide-react"
+import { Send, Loader2, AlertCircle, Monitor, Gauge, SlidersHorizontal, Terminal, FileText } from "lucide-react"
 import { TiptapEditor } from "@/components/tiptap-editor"
 import type { SettingCategory } from "@/components/wizard/settings-editor"
 import type { PerformanceData } from "./performance-step"

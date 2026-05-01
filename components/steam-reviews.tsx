@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ThumbsUp, ThumbsDown, ExternalLink, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +42,7 @@ export function SteamReviews({ gameId, steamAppId, className }: SteamReviewsProp
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
 
-  const fetchReviews = async (newOffset: number) => {
+  const fetchReviews = useCallback(async (newOffset: number) => {
     setLoading(true);
     setError(null);
 
@@ -64,11 +64,12 @@ export function SteamReviews({ gameId, steamAppId, className }: SteamReviewsProp
     } finally {
       setLoading(false);
     }
-  };
+  }, [gameId, setData, setLoading, setError, setOffset]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchReviews(0);
-  }, [gameId]);
+  }, [gameId, fetchReviews]);
 
   // Loading skeleton
   if (loading && !data) {

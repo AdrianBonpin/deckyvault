@@ -27,7 +27,7 @@ export function UpdateViewer({
         </aside>
 
         {/* Main content */}
-        <article className="flex-1 min-w-0">
+        <article className="flex-1 min-w-0 prose prose-invert lg:proxe-xl">
           <header className="mb-8">
             <div className="flex flex-row items-center gap-2 mb-2">
               <span className="text-xs font-mono px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">

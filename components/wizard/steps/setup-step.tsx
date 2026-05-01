@@ -33,11 +33,13 @@ interface SetupStepProps {
 }
 
 export function SetupStep({
-  gameId,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  gameId: _gameId,
   gameVersions,
   hardwareSlug,
   onHardwareChange,
-  hardwareName,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  hardwareName: _hardwareName,
   selectedVersionId,
   onVersionChange,
   newVersionString,

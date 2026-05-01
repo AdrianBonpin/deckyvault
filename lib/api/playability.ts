@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { db } from "@/lib/db/index";
-import { games, gamePlatformSupport, performanceEntries, gameVersions } from "@/lib/db/schema";
+import { games, gamePlatformSupport, performanceEntries, gameVersions, playabilityStatusEnum } from "@/lib/db/schema";
 import { eq, and, avg, count, sql } from "drizzle-orm";
 import { requireContributorOrAdmin } from "@/lib/auth/guard";
 
@@ -95,7 +95,7 @@ export async function recalculatePlayability(gameId: string): Promise<{
       await db
         .update(gamePlatformSupport)
         .set({
-          playabilityStatus: status as any,
+          playabilityStatus: status as typeof playabilityStatusEnum.enumValues[number],
           playabilityCalculatedAt: new Date(),
         })
         .where(
@@ -111,13 +111,13 @@ export async function recalculatePlayability(gameId: string): Promise<{
 
   // Update aggregate game-level playability (worst of all devices)
   const priority = { unplayable: 0, needs_tweaks: 1, playable: 2, great: 3, unknown: 4 };
-  let worstStatus: string = "unknown";
+  let worstStatus: typeof playabilityStatusEnum.enumValues[number] = "unknown";
   for (const r of results) {
     if (
       priority[r.playabilityStatus as keyof typeof priority] <
       priority[worstStatus as keyof typeof priority]
     ) {
-      worstStatus = r.playabilityStatus;
+      worstStatus = r.playabilityStatus as typeof playabilityStatusEnum.enumValues[number];
     }
   }
 
@@ -132,7 +132,7 @@ export async function recalculatePlayability(gameId: string): Promise<{
     await db
       .update(games)
       .set({
-        playabilityStatus: worstStatus as any,
+        playabilityStatus: worstStatus as typeof playabilityStatusEnum.enumValues[number],
         playabilityCalculatedAt: new Date(),
       })
       .where(eq(games.id, gameId));
@@ -174,7 +174,7 @@ export const playabilityRoutes = new Elysia({ prefix: "/playability" })
     if (hardwareSlug) {
       await db
         .update(gamePlatformSupport)
-        .set({ playabilityStatus: status as any, playabilityOverride: true })
+        .set({ playabilityStatus: status as typeof playabilityStatusEnum.enumValues[number], playabilityOverride: true })
         .where(
           and(
             eq(gamePlatformSupport.gameId, params.gameId),
@@ -184,7 +184,7 @@ export const playabilityRoutes = new Elysia({ prefix: "/playability" })
     } else {
       await db
         .update(games)
-        .set({ playabilityStatus: status as any, playabilityOverride: true })
+        .set({ playabilityStatus: status as typeof playabilityStatusEnum.enumValues[number], playabilityOverride: true })
         .where(eq(games.id, params.gameId));
     }
 

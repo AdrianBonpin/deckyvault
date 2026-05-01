@@ -169,7 +169,7 @@ export function GamesClient() {
                 setSyncCompleted(true)
                 setSelectedIds(new Set())
               }
-            } catch (e) {
+            } catch {
               // Ignore parse errors
             }
           }
@@ -255,7 +255,7 @@ export function GamesClient() {
                 }))
                 setSyncCompleted(true)
               }
-            } catch (e) {
+            } catch {
               // Ignore parse errors
             }
           }

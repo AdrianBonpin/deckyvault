@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
+import { version } from "./package.json";
 
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION: version,
+  },
   // Elysia is Bun-native and must not be bundled by Next.js
   serverExternalPackages: ["elysia", "@elysiajs/eden"],
   images: {

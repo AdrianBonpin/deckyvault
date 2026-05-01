@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Shield, ShieldCheck, ShieldX, ShieldQuestion, Pencil } from "lucide-react"
+import { Shield, ShieldCheck, ShieldX, ShieldQuestion } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export type AntiCheatData = {
@@ -61,7 +61,7 @@ export function AntiCheatStep({
   value,
   onChange,
 }: AntiCheatStepProps) {
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing] = useState(false)
 
   // Find the best existing entry to prefill:
   // Prefer the entry for the currently selected hardware,
