@@ -288,3 +288,72 @@ export async function syncSteamGame(
     return { success: false, error: errorMsg }
   }
 }
+
+/**
+ * Ensure a Steam game exists in the database with full data.
+ * If the game doesn't exist, inserts a minimal stub then runs a full sync.
+ * If the game already exists, returns it without re-syncing.
+ *
+ * This is the SINGLE ENTRY POINT for creating new Steam game records.
+ * Use this instead of direct Steam API fetches + manual inserts.
+ */
+export async function ensureSteamGame(
+  steamAppId: number
+): Promise<{ game: typeof games.$inferSelect | null; created: boolean; error?: string }> {
+  // 1. Check if game already exists
+  const [existing] = await db
+    .select()
+    .from(games)
+    .where(eq(games.steamAppId, steamAppId))
+    .limit(1)
+
+  if (existing) {
+    return { game: existing, created: false }
+  }
+
+  // 2. Insert minimal stub
+  const [stub] = await db
+    .insert(games)
+    .values({
+      steamAppId,
+      source: "steam",
+      title: `Steam App ${steamAppId}`,
+      storeUrl: `https://store.steampowered.com/app/${steamAppId}`,
+      syncStatus: "pending",
+    })
+    .returning()
+
+  // Handle race condition: if another request inserted first, UNIQUE constraint
+  // on steamAppId will throw. Catch and return the existing record.
+  if (!stub) {
+    const [raceWinner] = await db
+      .select()
+      .from(games)
+      .where(eq(games.steamAppId, steamAppId))
+      .limit(1)
+    return { game: raceWinner ?? null, created: false }
+  }
+
+  // 3. Run full sync (forceRetry=true to bypass staleness check on a brand-new record)
+  const syncResult = await syncSteamGame(steamAppId, { forceRetry: true })
+
+  if (!syncResult.success) {
+    // Sync failed — return the stub (it has error tracking fields populated by
+    // recordSyncFailure inside syncSteamGame). Re-fetch to get updated fields.
+    const [failedGame] = await db
+      .select()
+      .from(games)
+      .where(eq(games.steamAppId, steamAppId))
+      .limit(1)
+    return { game: failedGame ?? null, created: true, error: syncResult.error }
+  }
+
+  // 4. Return fully populated game
+  const [fullGame] = await db
+    .select()
+    .from(games)
+    .where(eq(games.steamAppId, steamAppId))
+    .limit(1)
+
+  return { game: fullGame ?? null, created: true }
+}
