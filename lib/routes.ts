@@ -20,10 +20,6 @@ export const routes = [
         href: "/devices",
     },
     {
-        title: "Updates",
-        href: "/updates",
-    },
-    {
         title: "Contact",
         href: "/contact",
     },
