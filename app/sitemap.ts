@@ -1,49 +1,19 @@
 import type { MetadataRoute } from "next"
-import { db } from "@/lib/db/index"
-import { games, hardware } from "@/lib/db/schema"
+import { buildStaticEntries } from "@/lib/sitemap/build-static-entries"
+import { fetchDynamicEntries } from "@/lib/sitemap/fetch-dynamic-entries"
 
-const BASE_URL = "https://deckyvault.xyz"
-
-// Skip static generation — rebuild sitemap at request time with fresh data
-export const dynamic = "force-dynamic"
+/**
+ * ISR revalidation interval for the sitemap.
+ *
+ * Instead of `force-dynamic`, we use ISR so the sitemap is cached and
+ * regenerated in the background. This keeps response times fast for
+ * crawlers while still reflecting recent changes on the site.
+ */
+export const revalidate = Number(process.env.SITEMAP_REVALIDATE_SECONDS) || 3600
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-    // Static pages that don't need DB
-    const staticEntries: MetadataRoute.Sitemap = [
-        { url: BASE_URL, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 1 },
-        { url: `${BASE_URL}/games`, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.7 },
-        { url: `${BASE_URL}/devices`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.6 },
-        { url: `${BASE_URL}/contact`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.3 },
-        { url: `${BASE_URL}/login`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.3 },
-        { url: `${BASE_URL}/signup`, lastModified: new Date(), changeFrequency: "monthly" as const, priority: 0.3 },
-        { url: `${BASE_URL}/updates`, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.5 },
-    ]
+  const staticEntries = buildStaticEntries()
+  const { gameEntries, deviceEntries } = await fetchDynamicEntries()
 
-    try {
-        const [allGames, allDevices] = await Promise.all([
-            db.select({ id: games.id, updatedAt: games.updatedAt, capsuleImage: games.capsuleImage }).from(games),
-            db.select({ slug: hardware.slug, createdAt: hardware.createdAt }).from(hardware),
-        ])
-
-        const gameEntries: MetadataRoute.Sitemap = allGames.map((game) => ({
-            url: `${BASE_URL}/game/${game.id}`,
-            lastModified: game.updatedAt,
-            changeFrequency: "weekly" as const,
-            priority: 0.8,
-            images: game.capsuleImage ? [game.capsuleImage] : undefined,
-        }))
-
-        const deviceEntries: MetadataRoute.Sitemap = allDevices.map((device) => ({
-            url: `${BASE_URL}/devices/${device.slug}`,
-            lastModified: device.createdAt,
-            changeFrequency: "monthly" as const,
-            priority: 0.6,
-        }))
-
-        return [...staticEntries, ...gameEntries, ...deviceEntries]
-    } catch {
-        // DB unreachable during build — return static sitemap only.
-        // Dynamic entries will be available at request time.
-        return staticEntries
-    }
+  return [...staticEntries, ...gameEntries, ...deviceEntries]
 }

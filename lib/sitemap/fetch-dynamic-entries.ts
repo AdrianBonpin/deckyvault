@@ -24,7 +24,7 @@ async function fetchGameEntries(): Promise<MetadataRoute.Sitemap> {
     return rows.map((row) => {
       const validatedImage = validateImageUrl(row.capsuleImage)
       return {
-        url: `${BASE_URL}/games/${row.id}`,
+        url: `${BASE_URL}/game/${row.id}`,
         lastModified: row.updatedAt,
         changeFrequency: "weekly" as const,
         priority: 0.7,
