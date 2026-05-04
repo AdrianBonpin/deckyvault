@@ -1,36 +1,30 @@
 import type { MetadataRoute } from "next"
-import { unstable_cache } from "next/cache"
 import { buildStaticEntries } from "@/lib/sitemap/build-static-entries"
 import { fetchDynamicEntries } from "@/lib/sitemap/fetch-dynamic-entries"
 
-const REVALIDATE_SECONDS = Number(process.env.SITEMAP_REVALIDATE_SECONDS) || 3600
+/**
+ * ISR-style revalidation window in seconds.
+ *
+ * Next.js caches the sitemap and regenerates it at most once per
+ * revalidation window. Between regenerations, the cached response
+ * is served instantly from memory (and from Cloudflare's edge via
+ * the `s-maxage` directive).
+ *
+ * On-demand purging is handled by `/api/revalidate-sitemap` which
+ * calls `revalidatePath("/sitemap.xml")`.
+ */
+export const revalidate = Number(process.env.SITEMAP_REVALIDATE_SECONDS) || 3600
 
 /**
- * Caches the full sitemap generation with time-based revalidation.
+ * Generates the sitemap for deckyvault.xyz.
  *
- * Instead of `force-dynamic` (which hits the DB on every crawler request),
- * we use `unstable_cache` so the sitemap is regenerated at most once per
- * revalidation window. This keeps response times fast for crawlers while
- * still reflecting recent changes on the site.
- *
- * Tagged with `"sitemap"` so the on-demand revalidation webhook can
- * clear this cache immediately after content changes.
- *
- * @see https://nextjs.org/docs/app/api-reference/functions/unstable_cache
+ * Combines static pages with dynamic game and device entries from
+ * the database. The result is cached by Next.js with ISR semantics
+ * so crawlers always get a fast response even during cold starts
+ * (the cache is persisted to disk in self-hosted Docker setups).
  */
-const getCachedSitemap = unstable_cache(
-  async () => {
-    const staticEntries = buildStaticEntries()
-    const { gameEntries, deviceEntries } = await fetchDynamicEntries()
-    return [...staticEntries, ...gameEntries, ...deviceEntries]
-  },
-  ["sitemap"],
-  {
-    revalidate: REVALIDATE_SECONDS,
-    tags: ["sitemap"],
-  },
-)
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  return getCachedSitemap()
+  const staticEntries = buildStaticEntries()
+  const { gameEntries, deviceEntries } = await fetchDynamicEntries()
+  return [...staticEntries, ...gameEntries, ...deviceEntries]
 }

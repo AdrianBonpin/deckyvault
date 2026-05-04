@@ -1,4 +1,4 @@
-import { revalidatePath, revalidateTag } from "next/cache"
+import { revalidatePath } from "next/cache"
 import { NextRequest, NextResponse } from "next/server"
 
 /**
@@ -38,7 +38,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    revalidateTag("sitemap", "default")
     revalidatePath("/sitemap.xml")
     return NextResponse.json({
       revalidated: true,
