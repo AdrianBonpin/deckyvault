@@ -10,6 +10,5 @@ export default function robots(): MetadataRoute.Robots {
             },
         ],
         sitemap: "https://deckyvault.xyz/sitemap.xml",
-        host: "https://deckyvault.xyz",
     }
 }
