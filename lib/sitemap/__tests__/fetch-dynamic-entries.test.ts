@@ -64,9 +64,9 @@ describe("fetchDynamicEntries", () => {
     const result = await fetchDynamicEntries()
 
     expect(result.gameEntries).toHaveLength(2)
-    expect(result.gameEntries[0].url).toBe("https://deckyvault.xyz/games/game-1")
+    expect(result.gameEntries[0].url).toBe("https://deckyvault.xyz/game/game-1")
     expect(result.gameEntries[0].images).toEqual(["https://cdn.example.com/img1.jpg"])
-    expect(result.gameEntries[1].url).toBe("https://deckyvault.xyz/games/game-2")
+    expect(result.gameEntries[1].url).toBe("https://deckyvault.xyz/game/game-2")
     expect(result.gameEntries[1].images).toBeUndefined()
     expect(result.deviceEntries).toHaveLength(1)
   })
