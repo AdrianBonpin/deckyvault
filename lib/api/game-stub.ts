@@ -1,127 +1,29 @@
 import { Elysia, t } from "elysia"
-import { db } from "@/lib/db/index"
-import { games } from "@/lib/db/schema"
-import { eq } from "drizzle-orm"
-import { validateImageUrl, fetchSteamGridDBCover } from "@/lib/steam/sync"
-
-interface SteamAppDetails {
-  type?: string
-  steam_appid: number
-  name: string
-  developers?: string[]
-  publishers?: string[]
-  header_image?: string
-  genres?: { id: string; description: string }[]
-  website?: string
-  pc_requirements?: { minimum?: string; recommended?: string }
-  metacritic?: { score: number; url: string }
-  recommendations?: { total: number }
-  price_overview?: { currency: string; initial: number; final: number }
-  is_free?: boolean
-  release_date?: { coming_soon: boolean; date: string }
-  categories?: { id: string; description: string }[]
-  platforms?: { windows: boolean; mac: boolean; linux: boolean }
-}
+import { ensureSteamGame } from "@/lib/steam/sync"
 
 export const gameStubRoutes = new Elysia({ prefix: "/games" }).post(
   "/stub",
   async ({ body, set }) => {
-    // Check if already exists
-    const [existing] = await db
-      .select()
-      .from(games)
-      .where(eq(games.steamAppId, body.steamAppId))
-      .limit(1)
+    const result = await ensureSteamGame(body.steamAppId)
 
-    if (existing) {
-      return { game: existing, created: false }
+    if (!result.game) {
+      set.status = 500
+      return { error: "Failed to create or retrieve game" }
     }
 
-    // Fetch details from Steam
-    let details: SteamAppDetails | null = null
-    try {
-      const url = new URL("https://store.steampowered.com/api/appdetails/")
-      url.searchParams.set("appids", String(body.steamAppId))
-      url.searchParams.set("cc", "US")
-      url.searchParams.set("l", "en")
-
-      const res = await fetch(url.toString(), {
-        headers: { Accept: "application/json" },
-      })
-
-      if (res.ok) {
-        const data = (await res.json()) as Record<
-          string,
-          { success: boolean; data: SteamAppDetails }
-        >
-        const entry = data[String(body.steamAppId)]
-        if (entry?.success) {
-          details = entry.data
-        }
-      }
-
-      // Reject non-games (DLCs, soundtracks, demos, etc.)
-      if (details?.type && details.type !== "game") {
-        set.status = 400
-        return { error: `Not a game (type: ${details.type})` }
-     
-      }
-    } catch (err) {
-      console.error("Failed to fetch Steam appdetails:", err)
+    // If game already existed, return 200 with created:false
+    if (!result.created) {
+      return { game: result.game, created: false }
     }
 
-    const title = details?.name || `Steam App ${body.steamAppId}`
-    const developer = details?.developers?.[0] || null
-    const publisher = details?.publishers?.[0] || null
-    const genres = details?.genres?.map((g) => g.description) || []
-    const headerImage = details?.header_image || null
-    const capsuleImage =
-      `https://cdn.akamai.steamstatic.com/steam/apps/${body.steamAppId}/library_600x900.jpg`
-
-    let finalCapsuleImage: string | null = capsuleImage
-    const imageValid = await validateImageUrl(capsuleImage)
-
-    if (!imageValid) {
-      const fallbackImage = await fetchSteamGridDBCover(title)
-      if (fallbackImage) {
-        finalCapsuleImage = fallbackImage
-      } else {
-        finalCapsuleImage = null
-      }
+    // If sync failed but stub exists, still return 201 with error info
+    if (result.error) {
+      set.status = 201
+      return { game: result.game, created: true, syncError: result.error }
     }
-
-    const [game] = await db
-      .insert(games)
-      .values({
-        steamAppId: body.steamAppId,
-        source: "steam",
-        title,
-        developer,
-        publisher,
-        genres,
-        headerImage,
-        capsuleImage: finalCapsuleImage,
-        storeUrl: `https://store.steampowered.com/app/${body.steamAppId}`,
-        systemRequirements: details?.pc_requirements
-          ? { minimum: details.pc_requirements.minimum || null, recommended: details.pc_requirements.recommended || null }
-          : null,
-        metacriticScore: details?.metacritic?.score ?? null,
-        metacriticUrl: details?.metacritic?.url ?? null,
-        recommendationsTotal: details?.recommendations?.total ?? null,
-        priceCurrent: details?.price_overview?.final ?? null,
-        priceInitial: details?.price_overview?.initial ?? null,
-        priceCurrency: details?.price_overview?.currency ?? null,
-        isFree: details?.is_free ?? false,
-        releaseDate: details?.release_date?.date ?? null,
-        categories: details?.categories?.map((c) => c.description) ?? null,
-        platforms: details?.platforms ?? null,
-        lastSync: new Date(),
-        syncStatus: "synced",
-      })
-      .returning()
 
     set.status = 201
-    return { game, created: true }
+    return { game: result.game, created: true }
   },
   {
     body: t.Object({
