@@ -13,7 +13,7 @@ import {
     user,
 } from "@/lib/db/schema"
 import { and, desc, eq, sql } from "drizzle-orm"
-import { isSyncStale, syncSteamGame } from "@/lib/steam/sync"
+import { isSyncStale, syncSteamGame, ensureSteamGame } from "@/lib/steam/sync"
 import { GamePageClient } from "./game-page-client"
 
 // This page needs live data — skip static generation at build time
@@ -74,73 +74,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 async function createGameStub(steamAppId: number) {
-    const url = new URL("https://store.steampowered.com/api/appdetails/")
-    url.searchParams.set("appids", String(steamAppId))
-    url.searchParams.set("cc", "US")
-    url.searchParams.set("l", "en")
-
-    const res = await fetch(url.toString(), {
-        headers: { Accept: "application/json" },
-    })
-
-    let title = `Steam App ${steamAppId}`
-    let developer: string | null = null
-    let publisher: string | null = null
-    let genres: string[] | null = null
-    let headerImage: string | null = null
-    let capsuleImage: string | null = null
-    let description: string | null = null
-
-    if (res.ok) {
-        const data = (await res.json()) as Record<
-            string,
-            {
-                success: boolean
-                data: {
-                    type?: string
-                    name: string
-                    developers?: string[]
-                    publishers?: string[]
-                    genres?: { description: string }[]
-                    header_image?: string
-                    short_description?: string
-                }
-            }
-        >
-        const entry = data[String(steamAppId)]
-        if (entry?.success && entry.data) {
-            if (entry.data.type && entry.data.type !== "game") {
-                notFound()
-            }
-            title = entry.data.name
-            developer = entry.data.developers?.[0] ?? null
-            publisher = entry.data.publishers?.[0] ?? null
-            genres = entry.data.genres?.map((g) => g.description) ?? []
-            headerImage = entry.data.header_image ?? null
-            capsuleImage = `https://cdn.akamai.steamstatic.com/steam/apps/${steamAppId}/library_600x900.jpg`
-            description = entry.data.short_description ?? null
-        }
+    const result = await ensureSteamGame(steamAppId)
+    if (!result.game) {
+        notFound()
     }
-
-    const [game] = await db
-        .insert(games)
-        .values({
-            steamAppId,
-            source: "steam",
-            title,
-            developer,
-            publisher,
-            genres,
-            headerImage,
-            capsuleImage,
-            description,
-            storeUrl: `https://store.steampowered.com/app/${steamAppId}`,
-            lastSync: new Date(),
-            syncStatus: "synced",
-        })
-        .returning()
-
-    return game
+    // If the sync determined this is not a game (DLC, soundtrack, etc.),
+    // treat it as not found rather than showing a broken page
+    if (result.game.syncStatus === "error" && result.error?.includes("not a game")) {
+        notFound()
+    }
+    return result.game
 }
 
 export default async function GamePage({
