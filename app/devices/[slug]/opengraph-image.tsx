@@ -3,7 +3,6 @@ import { db } from "@/lib/db/index"
 import { hardware, performanceEntries, gameVersions, games } from "@/lib/db/schema"
 import { eq, and, sql } from "drizzle-orm"
 
-export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 export const alt = "Device benchmarks on DeckyVault"
 export const size = { width: 1200, height: 630 }

@@ -13,7 +13,7 @@ import { fetchDynamicEntries } from "@/lib/sitemap/fetch-dynamic-entries"
  * On-demand purging is handled by `/api/revalidate-sitemap` which
  * calls `revalidatePath("/sitemap.xml")`.
  */
-export const revalidate = Number(process.env.SITEMAP_REVALIDATE_SECONDS) || 3600
+export const revalidate = 3600
 
 /**
  * Generates the sitemap for deckyvault.xyz.
