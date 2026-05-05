@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Lexend } from "next/font/google"
 import "./globals.css"
 import Script from "next/script"
@@ -9,6 +9,15 @@ const font = Lexend({
     variable: "--font-lexend",
     subsets: ["latin"],
 })
+
+export const viewport: Viewport = {
+    width: "device-width",
+    initialScale: 1,
+    viewportFit: "cover",
+    maximumScale: 1,
+    userScalable: false,
+    themeColor: "#eb3779",
+}
 
 export const metadata: Metadata = {
     metadataBase: new URL("https://deckyvault.xyz"),
@@ -82,6 +91,10 @@ export default function RootLayout({
             lang='en'
             className={`${font.variable} bg-background text-text antialiased overscroll-none`}
         >
+            <head>
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+            </head>
             <body className='min-h-full w-dvw flex flex-col relative'>
                 <Suspense>
                     <Navbar />

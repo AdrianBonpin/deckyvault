@@ -2,6 +2,36 @@
 
 All notable changes to DeckyVault will be documented in this file.
 
+## [2026.0.97] - 2026-05-06
+
+### Fixed
+- Sitemap.xml used ISR caching (`revalidate = 3600`) which poisoned the cache with empty responses on DB hiccups; switched to `force-dynamic` for per-request fresh generation
+- DB errors during sitemap generation were silently caught and returned as empty arrays (no games indexed); errors now propagate to observability with structured logging
+- Games with NULL `syncStatus` were excluded from sitemap due to SQL `<> 'failed'` returning NULL (not TRUE) for NULL values
+- Multi-genre selection in games filter panel only applied the first selected genre; now supports comma-separated OR-matching
+- FPS range filter included results from non-active devices; now scoped to the selected device filter when present
+
+### Added
+- PWA service worker with offline caching for game pages and images (stale-while-revalidate for HTML, cache-first for Steam CDN images)
+- Offline fallback page (`offline.html`) when navigating without network
+- Gamepad navigation hook (D-pad/left stick focus, A/B/X/Y buttons, context-aware actions)
+- Structured logging for sitemap generation metrics (games, devices, timestamps) via `console.info` JSON
+- Filter state synchronized to URL query parameters for shareable/bookmarkable filtered views
+- WCAG 2.1 AA touch targets (44×44px) on all games page filter controls
+
+### Changed
+- Web manifest icons now declare explicit 192px (maskable) and 512px (any) sizes
+- Viewport meta tag added with `viewport-fit=cover` and `user-scalable=no` for installed PWA feel
+- Apple mobile web app meta tags added for iOS home screen support
+- Loading a saved filter now auto-collapses the filter panel for visual feedback
+- Sitemap generation flattened into a single function in `app/sitemap.ts` (removed delegation to `lib/sitemap/`)
+
+### Technical
+- Removed `lib/sitemap/fetch-dynamic-entries.ts`, `lib/sitemap/build-static-entries.ts`, `lib/sitemap/validate-image-url.ts`
+- Removed `app/api/revalidate-sitemap/` route (no longer needed with `force-dynamic`)
+- Added `@serwist/next`, `@serwist/precaching`, `@serwist/sw`, `@serwist/strategies`, `@serwist/expiration`, `@serwist/routing`, and `serwist` dependencies
+- Build script updated to use `--webpack` flag for `@serwist/next` compatibility
+
 ## [2026.0.96] - 2026-05-01
 
 ### Added

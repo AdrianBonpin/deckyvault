@@ -1,30 +1,114 @@
 import type { MetadataRoute } from "next"
-import { buildStaticEntries } from "@/lib/sitemap/build-static-entries"
-import { fetchDynamicEntries } from "@/lib/sitemap/fetch-dynamic-entries"
+import { db } from "@/lib/db/index"
+import { games, hardware } from "@/lib/db/schema"
+import { or, ne, isNull } from "drizzle-orm"
 
-/**
- * ISR-style revalidation window in seconds.
- *
- * Next.js caches the sitemap and regenerates it at most once per
- * revalidation window. Between regenerations, the cached response
- * is served instantly from memory (and from Cloudflare's edge via
- * the `s-maxage` directive).
- *
- * On-demand purging is handled by `/api/revalidate-sitemap` which
- * calls `revalidatePath("/sitemap.xml")`.
- */
-export const revalidate = 3600
+export const dynamic = "force-dynamic"
 
-/**
- * Generates the sitemap for deckyvault.xyz.
- *
- * Combines static pages with dynamic game and device entries from
- * the database. The result is cached by Next.js with ISR semantics
- * so crawlers always get a fast response even during cold starts
- * (the cache is persisted to disk in self-hosted Docker setups).
- */
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://deckyvault.xyz"
+
+function buildStaticEntries(): MetadataRoute.Sitemap {
+  return [
+    {
+      url: BASE_URL,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 1,
+    },
+    {
+      url: `${BASE_URL}/games`,
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/devices`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    },
+    {
+      url: `${BASE_URL}/updates`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.5,
+    },
+    {
+      url: `${BASE_URL}/contact`,
+      lastModified: new Date(),
+      changeFrequency: "yearly" as const,
+      priority: 0.3,
+    },
+  ]
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries = buildStaticEntries()
-  const { gameEntries, deviceEntries } = await fetchDynamicEntries()
-  return [...staticEntries, ...gameEntries, ...deviceEntries]
+
+  try {
+    const [gameRows, deviceRows] = await Promise.all([
+      db
+        .select({
+          id: games.id,
+          updatedAt: games.updatedAt,
+          capsuleImage: games.capsuleImage,
+        })
+        .from(games)
+        .where(or(ne(games.syncStatus, "failed"), isNull(games.syncStatus))),
+      db
+        .select({
+          slug: hardware.slug,
+          createdAt: hardware.createdAt,
+        })
+        .from(hardware),
+    ])
+
+    const gameEntries: MetadataRoute.Sitemap = gameRows.map((row) => {
+      const image =
+        row.capsuleImage &&
+        typeof row.capsuleImage === "string" &&
+        row.capsuleImage.trim().startsWith("https://") &&
+        row.capsuleImage.trim().length <= 2048
+          ? row.capsuleImage.trim()
+          : undefined
+
+      return {
+        url: `${BASE_URL}/game/${row.id}`,
+        lastModified: row.updatedAt ?? undefined,
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+        ...(image ? { images: [image] } : {}),
+      }
+    })
+
+    const deviceEntries: MetadataRoute.Sitemap = deviceRows.map((row) => ({
+      url: `${BASE_URL}/devices/${row.slug}`,
+      lastModified: row.createdAt ?? undefined,
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    }))
+
+    console.info(
+      JSON.stringify({
+        event: "sitemap_generated",
+        gameCount: gameEntries.length,
+        deviceCount: deviceEntries.length,
+        staticCount: staticEntries.length,
+        totalUrls: staticEntries.length + gameEntries.length + deviceEntries.length,
+        generatedAt: new Date().toISOString(),
+      }),
+    )
+
+    return [...staticEntries, ...gameEntries, ...deviceEntries]
+  } catch (err) {
+    console.error(
+      JSON.stringify({
+        event: "sitemap_db_error",
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+        generatedAt: new Date().toISOString(),
+      }),
+    )
+    return staticEntries
+  }
 }

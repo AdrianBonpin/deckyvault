@@ -51,9 +51,18 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
       )
     }
 
-    // Genre filter
+    // Genre filter (supports comma-separated list with OR logic)
     if (genre) {
-      conditions.push(sql`${games.genres} @> ${JSON.stringify([genre])}::jsonb`)
+      const genres = genre.split(",").filter(Boolean)
+      if (genres.length === 1) {
+        conditions.push(sql`${games.genres} @> ${JSON.stringify([genres[0]])}::jsonb`)
+      } else if (genres.length > 1) {
+        // OR logic: game matches ANY of the selected genres
+        const genreConditions = genres.map(
+          (g) => sql`${games.genres} @> ${JSON.stringify([g])}::jsonb`,
+        )
+        conditions.push(or(...genreConditions)!)
+      }
     }
 
     // Device filter
@@ -96,6 +105,8 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
         eq(performanceEntries.isRemoved, false),
         minFps ? gte(performanceEntries.fpsAvg, Number(minFps)) : undefined,
         maxFps ? lte(performanceEntries.fpsAvg, Number(maxFps)) : undefined,
+        // Scope to active device when device filter is set
+        device ? eq(performanceEntries.hardwareSlug, device) : undefined,
       ].filter((c): c is SQL => c !== undefined)
 
       const fpsSubquery = db

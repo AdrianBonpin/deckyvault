@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "motion/react"
@@ -11,6 +12,7 @@ import {
   XIcon,
   Loader2Icon,
 } from "lucide-react"
+import { useGamepadNavigation } from "@/lib/hooks/use-gamepad-navigation"
 import { AntiCheatBadge } from "@/components/anti-cheat-badge"
 import { PlayabilityBadge } from "@/components/playability-badge"
 import { SavedFilters } from "@/components/saved-filters"
@@ -90,8 +92,53 @@ export function GamesPageClient({
   const [hasMultiplayer, setHasMultiplayer] = useState<boolean>(false)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const pageRef = useRef<HTMLElement>(null)
+
+  const { isGamepadActive } = useGamepadNavigation(pageRef, {
+    onXButton: () => {
+      // Navigate to search page
+      window.location.href = "/search"
+    },
+    onYButton: () => {
+      // Toggle filter panel
+      setShowFilters((prev) => !prev)
+    },
+  })
+
+  const router = useRouter()
 
   const hasMore = games.length < total
+
+  // ── Initialize filters from URL params on mount ────────────────
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("search")) setSearch(params.get("search")!)
+    if (params.get("device")) setSelectedDevice(params.get("device")!)
+    if (params.get("genre")) {
+      const genres = params.get("genre")!.split(",").filter(Boolean)
+      setSelectedGenres(genres)
+    }
+    if (params.get("minFps")) setMinFps(params.get("minFps")!)
+    if (params.get("maxFps")) setMaxFps(params.get("maxFps")!)
+    if (params.get("fsrSupport") === "true") setFsrSupport(true)
+    if (params.get("protonNative") && params.get("protonNative") !== "any")
+      setProtonNative(params.get("protonNative")!)
+    if (params.get("antiCheatStatus") && params.get("antiCheatStatus") !== "any")
+      setAntiCheatStatus(params.get("antiCheatStatus")!)
+    if (params.get("playabilityStatus")) setPlayabilityStatus(params.get("playabilityStatus")!)
+    if (params.get("steamReviewScore")) setSteamReviewMin(params.get("steamReviewScore")!)
+    if (params.get("isFree") === "true") setIsFree(true)
+    if (params.get("hasMultiplayer") === "true") setHasMultiplayer(true)
+    if (params.get("sort")) {
+      const s = params.get("sort")!
+      if (["recent", "name", "benchmarks", "performance", "popularity", "release_date", "steam_reviews"].includes(s)) {
+        setSort(s as SortOption)
+      }
+    }
+    if (params.get("order")) setSortDirection(params.get("order") as SortDirection)
+  }, [])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const buildUrl = useCallback(
     (offset: number) => {
@@ -102,7 +149,7 @@ export function GamesPageClient({
       params.set("order", sortDirection)
       if (search) params.set("search", search)
       if (selectedDevice) params.set("device", selectedDevice)
-      if (selectedGenres.length === 1) params.set("genre", selectedGenres[0])
+      if (selectedGenres.length > 0) params.set("genre", selectedGenres.join(","))
       if (minFps) params.set("minFps", minFps)
       if (maxFps) params.set("maxFps", maxFps)
       if (fsrSupport) params.set("fsrSupport", "true")
@@ -140,6 +187,29 @@ export function GamesPageClient({
       setLoading(false)
     }
   }, [loading, hasMore, games.length, buildUrl])
+
+  // ── Sync filter state to URL (replace, not push) ───────────────
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (search) params.set("search", search)
+    if (selectedDevice) params.set("device", selectedDevice)
+    if (selectedGenres.length > 0) params.set("genre", selectedGenres.join(","))
+    if (minFps) params.set("minFps", minFps)
+    if (maxFps) params.set("maxFps", maxFps)
+    if (fsrSupport) params.set("fsrSupport", "true")
+    if (protonNative !== "any") params.set("protonNative", protonNative)
+    if (antiCheatStatus !== "any") params.set("antiCheatStatus", antiCheatStatus)
+    if (playabilityStatus) params.set("playabilityStatus", playabilityStatus)
+    if (steamReviewMin) params.set("steamReviewScore", steamReviewMin)
+    if (isFree) params.set("isFree", "true")
+    if (hasMultiplayer) params.set("hasMultiplayer", "true")
+    if (sort !== "recent") params.set("sort", sort)
+    if (sortDirection !== "desc") params.set("order", sortDirection)
+
+    const qs = params.toString()
+    const url = qs ? `/games?${qs}` : "/games"
+    router.replace(url, { scroll: false })
+  }, [search, selectedDevice, selectedGenres, minFps, maxFps, fsrSupport, protonNative, antiCheatStatus, playabilityStatus, steamReviewMin, isFree, hasMultiplayer, sort, sortDirection, router])
 
   // Full reload when filters/sort change
   useEffect(() => {
@@ -199,7 +269,7 @@ export function GamesPageClient({
   }
 
   return (
-    <section className="w-full flex flex-col gap-8 py-8">
+    <section ref={pageRef} className={`w-full flex flex-col gap-8 py-8 ${isGamepadActive ? "gamepad-focus" : ""}`}>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -225,7 +295,7 @@ export function GamesPageClient({
         <div className="max-w-7xl mx-auto flex flex-col gap-3">
           {/* Search + Sort Row */}
           <div className="flex flex-row items-center gap-3">
-            <label className="flex-1 flex flex-row items-center gap-2 bg-text/5 px-3 py-2 rounded-md border border-border hover:border-border-active focus-within:border-primary/80 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 focus-within:ring-offset-background transition-colors cursor-text">
+            <label className="flex-1 flex flex-row items-center gap-2 bg-text/5 px-3 py-2.5 rounded-md border border-border hover:border-border-active focus-within:border-primary/80 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 focus-within:ring-offset-background transition-colors cursor-text min-h-[44px]">
               <SearchIcon className="h-4 w-4 text-text/40 shrink-0" />
               <input
                 type="text"
@@ -256,14 +326,14 @@ export function GamesPageClient({
             </select>
             <button
               onClick={() => setSortDirection(prev => prev === "asc" ? "desc" : "asc")}
-              className="px-2 py-2 rounded-md text-sm bg-text/5 border border-border hover:bg-text/10 transition-colors cursor-pointer"
+              className="px-2 py-2 rounded-md text-sm bg-text/5 border border-border hover:bg-text/10 transition-colors cursor-pointer min-h-[44px]"
               title={sortDirection === "asc" ? "Sort ascending" : "Sort descending"}
             >
               {sortDirection === "asc" ? "↑" : "↓"}
             </button>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`px-3 py-2 rounded-md text-sm transition-colors cursor-pointer border ${
+              className={`px-3 py-2 rounded-md text-sm transition-colors cursor-pointer border min-h-[44px] ${
                 showFilters ||
                 selectedDevice ||
                 selectedGenres.length > 0 ||
@@ -325,7 +395,7 @@ export function GamesPageClient({
                 <div className="flex flex-wrap gap-1.5">
                   <button
                     onClick={() => setSelectedDevice("")}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                    className={`px-3 py-2.5 rounded-full text-xs font-medium transition-colors cursor-pointer min-h-[44px] ${
                       selectedDevice === ""
                         ? "bg-primary/10 text-primary border border-primary/30"
                         : "text-text/50 hover:text-text/70 hover:bg-text/5 border border-transparent"
@@ -339,7 +409,7 @@ export function GamesPageClient({
                       onClick={() =>
                         setSelectedDevice(selectedDevice === device.slug ? "" : device.slug)
                       }
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                      className={`px-3 py-2.5 rounded-full text-xs font-medium transition-colors cursor-pointer min-h-[44px] ${
                         selectedDevice === device.slug
                           ? "bg-primary/10 text-primary border border-primary/30"
                           : "text-text/50 hover:text-text/70 hover:bg-text/5 border border-transparent"
@@ -361,7 +431,7 @@ export function GamesPageClient({
                     <button
                       key={genre}
                       onClick={() => toggleGenre(genre)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                      className={`px-3 py-2.5 rounded-full text-xs font-medium transition-colors cursor-pointer min-h-[44px] ${
                         selectedGenres.includes(genre)
                           ? "bg-primary/10 text-primary border border-primary/30"
                           : "text-text/50 hover:text-text/70 hover:bg-text/5 border border-transparent"
@@ -382,20 +452,20 @@ export function GamesPageClient({
                     placeholder="Min FPS"
                     value={minFps}
                     onChange={(e) => setMinFps(e.target.value)}
-                    className="w-24 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm"
+                    className="w-24 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-2.5 text-sm min-h-[44px]"
                   />
                   <input
                     type="number"
                     placeholder="Max FPS"
                     value={maxFps}
                     onChange={(e) => setMaxFps(e.target.value)}
-                    className="w-24 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm"
+                    className="w-24 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-2.5 text-sm min-h-[44px]"
                   />
                 </div>
                 <select
                   value={playabilityStatus}
                   onChange={(e) => setPlayabilityStatus(e.target.value)}
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm"
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-2.5 text-sm min-h-[44px]"
                 >
                   <option value="">Any Playability</option>
                   <option value="great">Plays Great</option>
@@ -411,7 +481,7 @@ export function GamesPageClient({
                 <select
                   value={protonNative}
                   onChange={(e) => setProtonNative(e.target.value)}
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm"
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-2.5 text-sm min-h-[44px]"
                 >
                   <option value="any">Any Runtime</option>
                   <option value="native">Native</option>
@@ -420,14 +490,14 @@ export function GamesPageClient({
                 <select
                   value={antiCheatStatus}
                   onChange={(e) => setAntiCheatStatus(e.target.value)}
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm"
+                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-2.5 text-sm min-h-[44px]"
                 >
                   <option value="any">Any Anti-Cheat</option>
                   <option value="supported">AC Supported</option>
                   <option value="unsupported">AC Unsupported</option>
                   <option value="unknown">AC Unknown</option>
                 </select>
-                <label className="flex items-center gap-2 text-sm">
+                <label className="flex items-center gap-2 text-sm py-2 min-h-[44px]">
                   <input
                     type="checkbox"
                     checked={fsrSupport}
@@ -441,7 +511,7 @@ export function GamesPageClient({
               {/* Other Filters */}
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-zinc-300">Other</h4>
-                <label className="flex items-center gap-2 text-sm">
+                <label className="flex items-center gap-2 text-sm py-2 min-h-[44px]">
                   <input
                     type="checkbox"
                     checked={isFree}
@@ -450,7 +520,7 @@ export function GamesPageClient({
                   />
                   Free to Play
                 </label>
-                <label className="flex items-center gap-2 text-sm">
+                <label className="flex items-center gap-2 text-sm py-2 min-h-[44px]">
                   <input
                     type="checkbox"
                     checked={hasMultiplayer}
@@ -494,11 +564,12 @@ export function GamesPageClient({
                   setSteamReviewMin((filters.steamReviewMin as string) || "")
                   setIsFree((filters.isFree as boolean) || false)
                   setHasMultiplayer((filters.hasMultiplayer as boolean) || false)
-                  if (filters.genre) setSelectedGenres([filters.genre as string])
+                  if (filters.genre) setSelectedGenres((filters.genre as string).split(",").filter(Boolean))
                   else setSelectedGenres([])
                   if (filters.device) setSelectedDevice(filters.device as string)
                   else setSelectedDevice("")
                   if (filters.sortBy) setSort(filters.sortBy as SortOption)
+                  setShowFilters(false)
                 }}
               />
 
@@ -528,7 +599,7 @@ export function GamesPageClient({
                     setIsFree(false)
                     setHasMultiplayer(false)
                   }}
-                  className="text-xs text-text/50 hover:text-primary transition-colors cursor-pointer self-start"
+                  className="text-xs text-text/50 hover:text-primary transition-colors cursor-pointer self-start min-h-[44px] py-2 flex items-center"
                 >
                   Clear all filters
                 </button>
@@ -544,7 +615,7 @@ export function GamesPageClient({
           <p className="text-red-400 text-sm">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-2 text-xs text-text/50 hover:text-primary transition-colors cursor-pointer"
+            className="mt-2 text-xs text-text/50 hover:text-primary transition-colors cursor-pointer min-h-[44px] py-2 flex items-center"
           >
             Try again
           </button>
@@ -611,7 +682,7 @@ export function GamesPageClient({
                   setIsFree(false)
                   setHasMultiplayer(false)
                 }}
-                className="text-xs text-primary hover:text-primary/80 transition-colors cursor-pointer"
+                className="text-xs text-primary hover:text-primary/80 transition-colors cursor-pointer min-h-[44px]"
               >
                 Clear filters
               </button>

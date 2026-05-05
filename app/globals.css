@@ -22,3 +22,17 @@
     /* Fonts */
     --font-sans: var(--font-lexend);
 }
+
+/* Touch targets — WCAG 2.1 AA: minimum 44×44px */
+.touch-target {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* Gamepad focus ring — visible only when gamepad navigation is active */
+.gamepad-focus :focus,
+.gamepad-focus:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+}

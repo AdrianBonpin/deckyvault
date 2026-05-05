@@ -41,7 +41,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-certificates
+# serwist build artifact
+public/sw.js
 
 /docs/superpowers
 

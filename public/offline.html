@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offline — DeckyVault</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-lexend, 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+      background-color: #100b14;
+      color: #ebe4f1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+      text-align: center;
+    }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #eb3779;
+      margin-bottom: 2rem;
+      letter-spacing: -0.02em;
+    }
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      font-size: 0.875rem;
+      color: #ebe4f1aa;
+      max-width: 24rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: #eb3779;
+      color: #100b14;
+      font-weight: 600;
+      font-size: 0.875rem;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .back-btn:hover { background: #d42d6a; }
+    .back-btn:active { background: #b8255c; }
+  </style>
+</head>
+<body>
+  <div class="logo">DeckyVault</div>
+  <h1>You're offline</h1>
+  <p>
+    This page isn't available right now. Check your internet connection and try again.
+    Previously visited game pages may still be available.
+  </p>
+  <button class="back-btn" onclick="history.back()">← Go Back</button>
+</body>
+</html>
