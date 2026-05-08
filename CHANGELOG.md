@@ -2,6 +2,12 @@
 
 All notable changes to DeckyVault will be documented in this file.
 
+## [2026.0.971] - 2026-05-09
+
+### Fixed
+- Submit `can't access property "id", (intermediate value).data is undefined`
+- Game Card Height in view extending, not fitting actual content.
+
 ## [2026.0.97] - 2026-05-06
 
 ### Fixed

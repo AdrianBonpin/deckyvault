@@ -235,8 +235,8 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
         throw new Error(data.error || "Failed to create game version")
       }
 
-      const data = await res.json() as { data: { id: string } }
-      return data.data.id
+      const data = await res.json() as { id: string }
+      return data.id
     } finally {
       setIsCreatingVersion(false)
     }

@@ -462,7 +462,7 @@ export function GamePageClient({
             >
                 <div className='max-w-7xl mx-auto flex gap-4 sm:gap-6'>
                     {/* Cover image */}
-                    <div className='relative shrink-0 aspect-2/3 w-28 sm:w-32 md:w-36 rounded-lg overflow-hidden border border-border bg-text/5'>
+                    <div className='relative shrink-0 aspect-2/3 w-28 sm:w-32 md:w-36 rounded-lg overflow-hidden border border-border bg-text/5 h-max'>
                         {coverImage && !imgError ? (
                             <Image
                                 src={coverImage}
