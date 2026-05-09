@@ -11,6 +11,7 @@ import {
   ChevronRightIcon,
   FlagIcon,
 } from "lucide-react"
+import { ConfirmDialog } from "@/components/ui/modal"
 
 interface Report {
   id: string
@@ -443,34 +444,16 @@ export function ReportsClient() {
 
       {/* Confirmation Dialog */}
       {confirmReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background border border-border rounded-xl p-6 max-w-sm w-full mx-4 space-y-4">
-            <h2 className="text-base font-semibold text-text">Confirm Review</h2>
-            <p className="text-sm text-text/70">
-              This will also remove the reported benchmark. Are you sure?
-            </p>
-            <div className="flex items-center justify-end gap-2">
-              <button
-                onClick={() => setConfirmReport(null)}
-                className="px-3 py-1.5 rounded-md text-xs font-medium bg-text/5 text-text hover:bg-text/10 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleUpdateStatus(confirmReport, "reviewed")}
-                disabled={actionLoading[confirmReport.id]}
-                className="px-3 py-1.5 rounded-md text-xs font-medium bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-              >
-                {actionLoading[confirmReport.id] ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <ShieldCheckIcon className="h-3.5 w-3.5" />
-                )}
-                Review
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          open={!!confirmReport}
+          onClose={() => setConfirmReport(null)}
+          onConfirm={() => handleUpdateStatus(confirmReport, "reviewed")}
+          title="Confirm Review"
+          message="This will also remove the reported benchmark. Are you sure?"
+          confirmLabel="Review"
+          variant="default"
+          loading={actionLoading[confirmReport.id]}
+        />
       )}
     </div>
   )
