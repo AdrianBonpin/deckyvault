@@ -72,7 +72,7 @@ export function ProfilePhotoUpload({ currentImage, userName, userId }: ProfilePh
     setPreviewUrl(objectUrl)
 
     const formData = new FormData()
-    formData.append("file", file)
+    formData.append("photo", file)
 
     try {
       const res = await fetch("/api/user/profile-photo", {
@@ -86,8 +86,8 @@ export function ProfilePhotoUpload({ currentImage, userName, userId }: ProfilePh
       }
 
       const data = await res.json()
-      if (data.imageUrl) {
-        setPreviewUrl(data.imageUrl)
+      if (data.url) {
+        setPreviewUrl(data.url)
         cleanupTempUrl()
       }
       setUploadState("success")

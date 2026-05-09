@@ -166,10 +166,13 @@ async function generateSitemaps() {
   console.log(`Sitemaps generated successfully! Total URLs: ${staticEntries.length + allDynamicEntries.length}`)
 }
 
-// Run if called directly
-generateSitemaps().catch((err) => {
-  console.error("Failed to generate sitemaps:", err)
-  process.exit(1)
-})
+// Run if called directly (CLI execution, not module import)
+const isCliRun = typeof process !== "undefined" && process.argv?.[1]?.includes("generate-static")
+if (isCliRun) {
+  generateSitemaps().catch((err) => {
+    console.error("Failed to generate sitemaps:", err)
+    process.exit(1)
+  })
+}
 
 export { generateSitemaps }
