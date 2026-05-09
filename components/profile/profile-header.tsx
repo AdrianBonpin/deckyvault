@@ -1,6 +1,6 @@
 "use client"
 
-import { Shield, Crown, CheckCircle, Mail } from "lucide-react"
+import { Shield, Crown, CheckCircle, Mail, User } from "lucide-react"
 import { motion } from "motion/react"
 
 interface ProfileHeaderProps {
@@ -9,6 +9,7 @@ interface ProfileHeaderProps {
   role: string | null
   verified: boolean
   createdAt: string
+  image?: string | null
 }
 
 const roleConfig: Record<string, { label: string; color: string; icon: typeof Crown }> = {
@@ -17,7 +18,15 @@ const roleConfig: Record<string, { label: string; color: string; icon: typeof Cr
   user: { label: "Member", color: "bg-text/10 text-text/60 border-text/20", icon: Shield },
 }
 
-export function ProfileHeader({ name, email, role, verified, createdAt }: ProfileHeaderProps) {
+function isR2Avatar(url: string): boolean {
+  return url.includes(".r2.dev")
+}
+
+function getInitials(name: string): string {
+  return name.charAt(0).toUpperCase()
+}
+
+export function ProfileHeader({ name, email, role, verified, createdAt, image }: ProfileHeaderProps) {
   const config = roleConfig[role || "user"] || roleConfig.user
   const RoleIcon = config.icon
 
@@ -33,6 +42,15 @@ export function ProfileHeader({ name, email, role, verified, createdAt }: Profil
       className="flex flex-col gap-2"
     >
       <div className="flex flex-wrap items-center gap-3">
+        {image ? (
+          <div className={`shrink-0 w-16 h-16 rounded-full overflow-hidden ${isR2Avatar(image) ? "ring-2 ring-primary/30 ring-offset-2 ring-offset-background" : ""}`}>
+            <img src={image} alt={`${name}'s profile photo`} className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <div className="shrink-0 w-16 h-16 rounded-full overflow-hidden flex items-center justify-center bg-primary/10 text-primary text-xl font-bold">
+            {getInitials(name)}
+          </div>
+        )}
         <h1 className="text-2xl font-bold">{name}</h1>
         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${config.color}`}>
           <RoleIcon className="h-3 w-3" />

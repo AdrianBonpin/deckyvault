@@ -104,6 +104,7 @@ export default function ProfilePage() {
                         role={profile.role}
                         verified={profile.verified}
                         createdAt={profile.createdAt}
+                        image={profile.image}
                     />
                 </div>
             </motion.div>
@@ -175,6 +176,8 @@ export default function ProfilePage() {
                                 email={profile.email}
                                 role={profile.role}
                                 createdAt={profile.createdAt}
+                                image={profile.image}
+                                userId={profile.id}
                             />
                         )}
                     </motion.div>

@@ -30,6 +30,7 @@ export function ProfilePageClient({ profile, recentContributions }: ProfilePageC
             role={profile.role}
             verified={profile.verified}
             createdAt={profile.createdAt}
+            image={profile.image}
           />
         </div>
       </div>

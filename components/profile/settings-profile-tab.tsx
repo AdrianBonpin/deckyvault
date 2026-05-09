@@ -5,14 +5,18 @@ import { authClient } from "@/lib/auth-client"
 import { Loader2, Save } from "lucide-react"
 import { motion } from "motion/react"
 
+import { ProfilePhotoUpload } from "@/components/profile/profile-photo-upload"
+
 interface SettingsProfileTabProps {
   name: string
   email: string
   role: string | null
   createdAt: string
+  image?: string | null
+  userId: string
 }
 
-export function SettingsProfileTab({ name, email, role, createdAt }: SettingsProfileTabProps) {
+export function SettingsProfileTab({ name, email, role, createdAt, image, userId }: SettingsProfileTabProps) {
   const [displayName, setDisplayName] = useState(name)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -49,6 +53,9 @@ export function SettingsProfileTab({ name, email, role, createdAt }: SettingsPro
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
+      {/* Profile Photo */}
+      <ProfilePhotoUpload currentImage={image ?? null} userName={name} userId={userId} />
+
       {/* Display Name */}
       <div className="rounded-xl border border-border bg-text/[0.03] p-5">
         <h3 className="text-sm font-medium uppercase tracking-wider text-text/60 mb-4">Display Name</h3>

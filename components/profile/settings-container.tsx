@@ -26,6 +26,8 @@ interface SettingsContainerProps {
     email: string
     role: string | null
     createdAt: string
+    image?: string | null
+    userId: string
 }
 
 export function SettingsContainer({
@@ -33,6 +35,8 @@ export function SettingsContainer({
     email,
     role,
     createdAt,
+    image,
+    userId,
 }: SettingsContainerProps) {
     const [activeSubTab, setActiveSubTab] = useState<SettingsSubTab>("profile")
     const [authMethods, setAuthMethods] = useState<AuthMethods | null>(null)
@@ -120,6 +124,8 @@ export function SettingsContainer({
                         email={email}
                         role={role}
                         createdAt={createdAt}
+                        image={image}
+                        userId={userId}
                     />
                 )}
                 {activeSubTab === "security" && (
