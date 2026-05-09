@@ -11,6 +11,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://localhost:3000/dashboard</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://localhost:3000/devices</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

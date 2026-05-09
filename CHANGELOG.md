@@ -2,6 +2,27 @@
 
 All notable changes to DeckyVault will be documented in this file.
 
+## [2026.0.98] - 2026-05-09
+
+### Added
+- Cloudflare R2 storage integration with upload, delete, and tracking
+- Profile photo upload, customization, and deletion (stored in R2)
+- Modular daily cron system at `/api/cron/daily` with storage cleanup and sitemap regeneration tasks
+- Public data dashboard (`/dashboard`) with trending games, best new releases, and most tested/reported charts
+- Advanced search filters on the search page (device, FPS, FSR, Proton, anti-cheat, playability) with saved filter presets
+- Admin-only sitemap regeneration endpoint `POST /api/sitemap/regenerate`
+
+### Changed
+- Game details page layout restructured: metadata moved inline with hero, system requirements expanded by default
+- Improved game details controller navigation (gamepad focusable attributes) and mobile responsiveness
+- Switched from dynamic (`force-dynamic`) sitemap generation to build-time static XML files
+
+### Technical
+- Added `storage_objects` database table
+- Added R2 client module (`lib/storage/`)
+- Added `CRON_SECRET` and `R2_*` environment variables; deprecated `S3_*` variables
+- Added `build:sitemap` script to `package.json`
+
 ## [2026.0.971] - 2026-05-09
 
 ### Fixed

@@ -30,6 +30,7 @@ function buildStaticEntries(): SitemapEntry[] {
   return [
     { loc: BASE_URL, changefreq: "weekly", priority: 1.0 },
     { loc: `${BASE_URL}/games`, changefreq: "daily", priority: 0.8 },
+    { loc: `${BASE_URL}/dashboard`, changefreq: "daily", priority: 0.7 },
     { loc: `${BASE_URL}/devices`, changefreq: "monthly", priority: 0.6 },
     { loc: `${BASE_URL}/updates`, changefreq: "weekly", priority: 0.5 },
     { loc: `${BASE_URL}/contact`, changefreq: "yearly", priority: 0.3 },
