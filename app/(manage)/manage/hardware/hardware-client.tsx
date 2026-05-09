@@ -20,6 +20,8 @@ interface DeviceItem {
   totalBenchmarks?: number
   avgFps?: number | null
   gameCount?: number
+  wattHours?: number | null
+  tdpMax?: number | null
 }
 
 interface DeviceFormData {
@@ -28,6 +30,8 @@ interface DeviceFormData {
   deviceType: "handheld" | "console"
   image: string
   sortOrder: number
+  wattHours: string
+  tdpMax: string
 }
 
 export function HardwareClient() {
@@ -41,6 +45,8 @@ export function HardwareClient() {
     deviceType: "handheld",
     image: "",
     sortOrder: 0,
+    wattHours: "",
+    tdpMax: "",
   })
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -78,6 +84,8 @@ export function HardwareClient() {
       deviceType: "handheld",
       image: "",
       sortOrder: 0,
+      wattHours: "",
+      tdpMax: "",
     })
     setShowModal(true)
   }
@@ -90,6 +98,8 @@ export function HardwareClient() {
       deviceType: device.deviceType as "handheld" | "console",
       image: device.image ?? "",
       sortOrder: device.sortOrder,
+      wattHours: device.wattHours != null ? String(device.wattHours) : "",
+      tdpMax: device.tdpMax != null ? String(device.tdpMax) : "",
     })
     setShowModal(true)
   }
