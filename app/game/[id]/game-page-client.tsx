@@ -252,6 +252,278 @@ function generatePresetName(preset: Preset): string {
     return parts.join(" · ")
 }
 
+function HeroInfo({
+    game,
+    stats,
+    session,
+    counts,
+    coverImage,
+    imgError,
+    handleImgError,
+    platformSupport,
+    protonDbUrl,
+    steamDbUrl,
+    gameId,
+    formatDate,
+    Badge,
+}: {
+    game: Game
+    stats: StatsResponse | null
+    session: { user?: { id?: string } } | null
+    counts: Counts
+    coverImage: string | null
+    imgError: boolean
+    handleImgError: () => void
+    platformSupport: PlatformSupport[]
+    protonDbUrl: string | null
+    steamDbUrl: string | null
+    gameId: string
+    formatDate: (value: string | null) => string
+    Badge: React.ComponentType<{ icon: React.ElementType; value: number; label: string }>
+}) {
+    return (
+        <>
+            {/* Title row */}
+            <div className='flex flex-wrap items-center gap-2'>
+                <h1 className='text-xl sm:text-2xl md:text-3xl font-bold truncate'>
+                    {game.title}
+                </h1>
+                {stats?.isRawPerformer && (
+                    <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-semibold'>
+                        <SparklesIcon className='h-3 w-3' />
+                        Raw Performer
+                    </span>
+                )}
+                {stats?.isPoorPerformance && (
+                    <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-semibold'>
+                        ⚠ Poor Performance
+                    </span>
+                )}
+
+                {/* Playability badge */}
+                {game.playabilityStatus && (
+                    <PlayabilityBadge status={game.playabilityStatus} />
+                )}
+
+                {/* Anti-cheat badge */}
+                {platformSupport?.some((p) => p.antiCheatRelevant) && (
+                    <AntiCheatBadge
+                        antiCheatRelevant={true}
+                        antiCheatStatus={
+                            platformSupport.find((p) => p.antiCheatRelevant)?.antiCheatStatus ?? "unknown"
+                        }
+                        antiCheatName={
+                            platformSupport.find((p) => p.antiCheatRelevant)?.antiCheatName
+                        }
+                    />
+                )}
+
+                {/* Steam review score */}
+                {game.steamReviewScore != null && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 text-xs font-medium">
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                        {game.steamReviewScore}% Positive
+                        {game.steamReviewSentiment && (
+                            <span className="text-blue-300/70">({game.steamReviewSentiment.replace(/_/g, ' ')})</span>
+                        )}
+                    </span>
+                )}
+            </div>
+
+            {/* Subtitle */}
+            <div className='flex flex-wrap items-center gap-2 text-sm text-text/70'>
+                {game.developer && <span>{game.developer}</span>}
+                {game.developer && game.publisher && (
+                    <span className='text-text/40'>·</span>
+                )}
+                {game.publisher && <span>{game.publisher}</span>}
+                {game.genres && game.genres.length > 0 && (
+                    <>
+                        <span className='text-text/40'>·</span>
+                        <span className='text-text/60'>
+                            {game.genres.slice(0, 3).join(", ")}
+                        </span>
+                    </>
+                )}
+            </div>
+
+            {/* Stats badges */}
+            <div className='flex flex-wrap items-center gap-2 mt-1'>
+                <Badge
+                    icon={TrendingUpIcon}
+                    value={counts.benchmarks}
+                    label='Benchmarks'
+                />
+                <Badge
+                    icon={SettingsIcon}
+                    value={counts.presets}
+                    label='Presets'
+                />
+                <Badge
+                    icon={MessageSquareIcon}
+                    value={counts.comments}
+                    label='Comments'
+                />
+                {game.metascore !== undefined &&
+                    game.metascore !== null && (
+                        <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[10px] font-semibold'>
+                            ★ {game.metascore}
+                        </span>
+                    )}
+            </div>
+
+            {/* Metadata pills */}
+            <div className='flex flex-wrap items-center gap-2 mt-2'>
+                {game.releaseDate && (
+                    <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/60 text-[10px]'>
+                        {game.releaseDate}
+                    </span>
+                )}
+                {game.isFree && (
+                    <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-semibold'>
+                        Free to Play
+                    </span>
+                )}
+                {game.priceCurrent != null && !game.isFree && game.priceCurrency && (
+                    <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/60 text-[10px]'>
+                        {new Intl.NumberFormat("en-US", { style: "currency", currency: game.priceCurrency }).format(game.priceCurrent / 100)}
+                    </span>
+                )}
+                {game.priceCurrent != null && !game.isFree && game.priceInitial != null && game.priceInitial > game.priceCurrent && game.priceCurrency && (
+                    <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/40 text-[10px] line-through'>
+                        {new Intl.NumberFormat("en-US", { style: "currency", currency: game.priceCurrency }).format(game.priceInitial / 100)}
+                    </span>
+                )}
+                {game.metacriticScore != null && (
+                    <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[10px] font-semibold'>
+                        ★ {game.metacriticScore}/100
+                    </span>
+                )}
+                {game.onlineMultiplayerStatus && (
+                    <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/60 text-[10px]'>
+                        {game.onlineMultiplayerStatus}
+                    </span>
+                )}
+                {game.platforms && (
+                    <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/60 text-[10px]'>
+                        {game.platforms.windows && <WindowsIcon className='h-3 w-3 text-blue-400' />}
+                        {game.platforms.mac && <MacIcon className='h-3 w-3 text-text/60' />}
+                        {game.platforms.linux && <LinuxIcon className='h-3 w-3 text-yellow-500' />}
+                    </span>
+                )}
+                {game.steamAppId !== null && (
+                    <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/40 text-[10px]'>
+                        AppID {game.steamAppId}
+                    </span>
+                )}
+            </div>
+
+            {/* External links */}
+            <div className='flex flex-wrap items-center gap-3 mt-1'>
+                {game.storeUrl && (
+                    <a
+                        href={game.storeUrl}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='inline-flex items-center gap-1 text-xs text-text/60 hover:text-primary transition-colors cursor-pointer'
+                    >
+                        <FaSteam className='h-3.5 w-3.5' />
+                        Steam
+                        <ExternalLinkIcon className='h-3 w-3' />
+                    </a>
+                )}
+                {protonDbUrl && (
+                    <a
+                        href={protonDbUrl}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='inline-flex items-center gap-1 text-xs text-text/60 hover:text-primary transition-colors cursor-pointer'
+                    >
+                        ProtonDB
+                        <ExternalLinkIcon className='h-3 w-3' />
+                    </a>
+                )}
+                {steamDbUrl && (
+                    <a
+                        href={steamDbUrl}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='inline-flex items-center gap-1 text-xs text-text/60 hover:text-primary transition-colors cursor-pointer'
+                    >
+                        SteamDB
+                        <ExternalLinkIcon className='h-3 w-3' />
+                    </a>
+                )}
+            </div>
+
+            {/* DB stats row */}
+            {stats && (
+                <div className='flex flex-wrap items-center gap-3 mt-1 text-xs text-text/50'>
+                    <span className='inline-flex items-center gap-1'>
+                        <DatabaseIcon className='h-3 w-3' />
+                        {stats.summary.versionCount} versions
+                    </span>
+                    <span>·</span>
+                    <span className='inline-flex items-center gap-1'>
+                        <SparklesIcon className='h-3 w-3' />
+                        {stats.summary.verifiedCount} verified
+                    </span>
+                    {game.lastSync && (
+                        <>
+                            <span>·</span>
+                            <span className='inline-flex items-center gap-1'>
+                                <ClockIcon className='h-3 w-3' />
+                                Last sync{" "}
+                                {formatDate(game.lastSync)}
+                            </span>
+                        </>
+                    )}
+                </div>
+            )}
+            {stats && (
+                <div className='flex flex-wrap items-center gap-2 mt-2'>
+                    <BookmarkButton gameId={game.id} data-gamepad-focusable />
+                    {session?.user && game.source !== "steam" && (
+                        <Link
+                            href={`/game/${gameId}/edit`}
+                            className='inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-sm text-text/70 hover:bg-text/5 transition-colors cursor-pointer'
+                            data-gamepad-focusable
+                        >
+                            <PencilIcon className='h-4 w-4' />
+                            Edit Game
+                        </Link>
+                    )}
+                    {session && (
+                        <Link
+                            href={`/game/${game.id}/submit`}
+                            className='inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer'
+                            data-gamepad-focusable
+                        >
+                            <Plus className='h-4 w-4' />
+                            Add Benchmark
+                        </Link>
+                    )}
+                    {game.source !== "steam" && (
+                        <CommunitySuggestionForm
+                            gameId={game.id}
+                            gameTitle={game.title}
+                            editableFields={[
+                                { name: "title", label: "Title", currentValue: game.title },
+                                { name: "description", label: "Description", currentValue: game.description || "" },
+                                { name: "developer", label: "Developer", currentValue: game.developer || "" },
+                                { name: "publisher", label: "Publisher", currentValue: game.publisher || "" },
+                                { name: "storeUrl", label: "Store URL", currentValue: game.storeUrl || "" },
+                            ]}
+                        />
+                    )}
+                </div>
+            )}
+        </>
+    )
+}
+
 export function GamePageClient({
     game,
     counts,
@@ -460,7 +732,45 @@ export function GamePageClient({
                 transition={{ duration: 0.4 }}
                 className='px-4 md:px-[10svw] pt-6'
             >
-                <div className='max-w-7xl mx-auto flex gap-4 sm:gap-6'>
+                {/* Mobile hero — full-bleed background */}
+                <div className='relative md:hidden'>
+                    {coverImage && !imgError ? (
+                        <div className='absolute inset-0 z-0'>
+                            <Image
+                                src={coverImage}
+                                alt=''
+                                fill
+                                className='object-cover'
+                                sizes='100vw'
+                                priority
+                                onError={handleImgError}
+                            />
+                            <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/30' />
+                        </div>
+                    ) : (
+                        <div className='absolute inset-0 z-0 bg-gradient-to-b from-primary/20 to-background' />
+                    )}
+                    <div className='relative z-10 flex flex-col gap-2 min-w-0 px-4 pt-24 pb-6'>
+                        <HeroInfo
+                            game={game}
+                            stats={stats}
+                            session={session}
+                            counts={counts}
+                            coverImage={coverImage}
+                            imgError={imgError}
+                            handleImgError={handleImgError}
+                            platformSupport={platformSupport}
+                            protonDbUrl={protonDbUrl}
+                            steamDbUrl={steamDbUrl}
+                            gameId={gameId}
+                            formatDate={formatDate}
+                            Badge={Badge}
+                        />
+                    </div>
+                </div>
+
+                {/* Desktop hero — side-by-side layout */}
+                <div className='hidden md:flex gap-4 sm:gap-6'>
                     {/* Cover image */}
                     <div className='relative shrink-0 aspect-2/3 w-20 sm:w-28 md:w-36 rounded-lg overflow-hidden border border-border bg-text/5 h-max'>
                         {coverImage && !imgError ? (
@@ -480,246 +790,23 @@ export function GamePageClient({
                             </div>
                         )}
                     </div>
-
                     {/* Info */}
                     <div className='flex flex-col gap-2 min-w-0'>
-                        {/* Title row */}
-                        <div className='flex flex-wrap items-center gap-2'>
-                            <h1 className='text-xl sm:text-2xl md:text-3xl font-bold truncate'>
-                                {game.title}
-                            </h1>
-                            {stats?.isRawPerformer && (
-                                <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-semibold'>
-                                    <SparklesIcon className='h-3 w-3' />
-                                    Raw Performer
-                                </span>
-                            )}
-                            {stats?.isPoorPerformance && (
-                                <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-semibold'>
-                                    ⚠ Poor Performance
-                                </span>
-                            )}
-
-                            {/* Playability badge */}
-                            {game.playabilityStatus && (
-                                <PlayabilityBadge status={game.playabilityStatus} />
-                            )}
-
-                            {/* Anti-cheat badge */}
-                            {platformSupport?.some((p) => p.antiCheatRelevant) && (
-                                <AntiCheatBadge
-                                    antiCheatRelevant={true}
-                                    antiCheatStatus={
-                                        platformSupport.find((p) => p.antiCheatRelevant)?.antiCheatStatus ?? "unknown"
-                                    }
-                                    antiCheatName={
-                                        platformSupport.find((p) => p.antiCheatRelevant)?.antiCheatName
-                                    }
-                                />
-                            )}
-
-                            {/* Steam review score */}
-                            {game.steamReviewScore != null && (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 text-xs font-medium">
-                                    <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                    </svg>
-                                    {game.steamReviewScore}% Positive
-                                    {game.steamReviewSentiment && (
-                                        <span className="text-blue-300/70">({game.steamReviewSentiment.replace(/_/g, ' ')})</span>
-                                    )}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Subtitle */}
-                        <div className='flex flex-wrap items-center gap-2 text-sm text-text/70'>
-                            {game.developer && <span>{game.developer}</span>}
-                            {game.developer && game.publisher && (
-                                <span className='text-text/40'>·</span>
-                            )}
-                            {game.publisher && <span>{game.publisher}</span>}
-                            {game.genres && game.genres.length > 0 && (
-                                <>
-                                    <span className='text-text/40'>·</span>
-                                    <span className='text-text/60'>
-                                        {game.genres.slice(0, 3).join(", ")}
-                                    </span>
-                                </>
-                            )}
-                        </div>
-
-                        {/* Stats badges */}
-                        <div className='flex flex-wrap items-center gap-2 mt-1'>
-                            <Badge
-                                icon={TrendingUpIcon}
-                                value={counts.benchmarks}
-                                label='Benchmarks'
-                            />
-                            <Badge
-                                icon={SettingsIcon}
-                                value={counts.presets}
-                                label='Presets'
-                            />
-                            <Badge
-                                icon={MessageSquareIcon}
-                                value={counts.comments}
-                                label='Comments'
-                            />
-                            {game.metascore !== undefined &&
-                                game.metascore !== null && (
-                                    <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[10px] font-semibold'>
-                                        ★ {game.metascore}
-                                    </span>
-                                )}
-                        </div>
-
-                        {/* Metadata pills */}
-                        <div className='flex flex-wrap items-center gap-2 mt-2'>
-                            {game.releaseDate && (
-                                <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/60 text-[10px]'>
-                                    {game.releaseDate}
-                                </span>
-                            )}
-                            {game.isFree && (
-                                <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-semibold'>
-                                    Free to Play
-                                </span>
-                            )}
-                            {game.priceCurrent != null && !game.isFree && game.priceCurrency && (
-                                <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/60 text-[10px]'>
-                                    {new Intl.NumberFormat("en-US", { style: "currency", currency: game.priceCurrency }).format(game.priceCurrent / 100)}
-                                </span>
-                            )}
-                            {game.priceCurrent != null && !game.isFree && game.priceInitial != null && game.priceInitial > game.priceCurrent && game.priceCurrency && (
-                                <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/40 text-[10px] line-through'>
-                                    {new Intl.NumberFormat("en-US", { style: "currency", currency: game.priceCurrency }).format(game.priceInitial / 100)}
-                                </span>
-                            )}
-                            {game.metacriticScore != null && (
-                                <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[10px] font-semibold'>
-                                    ★ {game.metacriticScore}/100
-                                </span>
-                            )}
-                            {game.onlineMultiplayerStatus && (
-                                <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/60 text-[10px]'>
-                                    {game.onlineMultiplayerStatus}
-                                </span>
-                            )}
-                            {game.platforms && (
-                                <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/60 text-[10px]'>
-                                    {game.platforms.windows && <WindowsIcon className='h-3 w-3 text-blue-400' />}
-                                    {game.platforms.mac && <MacIcon className='h-3 w-3 text-text/60' />}
-                                    {game.platforms.linux && <LinuxIcon className='h-3 w-3 text-yellow-500' />}
-                                </span>
-                            )}
-                            {game.steamAppId !== null && (
-                                <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/40 text-[10px]'>
-                                    AppID {game.steamAppId}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* External links */}
-                        <div className='flex flex-wrap items-center gap-3 mt-1'>
-                            {game.storeUrl && (
-                                <a
-                                    href={game.storeUrl}
-                                    target='_blank'
-                                    rel='noopener noreferrer'
-                                    className='inline-flex items-center gap-1 text-xs text-text/60 hover:text-primary transition-colors cursor-pointer'
-                                >
-                                    <FaSteam className='h-3.5 w-3.5' />
-                                    Steam
-                                    <ExternalLinkIcon className='h-3 w-3' />
-                                </a>
-                            )}
-                            {protonDbUrl && (
-                                <a
-                                    href={protonDbUrl}
-                                    target='_blank'
-                                    rel='noopener noreferrer'
-                                    className='inline-flex items-center gap-1 text-xs text-text/60 hover:text-primary transition-colors cursor-pointer'
-                                >
-                                    ProtonDB
-                                    <ExternalLinkIcon className='h-3 w-3' />
-                                </a>
-                            )}
-                            {steamDbUrl && (
-                                <a
-                                    href={steamDbUrl}
-                                    target='_blank'
-                                    rel='noopener noreferrer'
-                                    className='inline-flex items-center gap-1 text-xs text-text/60 hover:text-primary transition-colors cursor-pointer'
-                                >
-                                    SteamDB
-                                    <ExternalLinkIcon className='h-3 w-3' />
-                                </a>
-                            )}
-                        </div>
-
-                        {/* DB stats row */}
-                        {stats && (
-                            <div className='flex flex-wrap items-center gap-3 mt-1 text-xs text-text/50'>
-                                <span className='inline-flex items-center gap-1'>
-                                    <DatabaseIcon className='h-3 w-3' />
-                                    {stats.summary.versionCount} versions
-                                </span>
-                                <span>·</span>
-                                <span className='inline-flex items-center gap-1'>
-                                    <SparklesIcon className='h-3 w-3' />
-                                    {stats.summary.verifiedCount} verified
-                                </span>
-                                {game.lastSync && (
-                                    <>
-                                        <span>·</span>
-                                        <span className='inline-flex items-center gap-1'>
-                                            <ClockIcon className='h-3 w-3' />
-                                            Last sync{" "}
-                                            {formatDate(game.lastSync)}
-                                        </span>
-                                    </>
-                                )}
-                            </div>
-                        )}
-                        {stats && (
-                            <div className='flex flex-wrap items-center gap-2 mt-2'>
-                                <BookmarkButton gameId={game.id} data-gamepad-focusable />
-                                {session?.user && game.source !== "steam" && (
-                                    <Link
-                                        href={`/game/${gameId}/edit`}
-                                        className='inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-sm text-text/70 hover:bg-text/5 transition-colors cursor-pointer'
-                                        data-gamepad-focusable
-                                    >
-                                        <PencilIcon className='h-4 w-4' />
-                                        Edit Game
-                                    </Link>
-                                )}
-                                {session && (
-                                    <Link
-                                        href={`/game/${game.id}/submit`}
-                                        className='inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer'
-                                        data-gamepad-focusable
-                                    >
-                                        <Plus className='h-4 w-4' />
-                                        Add Benchmark
-                                    </Link>
-                                )}
-                                {game.source !== "steam" && (
-                                    <CommunitySuggestionForm
-                                        gameId={game.id}
-                                        gameTitle={game.title}
-                                        editableFields={[
-                                            { name: "title", label: "Title", currentValue: game.title },
-                                            { name: "description", label: "Description", currentValue: game.description || "" },
-                                            { name: "developer", label: "Developer", currentValue: game.developer || "" },
-                                            { name: "publisher", label: "Publisher", currentValue: game.publisher || "" },
-                                            { name: "storeUrl", label: "Store URL", currentValue: game.storeUrl || "" },
-                                        ]}
-                                    />
-                                )}
-                            </div>
-                        )}
+                        <HeroInfo
+                            game={game}
+                            stats={stats}
+                            session={session}
+                            counts={counts}
+                            coverImage={coverImage}
+                            imgError={imgError}
+                            handleImgError={handleImgError}
+                            platformSupport={platformSupport}
+                            protonDbUrl={protonDbUrl}
+                            steamDbUrl={steamDbUrl}
+                            gameId={gameId}
+                            formatDate={formatDate}
+                            Badge={Badge}
+                        />
                     </div>
                 </div>
             </motion.div>
