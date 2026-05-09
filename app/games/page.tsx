@@ -123,6 +123,71 @@ export default async function GamesPage() {
     }
   }
 
+  // Performance stats: best FPS, raw performer, poor performance, battery estimate
+  const rawPerformerMap = new Map<string, boolean>()
+  const poorPerformerMap = new Map<string, boolean>()
+  const bestFpsMap = new Map<string, number>()
+  const batteryMinMap = new Map<string, number>()
+
+  if (gameIds.length > 0) {
+    const perfStats = await db
+      .select({
+        gameId: gameVersions.gameId,
+        bestFps: sql<number>`MAX(${performanceEntries.fpsAvg})::real`,
+        isRawPerformer: sql<boolean>`BOOL_OR(
+          ${performanceEntries.fpsAvg} >= 60
+          AND ${performanceEntries.upscalerType} = 'none'
+          AND ${performanceEntries.frameGenMethod} = 'none'
+        )`,
+        isPoorPerformance: sql<boolean>`BOOL_OR(${performanceEntries.fpsAvg} < 30)`,
+      })
+      .from(performanceEntries)
+      .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+      .where(
+        and(
+          inArray(gameVersions.gameId, gameIds),
+          eq(performanceEntries.isRemoved, false),
+        ),
+      )
+      .groupBy(gameVersions.gameId)
+
+    for (const row of perfStats) {
+      bestFpsMap.set(row.gameId, row.bestFps)
+      rawPerformerMap.set(row.gameId, row.isRawPerformer)
+      poorPerformerMap.set(row.gameId, row.isPoorPerformance)
+    }
+
+    // Battery estimate for handheld devices
+    const batteryStats = await db
+      .select({
+        gameId: gameVersions.gameId,
+        estimatedBatteryMin: sql<number>`ROUND(
+          (${hardware.wattHours}::real / ${performanceEntries.tdpWatts}) * 60
+        )::int`,
+      })
+      .from(performanceEntries)
+      .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+      .innerJoin(hardware, eq(performanceEntries.hardwareSlug, hardware.slug))
+      .where(
+        and(
+          inArray(gameVersions.gameId, gameIds),
+          eq(performanceEntries.isRemoved, false),
+          eq(hardware.deviceType, "handheld"),
+          sql`${performanceEntries.tdpWatts} IS NOT NULL AND ${performanceEntries.tdpWatts} > 0`,
+          sql`${hardware.wattHours} IS NOT NULL`,
+        ),
+      )
+      .orderBy(desc(performanceEntries.fpsAvg))
+
+    const seenGames = new Set<string>()
+    for (const row of batteryStats) {
+      if (!seenGames.has(row.gameId)) {
+        seenGames.add(row.gameId)
+        batteryMinMap.set(row.gameId, row.estimatedBatteryMin)
+      }
+    }
+  }
+
   // Fetch all genres
   const genreRows = await db
     .select({ genres: games.genres })
@@ -161,6 +226,10 @@ export default async function GamesPage() {
     deckStatus: platformMap.get(g.id) ?? null,
     antiCheatRelevant: antiCheatMap.get(g.id)?.antiCheatRelevant ?? false,
     antiCheatStatus: antiCheatMap.get(g.id)?.antiCheatStatus ?? null,
+    bestFps: bestFpsMap.get(g.id) ?? null,
+    isRawPerformer: rawPerformerMap.get(g.id) ?? false,
+    isPoorPerformance: poorPerformerMap.get(g.id) ?? false,
+    estimatedBatteryMin: batteryMinMap.get(g.id) ?? null,
   }))
 
   const allGenres = Array.from(genreSet).sort()

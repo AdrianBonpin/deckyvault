@@ -49,6 +49,7 @@ interface UnifiedResult {
   isRawPerformer?: boolean
   isPoorPerformance?: boolean
   bestFps?: number | null
+  estimatedBatteryMin?: number | null
   latestVersion?: string | null
   tinyImage?: string | null
   // Badges & review fields
@@ -567,6 +568,11 @@ function SearchResultCard({
                     ⚠ POOR PERFORMANCE
                   </span>
                 )}
+                {result.estimatedBatteryMin != null && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-semibold shrink-0">
+                    🔋 ~{Math.round(result.estimatedBatteryMin / 60)}h
+                  </span>
+                )}
               </div>
               {(result.developer || result.publisher) && (
                 <p className="text-[11px] text-text/45 mt-0.5 truncate">
@@ -750,6 +756,14 @@ function SearchResultCard({
             bar={result.bestFps != null}
             color={result.bestFps != null && result.bestFps >= 60 ? "text-green-400" : undefined}
           />
+
+          {/* Battery Estimate */}
+          {result.estimatedBatteryMin != null && (
+            <DataField
+              label="Battery"
+              value={`~${Math.round(result.estimatedBatteryMin / 60)}h`}
+            />
+          )}
 
           {/* Version */}
           <DataField

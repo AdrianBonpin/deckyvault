@@ -6,7 +6,7 @@ import {
   performanceEntries,
   gameComments,
 } from "@/lib/db/schema"
-import { ilike, or, sql, eq, inArray, and, gte } from "drizzle-orm"
+import { ilike, or, sql, eq, inArray, and, gte, desc } from "drizzle-orm"
 import { fuzzySearchTerm } from "@/lib/db/search"
 
 interface SteamSearchItem {
@@ -323,6 +323,43 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
       }
     }
 
+    // ── 2b2. Battery estimate for handheld devices ────────────────────
+    const batteryMinMap = new Map<string, number>()
+
+    if (finalIds.length > 0) {
+      const { hardware: hardwareTable } = await import("@/lib/db/schema")
+
+      const batteryStats = await db
+        .select({
+          gameId: gameVersions.gameId,
+          estimatedBatteryMin: sql<number>`ROUND(
+            (${hardwareTable.wattHours}::real / ${performanceEntries.tdpWatts}) * 60
+          )::int`,
+        })
+        .from(performanceEntries)
+        .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+        .innerJoin(hardwareTable, eq(performanceEntries.hardwareSlug, hardwareTable.slug))
+        .where(
+          and(
+            inArray(gameVersions.gameId, finalIds),
+            eq(performanceEntries.isRemoved, false),
+            eq(hardwareTable.deviceType, "handheld"),
+            sql`${performanceEntries.tdpWatts} IS NOT NULL AND ${performanceEntries.tdpWatts} > 0`,
+            sql`${hardwareTable.wattHours} IS NOT NULL`,
+          ),
+        )
+        .orderBy(desc(performanceEntries.fpsAvg))
+
+      // Deduplicate — keep only the first (best fps) entry per game
+      const seenGames = new Set<string>()
+      for (const row of batteryStats) {
+        if (!seenGames.has(row.gameId)) {
+          seenGames.add(row.gameId)
+          batteryMinMap.set(row.gameId, row.estimatedBatteryMin)
+        }
+      }
+    }
+
     // ── 2c. Latest version ──────────────────────────────────────────
     const latestVersionMap = new Map<string, string>()
 
@@ -432,6 +469,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
         isRawPerformer: rawPerformerMap.get(g.id) ?? false,
         isPoorPerformance: poorPerformerMap.get(g.id) ?? false,
         bestFps: bestFpsMap.get(g.id) ?? null,
+        estimatedBatteryMin: batteryMinMap.get(g.id) ?? null,
         latestVersion: latestVersionMap.get(g.id) ?? null,
         playabilityStatus: g.playabilityStatus,
         steamReviewScore: g.steamReviewScore,
