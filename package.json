@@ -12,6 +12,7 @@
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
     "db:seed": "bun run lib/db/seed.ts",
+    "build:sitemap": "tsx lib/sitemap/generate-static.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

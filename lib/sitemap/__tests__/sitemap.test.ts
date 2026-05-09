@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest"
 
+// Mock database to prevent real queries
 vi.mock("@/lib/db/index", () => ({
   db: {
     select: vi.fn().mockReturnValue({
@@ -22,13 +23,9 @@ vi.mock("drizzle-orm", () => ({
 }))
 
 describe("Sitemap Generator", () => {
-  it("exports dynamic = force-dynamic", async () => {
+  it("default export returns empty array (static sitemap is in public/)", async () => {
     const mod = await import("@/app/sitemap")
-    expect(mod.dynamic).toBe("force-dynamic")
-  })
-
-  it("default export is a function", async () => {
-    const mod = await import("@/app/sitemap")
-    expect(typeof mod.default).toBe("function")
+    const result = mod.default()
+    expect(result).toEqual([])
   })
 })
