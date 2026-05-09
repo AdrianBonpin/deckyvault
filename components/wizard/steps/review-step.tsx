@@ -1,7 +1,8 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { motion } from "motion/react"
-import { Send, Loader2, AlertCircle, Monitor, Gauge, SlidersHorizontal, Terminal, FileText } from "lucide-react"
+import { Send, Loader2, AlertCircle, Monitor, Gauge, SlidersHorizontal, Terminal, FileText, ImagePlus, X } from "lucide-react"
 import { TiptapEditor } from "@/components/tiptap-editor"
 import type { SettingCategory } from "@/components/wizard/settings-editor"
 import type { PerformanceData } from "./performance-step"
@@ -29,6 +30,10 @@ interface ReviewStepProps {
   onSubmit: () => void
   isSubmitting: boolean
   error: string | null
+  screenshotFiles?: File[]
+  onScreenshotFilesChange?: (files: File[]) => void
+  screenshotUploading?: boolean
+  screenshotError?: string | null
 }
 
 function SectionHeader({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
@@ -61,8 +66,26 @@ export function ReviewStep({
   onSubmit,
   isSubmitting,
   error,
+  screenshotFiles,
+  onScreenshotFilesChange,
+  screenshotUploading,
+  screenshotError,
 }: ReviewStepProps) {
   const { hardwareName, gameVersionLabel, antiCheat, performance, environment, settings } = data
+
+  const [previews, setPreviews] = useState<{ file: File; url: string }[]>([])
+
+  useEffect(() => {
+    if (!screenshotFiles?.length) {
+      setPreviews([])
+      return
+    }
+    const next = screenshotFiles.map((file) => ({ file, url: URL.createObjectURL(file) }))
+    setPreviews(next)
+    return () => {
+      next.forEach((p) => URL.revokeObjectURL(p.url))
+    }
+  }, [screenshotFiles])
 
   const upscalerLabel = (() => {
     if (!data.environment.upscalerType || data.environment.upscalerType === "none") return "None"
@@ -170,6 +193,84 @@ export function ReviewStep({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Screenshots */}
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-text/60">Screenshots</label>
+        {data.settings.length === 0 ? (
+          <div className="rounded-lg border border-border bg-text/5 p-4">
+            <p className="text-xs text-text/50">Add game settings to enable screenshot upload</p>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-border bg-text/5 p-4 space-y-3">
+            {screenshotUploading && (
+              <div className="flex items-center gap-2 text-xs text-text/60">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Uploading...</span>
+              </div>
+            )}
+
+            {previews.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {previews.map((preview) => (
+                  <div
+                    key={preview.url}
+                    className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-lg overflow-hidden border border-border bg-text/10"
+                  >
+                    <img
+                      src={preview.url}
+                      alt={preview.file.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newFiles = (screenshotFiles || []).filter((f) => f !== preview.file)
+                        onScreenshotFilesChange?.(newFiles)
+                      }}
+                      className="absolute top-1 right-1 p-0.5 rounded bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {(!screenshotFiles || screenshotFiles.length < 2) && !screenshotUploading && (
+              <label className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-dashed border-border bg-text/5 hover:bg-text/10 transition-colors cursor-pointer">
+                <ImagePlus className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs text-text/70">
+                  {(!screenshotFiles || screenshotFiles.length === 0) ? "Add screenshots" : "Add another screenshot"}
+                </span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []).filter((f) =>
+                      /image\/(jpeg|png|webp)/.test(f.type)
+                    )
+                    const current = screenshotFiles || []
+                    const combined = [...current, ...files].slice(0, 2)
+                    onScreenshotFilesChange?.(combined)
+                    e.target.value = ""
+                  }}
+                  className="sr-only"
+                />
+              </label>
+            )}
+
+            {screenshotFiles && screenshotFiles.length >= 2 && (
+              <p className="text-xs text-text/50">Maximum 2 screenshots reached</p>
+            )}
+
+            {screenshotError && (
+              <p className="text-xs text-red-400">{screenshotError}</p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* User Notes */}
