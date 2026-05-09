@@ -51,3 +51,6 @@ public/sw.js
 .pi/
 
 .superpowers/
+
+# temporary files
+post.md

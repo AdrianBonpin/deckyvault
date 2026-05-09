@@ -66,7 +66,10 @@ interface Game {
     createdAt: string
     metascore?: number | null
     onlineMultiplayerStatus?: string | null
-    systemRequirements: { minimum: string | null; recommended: string | null } | null
+    systemRequirements: {
+        minimum: string | null
+        recommended: string | null
+    } | null
     metacriticScore: number | null
     metacriticUrl: string | null
     recommendationsTotal: number | null
@@ -77,7 +80,13 @@ interface Game {
     releaseDate: string | null
     categories: string[] | null
     platforms: { windows: boolean; mac: boolean; linux: boolean } | null
-    playabilityStatus?: "great" | "playable" | "needs_tweaks" | "unplayable" | "unknown" | null
+    playabilityStatus?:
+        | "great"
+        | "playable"
+        | "needs_tweaks"
+        | "unplayable"
+        | "unknown"
+        | null
     steamReviewScore?: number | null
     steamReviewSentiment?: string | null
     steamReviewCount?: number | null
@@ -95,7 +104,13 @@ interface PlatformSupport {
     hardwareSlug: string
     isSupported: boolean
     protonStatus: string
-    playabilityStatus: "great" | "playable" | "needs_tweaks" | "unplayable" | "unknown" | null
+    playabilityStatus:
+        | "great"
+        | "playable"
+        | "needs_tweaks"
+        | "unplayable"
+        | "unknown"
+        | null
     antiCheatRelevant: boolean
     antiCheatStatus: "none" | "supported" | "unsupported" | "unknown" | null
     antiCheatName: string | null
@@ -125,7 +140,13 @@ interface Preset {
     estimatedBatteryMin: number | null
     tdpWatts: number | null
     youtubeVideoId: string | null
-    screenshots: Array<{ id: string; url: string; width: number; height: number; orderIndex: number }> | null
+    screenshots: Array<{
+        id: string
+        url: string
+        width: number
+        height: number
+        orderIndex: number
+    }> | null
     customSystem: boolean
     userNotes: string | null
     userId: string
@@ -292,7 +313,11 @@ function HeroInfo({
     steamDbUrl: string | null
     gameId: string
     formatDate: (value: string | null) => string
-    Badge: React.ComponentType<{ icon: React.ElementType; value: number; label: string }>
+    Badge: React.ComponentType<{
+        icon: React.ElementType
+        value: number
+        label: string
+    }>
 }) {
     return (
         <>
@@ -323,23 +348,31 @@ function HeroInfo({
                     <AntiCheatBadge
                         antiCheatRelevant={true}
                         antiCheatStatus={
-                            platformSupport.find((p) => p.antiCheatRelevant)?.antiCheatStatus ?? "unknown"
+                            platformSupport.find((p) => p.antiCheatRelevant)
+                                ?.antiCheatStatus ?? "unknown"
                         }
                         antiCheatName={
-                            platformSupport.find((p) => p.antiCheatRelevant)?.antiCheatName
+                            platformSupport.find((p) => p.antiCheatRelevant)
+                                ?.antiCheatName
                         }
                     />
                 )}
 
                 {/* Steam review score */}
                 {game.steamReviewScore != null && (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 text-xs font-medium">
-                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    <span className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 text-xs font-medium'>
+                        <svg
+                            className='h-3 w-3'
+                            viewBox='0 0 24 24'
+                            fill='currentColor'
+                        >
+                            <path d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z' />
                         </svg>
                         {game.steamReviewScore}% Positive
                         {game.steamReviewSentiment && (
-                            <span className="text-blue-300/70">({game.steamReviewSentiment.replace(/_/g, ' ')})</span>
+                            <span className='text-blue-300/70'>
+                                ({game.steamReviewSentiment.replace(/_/g, " ")})
+                            </span>
                         )}
                     </span>
                 )}
@@ -379,12 +412,11 @@ function HeroInfo({
                     value={counts.comments}
                     label='Comments'
                 />
-                {game.metascore !== undefined &&
-                    game.metascore !== null && (
-                        <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[10px] font-semibold'>
-                            ★ {game.metascore}
-                        </span>
-                    )}
+                {game.metascore !== undefined && game.metascore !== null && (
+                    <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[10px] font-semibold'>
+                        ★ {game.metascore}
+                    </span>
+                )}
             </div>
 
             {/* Metadata pills */}
@@ -399,16 +431,28 @@ function HeroInfo({
                         Free to Play
                     </span>
                 )}
-                {game.priceCurrent != null && !game.isFree && game.priceCurrency && (
-                    <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/60 text-[10px]'>
-                        {new Intl.NumberFormat("en-US", { style: "currency", currency: game.priceCurrency }).format(game.priceCurrent / 100)}
-                    </span>
-                )}
-                {game.priceCurrent != null && !game.isFree && game.priceInitial != null && game.priceInitial > game.priceCurrent && game.priceCurrency && (
-                    <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/40 text-[10px] line-through'>
-                        {new Intl.NumberFormat("en-US", { style: "currency", currency: game.priceCurrency }).format(game.priceInitial / 100)}
-                    </span>
-                )}
+                {game.priceCurrent != null &&
+                    !game.isFree &&
+                    game.priceCurrency && (
+                        <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/60 text-[10px]'>
+                            {new Intl.NumberFormat("en-US", {
+                                style: "currency",
+                                currency: game.priceCurrency,
+                            }).format(game.priceCurrent / 100)}
+                        </span>
+                    )}
+                {game.priceCurrent != null &&
+                    !game.isFree &&
+                    game.priceInitial != null &&
+                    game.priceInitial > game.priceCurrent &&
+                    game.priceCurrency && (
+                        <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/40 text-[10px] line-through'>
+                            {new Intl.NumberFormat("en-US", {
+                                style: "currency",
+                                currency: game.priceCurrency,
+                            }).format(game.priceInitial / 100)}
+                        </span>
+                    )}
                 {game.metacriticScore != null && (
                     <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[10px] font-semibold'>
                         ★ {game.metacriticScore}/100
@@ -421,9 +465,15 @@ function HeroInfo({
                 )}
                 {game.platforms && (
                     <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/60 text-[10px]'>
-                        {game.platforms.windows && <WindowsIcon className='h-3 w-3 text-blue-400' />}
-                        {game.platforms.mac && <MacIcon className='h-3 w-3 text-text/60' />}
-                        {game.platforms.linux && <LinuxIcon className='h-3 w-3 text-yellow-500' />}
+                        {game.platforms.windows && (
+                            <WindowsIcon className='h-3 w-3 text-blue-400' />
+                        )}
+                        {game.platforms.mac && (
+                            <MacIcon className='h-3 w-3 text-text/60' />
+                        )}
+                        {game.platforms.linux && (
+                            <LinuxIcon className='h-3 w-3 text-yellow-500' />
+                        )}
                     </span>
                 )}
                 {game.steamAppId !== null && (
@@ -488,8 +538,7 @@ function HeroInfo({
                             <span>·</span>
                             <span className='inline-flex items-center gap-1'>
                                 <ClockIcon className='h-3 w-3' />
-                                Last sync{" "}
-                                {formatDate(game.lastSync)}
+                                Last sync {formatDate(game.lastSync)}
                             </span>
                         </>
                     )}
@@ -497,7 +546,10 @@ function HeroInfo({
             )}
             {stats && (
                 <div className='flex flex-wrap items-center gap-2 mt-2'>
-                    <BookmarkButton gameId={game.id} data-gamepad-focusable />
+                    <BookmarkButton
+                        gameId={game.id}
+                        data-gamepad-focusable
+                    />
                     {session?.user && game.source !== "steam" && (
                         <Link
                             href={`/game/${gameId}/edit`}
@@ -523,11 +575,31 @@ function HeroInfo({
                             gameId={game.id}
                             gameTitle={game.title}
                             editableFields={[
-                                { name: "title", label: "Title", currentValue: game.title },
-                                { name: "description", label: "Description", currentValue: game.description || "" },
-                                { name: "developer", label: "Developer", currentValue: game.developer || "" },
-                                { name: "publisher", label: "Publisher", currentValue: game.publisher || "" },
-                                { name: "storeUrl", label: "Store URL", currentValue: game.storeUrl || "" },
+                                {
+                                    name: "title",
+                                    label: "Title",
+                                    currentValue: game.title,
+                                },
+                                {
+                                    name: "description",
+                                    label: "Description",
+                                    currentValue: game.description || "",
+                                },
+                                {
+                                    name: "developer",
+                                    label: "Developer",
+                                    currentValue: game.developer || "",
+                                },
+                                {
+                                    name: "publisher",
+                                    label: "Publisher",
+                                    currentValue: game.publisher || "",
+                                },
+                                {
+                                    name: "storeUrl",
+                                    label: "Store URL",
+                                    currentValue: game.storeUrl || "",
+                                },
                             ]}
                         />
                     )}
@@ -557,9 +629,13 @@ export function GamePageClient({
         frameGen: "all",
     })
     const [loading, setLoading] = useState(true)
-    const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
+    const [selectedPresetId, setSelectedPresetId] = useState<string | null>(
+        null,
+    )
     const [showSystemReq, setShowSystemReq] = useState(true)
-    const [reportedPresets, setReportedPresets] = useState<Set<string>>(new Set())
+    const [reportedPresets, setReportedPresets] = useState<Set<string>>(
+        new Set(),
+    )
     const presetsRef = useRef<HTMLDivElement>(null)
 
     // On mount, auto-open preset from URL
@@ -590,10 +666,13 @@ export function GamePageClient({
 
     const handleDeletePreset = async (presetId: string) => {
         try {
-            const res = await fetch(`/api/performance/${presetId}/user-delete`, {
-                method: "DELETE",
-                headers: { "Content-Type": "application/json" },
-            })
+            const res = await fetch(
+                `/api/performance/${presetId}/user-delete`,
+                {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                },
+            )
             if (res.ok) {
                 setSelectedPresetId(null)
                 router.refresh()
@@ -603,7 +682,11 @@ export function GamePageClient({
         }
     }
 
-    const handleReportPreset = async (presetId: string, reason: "inaccurate" | "spam" | "inappropriate" | "other", details?: string) => {
+    const handleReportPreset = async (
+        presetId: string,
+        reason: "inaccurate" | "spam" | "inappropriate" | "other",
+        details?: string,
+    ) => {
         try {
             const res = await fetch(`/api/performance/${presetId}/report`, {
                 method: "POST",
@@ -658,13 +741,19 @@ export function GamePageClient({
 
         const deviceSet = new Set(selectedDevices)
 
-        const filterByDevice = <T extends { hardwareSlug: string }>(arr: T[] | undefined) =>
-            arr?.filter((item) => deviceSet.has(item.hardwareSlug)) ?? []
+        const filterByDevice = <T extends { hardwareSlug: string }>(
+            arr: T[] | undefined,
+        ) => arr?.filter((item) => deviceSet.has(item.hardwareSlug)) ?? []
 
-        const filterUpscaler = (arr: StatsResponse["upscalerStats"] | undefined) =>
+        const filterUpscaler = (
+            arr: StatsResponse["upscalerStats"] | undefined,
+        ) =>
             (arr ?? []).filter((item) => {
                 if (!deviceSet.has(item.hardwareSlug)) return false
-                if (filters.upscaler !== "all" && item.upscalerType !== filters.upscaler)
+                if (
+                    filters.upscaler !== "all" &&
+                    item.upscalerType !== filters.upscaler
+                )
                     return false
                 if (
                     filters.frameGen !== "all" &&
@@ -705,7 +794,10 @@ export function GamePageClient({
             if (filters.proton !== "all" && p.protonVersion !== filters.proton)
                 return false
             if (filters.os !== "all" && p.osVersion !== filters.os) return false
-            if (filters.upscaler !== "all" && p.upscalerType !== filters.upscaler)
+            if (
+                filters.upscaler !== "all" &&
+                p.upscalerType !== filters.upscaler
+            )
                 return false
             if (
                 filters.frameGen !== "all" &&
@@ -716,8 +808,14 @@ export function GamePageClient({
         })
     }, [presets, selectedDevices, filters])
 
-    const pinnedPresets = useMemo(() => filteredPresets.filter((p) => p.isPinned), [filteredPresets])
-    const regularPresets = useMemo(() => filteredPresets.filter((p) => !p.isPinned), [filteredPresets])
+    const pinnedPresets = useMemo(
+        () => filteredPresets.filter((p) => p.isPinned),
+        [filteredPresets],
+    )
+    const regularPresets = useMemo(
+        () => filteredPresets.filter((p) => !p.isPinned),
+        [filteredPresets],
+    )
 
     const coverImage = game.capsuleImage || game.headerImage
 
@@ -738,525 +836,623 @@ export function GamePageClient({
 
     return (
         <>
-        <section className='w-full flex flex-col gap-8 pb-16'>
-            {/* Section 1: Hero Header */}
-            <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className='px-4 md:px-[10svw] pt-6'
-            >
-                {/* Mobile hero — full-bleed background */}
-                <div className='relative md:hidden'>
-                    {coverImage && !imgError ? (
-                        <div className='absolute inset-0 z-0'>
-                            <Image
-                                src={coverImage}
-                                alt=''
-                                fill
-                                className='object-cover'
-                                sizes='100vw'
-                                priority
-                                onError={handleImgError}
-                            />
-                            <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/30' />
-                        </div>
-                    ) : (
-                        <div className='absolute inset-0 z-0 bg-gradient-to-b from-primary/20 to-background' />
-                    )}
-                    <div className='relative z-10 flex flex-col gap-2 min-w-0 px-4 pt-24 pb-6'>
-                        <HeroInfo
-                            game={game}
-                            stats={stats}
-                            session={session}
-                            counts={counts}
-                            platformSupport={platformSupport}
-                            protonDbUrl={protonDbUrl}
-                            steamDbUrl={steamDbUrl}
-                            gameId={gameId}
-                            formatDate={formatDate}
-                            Badge={Badge}
-                        />
-                    </div>
-                </div>
-
-                {/* Desktop hero — side-by-side layout */}
-                <div className='hidden md:flex gap-4 sm:gap-6'>
-                    {/* Cover image */}
-                    <div className='relative shrink-0 aspect-2/3 w-20 sm:w-28 md:w-36 rounded-lg overflow-hidden border border-border bg-text/5 h-max'>
+            <section className='w-full flex flex-col gap-8 pb-16'>
+                {/* Section 1: Hero Header */}
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className='pt-6'
+                >
+                    {/* Mobile hero — full-bleed background */}
+                    <div className='relative md:hidden'>
                         {coverImage && !imgError ? (
-                            <Image
-                                src={coverImage}
-                                alt={game.title}
-                                width={600}
-                                height={900}
-                                className='object-cover'
-                                priority
-                                onError={handleImgError}
-                                loading="eager"
-                            />
-                        ) : (
-                            <div className='w-full h-full flex items-center justify-center'>
-                                <Gamepad2Icon className='h-10 w-10 text-text/20' />
+                            <div className='absolute inset-0 z-0'>
+                                <Image
+                                    src={coverImage}
+                                    alt=''
+                                    fill
+                                    className='object-cover object-top'
+                                    sizes='(max-width: 767px) 100vw, 0px'
+                                    priority
+                                    onError={handleImgError}
+                                />
+                                <div className='absolute inset-0 bg-linear-to-t from-black/80 via-black/50 to-black/40 backdrop-blur-xs' />
                             </div>
-                        )}
-                    </div>
-                    {/* Info */}
-                    <div className='flex flex-col gap-2 min-w-0'>
-                        <HeroInfo
-                            game={game}
-                            stats={stats}
-                            session={session}
-                            counts={counts}
-                            platformSupport={platformSupport}
-                            protonDbUrl={protonDbUrl}
-                            steamDbUrl={steamDbUrl}
-                            gameId={gameId}
-                            formatDate={formatDate}
-                            Badge={Badge}
-                        />
-                    </div>
-                </div>
-            </motion.div>
-
-            {/* Section 2: Overview */}
-            <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 }}
-                className='px-4 md:px-[10svw]'
-            >
-                <div className='max-w-7xl mx-auto flex flex-col gap-6'>
-                    {/* Description */}
-                    <div>
-                        <h2 className='text-sm font-medium uppercase tracking-wider text-text/60 mb-3'>
-                            About
-                        </h2>
-                        {game.description ? (
-                            <p className='text-sm text-text/80 leading-relaxed whitespace-pre-line'>
-                                {game.description}
-                            </p>
                         ) : (
-                            <p className='text-sm text-text/40 italic'>
-                                No description available.
-                            </p>
+                            <div className='absolute inset-0 z-0 bg-linear-to-b from-primary/20 to-background backdrop-blur-xs' />
                         )}
-                        {game.systemRequirements && (game.systemRequirements.minimum || game.systemRequirements.recommended) && (
-                            <div className="mt-6">
-                                <button
-                                    onClick={() => setShowSystemReq(!showSystemReq)}
-                                    className="flex items-center gap-2 text-sm font-medium text-text/80 hover:text-primary transition-colors cursor-pointer"
-                                    data-gamepad-focusable
-                                >
-                                    <ChevronDownIcon className={`h-4 w-4 transition-transform ${showSystemReq ? 'rotate-180' : ''}`} />
-                                    System Requirements
-                                </button>
-                                {showSystemReq && (
-                                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {game.systemRequirements.minimum && (
-                                            <div className="p-4 rounded-lg border border-border bg-text/3">
-                                                <h4 className="text-xs font-medium uppercase tracking-wider text-text/50 mb-2">Minimum</h4>
-                                                <div className="text-xs text-text/70 prose prose-sm prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: game.systemRequirements.minimum }} />
-                                            </div>
-                                        )}
-                                        {game.systemRequirements.recommended && (
-                                            <div className="p-4 rounded-lg border border-border bg-text/3">
-                                                <h4 className="text-xs font-medium uppercase tracking-wider text-text/50 mb-2">Recommended</h4>
-                                                <div className="text-xs text-text/70 prose prose-sm prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: game.systemRequirements.recommended }} />
+                        <div className='relative z-10 flex flex-col gap-2 min-w-0 px-4 pt-24 pb-6'>
+                            <HeroInfo
+                                game={game}
+                                stats={stats}
+                                session={session}
+                                counts={counts}
+                                platformSupport={platformSupport}
+                                protonDbUrl={protonDbUrl}
+                                steamDbUrl={steamDbUrl}
+                                gameId={gameId}
+                                formatDate={formatDate}
+                                Badge={Badge}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Desktop hero — side-by-side layout */}
+                    <div className='hidden md:flex gap-4 sm:gap-6 px-[10svw]'>
+                        {/* Cover image */}
+                        <div className='relative shrink-0 aspect-2/3 w-20 sm:w-28 md:w-36 rounded-lg overflow-hidden border border-border bg-text/5 h-max'>
+                            {coverImage && !imgError ? (
+                                <Image
+                                    src={coverImage}
+                                    alt={game.title}
+                                    width={600}
+                                    height={900}
+                                    className='object-cover'
+                                    priority
+                                    onError={handleImgError}
+                                    loading='eager'
+                                />
+                            ) : (
+                                <div className='w-full h-full flex items-center justify-center'>
+                                    <Gamepad2Icon className='h-10 w-10 text-text/20' />
+                                </div>
+                            )}
+                        </div>
+                        {/* Info */}
+                        <div className='flex flex-col gap-2 min-w-0'>
+                            <HeroInfo
+                                game={game}
+                                stats={stats}
+                                session={session}
+                                counts={counts}
+                                platformSupport={platformSupport}
+                                protonDbUrl={protonDbUrl}
+                                steamDbUrl={steamDbUrl}
+                                gameId={gameId}
+                                formatDate={formatDate}
+                                Badge={Badge}
+                            />
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* Section 2: Overview */}
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                    className='px-4 md:px-[10svw]'
+                >
+                    <div className='max-w-7xl mx-auto flex flex-col gap-6'>
+                        {/* Description */}
+                        <div>
+                            <h2 className='text-sm font-medium uppercase tracking-wider text-text/60 mb-3'>
+                                About
+                            </h2>
+                            {game.description ? (
+                                <p className='text-sm text-text/80 leading-relaxed whitespace-pre-line'>
+                                    {game.description}
+                                </p>
+                            ) : (
+                                <p className='text-sm text-text/40 italic'>
+                                    No description available.
+                                </p>
+                            )}
+                            {game.systemRequirements &&
+                                (game.systemRequirements.minimum ||
+                                    game.systemRequirements.recommended) && (
+                                    <div className='mt-6'>
+                                        <button
+                                            onClick={() =>
+                                                setShowSystemReq(!showSystemReq)
+                                            }
+                                            className='flex items-center gap-2 text-sm font-medium text-text/80 hover:text-primary transition-colors cursor-pointer'
+                                            data-gamepad-focusable
+                                        >
+                                            <ChevronDownIcon
+                                                className={`h-4 w-4 transition-transform ${showSystemReq ? "rotate-180" : ""}`}
+                                            />
+                                            System Requirements
+                                        </button>
+                                        {showSystemReq && (
+                                            <div className='mt-3 grid grid-cols-1 md:grid-cols-2 gap-4'>
+                                                {game.systemRequirements
+                                                    .minimum && (
+                                                    <div className='p-4 rounded-lg border border-border bg-text/3'>
+                                                        <h4 className='text-xs font-medium uppercase tracking-wider text-text/50 mb-2'>
+                                                            Minimum
+                                                        </h4>
+                                                        <div
+                                                            className='text-xs text-text/70 prose prose-sm prose-invert max-w-none'
+                                                            dangerouslySetInnerHTML={{
+                                                                __html: game
+                                                                    .systemRequirements
+                                                                    .minimum,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                )}
+                                                {game.systemRequirements
+                                                    .recommended && (
+                                                    <div className='p-4 rounded-lg border border-border bg-text/3'>
+                                                        <h4 className='text-xs font-medium uppercase tracking-wider text-text/50 mb-2'>
+                                                            Recommended
+                                                        </h4>
+                                                        <div
+                                                            className='text-xs text-text/70 prose prose-sm prose-invert max-w-none'
+                                                            dangerouslySetInnerHTML={{
+                                                                __html: game
+                                                                    .systemRequirements
+                                                                    .recommended,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
                                 )}
+                        </div>
+
+                        {/* Platforms */}
+                        {game.platforms && (
+                            <div>
+                                <h3 className='text-xs font-medium uppercase tracking-wider text-text/50 mb-2'>
+                                    Platforms
+                                </h3>
+                                <div className='flex items-center gap-1.5'>
+                                    <span title='Windows'>
+                                        <WindowsIcon
+                                            className={`h-3.5 w-3.5 ${game.platforms.windows ? "text-blue-400" : "text-text/20"}`}
+                                        />
+                                    </span>
+                                    <span title='macOS'>
+                                        <MacIcon
+                                            className={`h-3.5 w-3.5 ${game.platforms.mac ? "text-text/60" : "text-text/20"}`}
+                                        />
+                                    </span>
+                                    <span title='Linux'>
+                                        <LinuxIcon
+                                            className={`h-3.5 w-3.5 ${game.platforms.linux ? "text-yellow-500" : "text-text/20"}`}
+                                        />
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                        {platformSupport.length > 0 && (
+                            <div>
+                                <h3 className='text-xs font-medium uppercase tracking-wider text-text/50 mb-2'>
+                                    Platform Support
+                                </h3>
+                                <div className='flex flex-col gap-2'>
+                                    {platformSupport.map((ps) => (
+                                        <div
+                                            key={ps.id}
+                                            className='flex items-center justify-between p-2 rounded-md border border-border bg-text/3'
+                                        >
+                                            <span className='text-xs font-medium capitalize'>
+                                                {ps.hardwareSlug.replace(
+                                                    /-/g,
+                                                    " ",
+                                                )}
+                                            </span>
+                                            <div className='flex items-center gap-2'>
+                                                <span
+                                                    className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                                        ps.isSupported
+                                                            ? "bg-green-500/20 text-green-400"
+                                                            : "bg-red-500/20 text-red-400"
+                                                    }`}
+                                                >
+                                                    {ps.isSupported
+                                                        ? "Supported"
+                                                        : "Unsupported"}
+                                                </span>
+                                                <span className='text-[10px] text-text/50 capitalize'>
+                                                    {ps.protonStatus}
+                                                </span>
+
+                                                {/* Per-device playability */}
+                                                {ps.playabilityStatus && (
+                                                    <PlayabilityBadge
+                                                        status={
+                                                            ps.playabilityStatus
+                                                        }
+                                                        compact
+                                                    />
+                                                )}
+
+                                                {/* Per-device anti-cheat */}
+                                                {ps.antiCheatRelevant && (
+                                                    <AntiCheatBadge
+                                                        antiCheatRelevant={true}
+                                                        antiCheatStatus={
+                                                            ps.antiCheatStatus
+                                                        }
+                                                        antiCheatName={
+                                                            ps.antiCheatName
+                                                        }
+                                                        compact
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>
+                </motion.div>
 
-                    {/* Platforms */}
-                    {game.platforms && (
-                        <div>
-                            <h3 className='text-xs font-medium uppercase tracking-wider text-text/50 mb-2'>
-                                Platforms
-                            </h3>
-                            <div className='flex items-center gap-1.5'>
-                                <span title="Windows">
-                                    <WindowsIcon
-                                        className={`h-3.5 w-3.5 ${game.platforms.windows ? "text-blue-400" : "text-text/20"}`}
-                                    />
-                                </span>
-                                <span title="macOS">
-                                    <MacIcon
-                                        className={`h-3.5 w-3.5 ${game.platforms.mac ? "text-text/60" : "text-text/20"}`}
-                                    />
-                                </span>
-                                <span title="Linux">
-                                    <LinuxIcon
-                                        className={`h-3.5 w-3.5 ${game.platforms.linux ? "text-yellow-500" : "text-text/20"}`}
-                                    />
-                                </span>
-                            </div>
-                        </div>
-                    )}
-                    {platformSupport.length > 0 && (
-                        <div>
-                            <h3 className='text-xs font-medium uppercase tracking-wider text-text/50 mb-2'>
-                                Platform Support
-                            </h3>
-                            <div className='flex flex-col gap-2'>
-                                {platformSupport.map((ps) => (
-                                    <div
-                                        key={ps.id}
-                                        className='flex items-center justify-between p-2 rounded-md border border-border bg-text/3'
-                                    >
-                                        <span className='text-xs font-medium capitalize'>
-                                            {ps.hardwareSlug.replace(
-                                                /-/g,
-                                                " ",
-                                            )}
-                                        </span>
-                                        <div className='flex items-center gap-2'>
-                                            <span
-                                                className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                                                    ps.isSupported
-                                                        ? "bg-green-500/20 text-green-400"
-                                                        : "bg-red-500/20 text-red-400"
-                                                }`}
-                                            >
-                                                {ps.isSupported
-                                                    ? "Supported"
-                                                    : "Unsupported"}
+                {/* Section 3: Device Selector + Filters */}
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.15 }}
+                    className='px-4 md:px-[10svw]'
+                >
+                    <div className='max-w-7xl mx-auto flex flex-col gap-4'>
+                        {/* Device ribbon */}
+                        {stats && stats.deviceBreakdown.length > 0 && (
+                            <div className='flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide'>
+                                {stats.deviceBreakdown.map((device) => {
+                                    const active = selectedDevices.includes(
+                                        device.hardwareSlug,
+                                    )
+                                    return (
+                                        <button
+                                            key={device.hardwareSlug}
+                                            onClick={() =>
+                                                toggleDevice(
+                                                    device.hardwareSlug,
+                                                )
+                                            }
+                                            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                                                active
+                                                    ? "bg-primary/20 border-primary text-primary"
+                                                    : "bg-transparent border-border text-text/60 hover:text-text/80"
+                                            }`}
+                                            data-gamepad-focusable
+                                        >
+                                            {device.hardwareName}
+                                            <span className='ml-1 text-text/40'>
+                                                ({device.count})
                                             </span>
-                                            <span className='text-[10px] text-text/50 capitalize'>
-                                                {ps.protonStatus}
-                                            </span>
-
-                                            {/* Per-device playability */}
-                                            {ps.playabilityStatus && (
-                                                <PlayabilityBadge
-                                                    status={ps.playabilityStatus}
-                                                    compact
-                                                />
-                                            )}
-
-                                            {/* Per-device anti-cheat */}
-                                            {ps.antiCheatRelevant && (
-                                                <AntiCheatBadge
-                                                    antiCheatRelevant={true}
-                                                    antiCheatStatus={ps.antiCheatStatus}
-                                                    antiCheatName={ps.antiCheatName}
-                                                    compact
-                                                />
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
+                                        </button>
+                                    )
+                                })}
                             </div>
+                        )}
+
+                        {/* Fine filters */}
+                        <div className='flex flex-wrap items-center gap-2'>
+                            <FilterSelect
+                                label='Proton Version'
+                                value={filters.proton}
+                                options={[
+                                    "all",
+                                    ...(stats?.filterOptions.protonVersions ??
+                                        []),
+                                ]}
+                                onChange={(v) =>
+                                    setFilters((f) => ({ ...f, proton: v }))
+                                }
+                            />
+                            <FilterSelect
+                                label='OS Version'
+                                value={filters.os}
+                                options={[
+                                    "all",
+                                    ...(stats?.filterOptions.osVersions ?? []),
+                                ]}
+                                onChange={(v) =>
+                                    setFilters((f) => ({ ...f, os: v }))
+                                }
+                            />
+                            <FilterSelect
+                                label='Upscaler'
+                                value={filters.upscaler}
+                                options={UPSCALER_OPTIONS.map((o) =>
+                                    o.toLowerCase(),
+                                )}
+                                onChange={(v) =>
+                                    setFilters((f) => ({ ...f, upscaler: v }))
+                                }
+                            />
+                            <FilterSelect
+                                label='Frame Gen Method'
+                                value={filters.frameGen}
+                                options={FRAMEGEN_OPTIONS.map((o) =>
+                                    o.toLowerCase().replace(" ", "_"),
+                                )}
+                                onChange={(v) =>
+                                    setFilters((f) => ({ ...f, frameGen: v }))
+                                }
+                            />
                         </div>
-                    )}
-                </div>
-            </motion.div>
-
-            {/* Section 3: Device Selector + Filters */}
-            <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.15 }}
-                className='px-4 md:px-[10svw]'
-            >
-                <div className='max-w-7xl mx-auto flex flex-col gap-4'>
-                    {/* Device ribbon */}
-                    {stats && stats.deviceBreakdown.length > 0 && (
-                        <div className='flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide'>
-                            {stats.deviceBreakdown.map((device) => {
-                                const active = selectedDevices.includes(
-                                    device.hardwareSlug,
-                                )
-                                return (
-                                    <button
-                                        key={device.hardwareSlug}
-                                        onClick={() =>
-                                            toggleDevice(device.hardwareSlug)
-                                        }
-                                        className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
-                                            active
-                                                ? "bg-primary/20 border-primary text-primary"
-                                                : "bg-transparent border-border text-text/60 hover:text-text/80"
-                                        }`}
-                                        data-gamepad-focusable
-                                    >
-                                        {device.hardwareName}
-                                        <span className='ml-1 text-text/40'>
-                                            ({device.count})
-                                        </span>
-                                    </button>
-                                )
-                            })}
-                        </div>
-                    )}
-
-                    {/* Fine filters */}
-                    <div className='flex flex-wrap items-center gap-2'>
-                        <FilterSelect
-                            label='Proton Version'
-                            value={filters.proton}
-                            options={[
-                                "all",
-                                ...(stats?.filterOptions.protonVersions ?? []),
-                            ]}
-                            onChange={(v) =>
-                                setFilters((f) => ({ ...f, proton: v }))
-                            }
-                        />
-                        <FilterSelect
-                            label='OS Version'
-                            value={filters.os}
-                            options={[
-                                "all",
-                                ...(stats?.filterOptions.osVersions ?? []),
-                            ]}
-                            onChange={(v) =>
-                                setFilters((f) => ({ ...f, os: v }))
-                            }
-                        />
-                        <FilterSelect
-                            label='Upscaler'
-                            value={filters.upscaler}
-                            options={UPSCALER_OPTIONS.map((o) => o.toLowerCase())}
-                            onChange={(v) =>
-                                setFilters((f) => ({ ...f, upscaler: v }))
-                            }
-                        />
-                        <FilterSelect
-                            label='Frame Gen Method'
-                            value={filters.frameGen}
-                            options={FRAMEGEN_OPTIONS.map((o) =>
-                                o.toLowerCase().replace(" ", "_"),
-                            )}
-                            onChange={(v) =>
-                                setFilters((f) => ({ ...f, frameGen: v }))
-                            }
-                        />
                     </div>
-                </div>
-            </motion.div>
+                </motion.div>
 
-            {/* Section 4a: Pinned Presets */}
-            {pinnedPresets.length > 0 && (
-            <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.2 }}
-                className='px-4 md:px-[10svw]'
-            >
-                <div className='max-w-7xl mx-auto flex flex-col gap-4'>
-                    <div className='flex items-center justify-between'>
-                        <h2 className='text-lg font-semibold'>
-                            📌 Pinned Presets
-                        </h2>
-                        <span className='text-xs text-text/50'>
-                            {pinnedPresets.length} pinned
-                        </span>
-                    </div>
-                    <div
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                {/* Section 4a: Pinned Presets */}
+                {pinnedPresets.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.2 }}
+                        className='px-4 md:px-[10svw]'
                     >
-                        {pinnedPresets.map((preset) => {
-                            const raw = isRawPerformerPreset(preset)
-                            const fpsColor = getFpsColor(preset)
-                            return (
-                                <motion.div
-                                    key={preset.id}
-                                    onClick={() => handlePresetOpen(preset.id)}
-                                    className={`flex flex-col gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-primary/30 ${
-                                        raw
-                                            ? "border-green-500/30 bg-green-500/5"
-                                            : "border-yellow-500/30 bg-yellow-500/5"
-                                    }`}
-                                    data-gamepad-focusable
-                                >
-                                    {/* Header */}
-                                    <div className='flex items-start justify-between gap-2'>
-                                        <div className='min-w-0'>
-                                            <div className='flex items-center gap-2'>
-                                                <h3 className='font-semibold text-sm truncate'>
-                                                    {generatePresetName(preset)}
-                                                </h3>
-                                                {raw && (
-                                                    <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-semibold'>
-                                                        <SparklesIcon className='h-2.5 w-2.5' />
-                                                        Raw
+                        <div className='max-w-7xl mx-auto flex flex-col gap-4'>
+                            <div className='flex items-center justify-between'>
+                                <h2 className='text-lg font-semibold'>
+                                    📌 Pinned Presets
+                                </h2>
+                                <span className='text-xs text-text/50'>
+                                    {pinnedPresets.length} pinned
+                                </span>
+                            </div>
+                            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+                                {pinnedPresets.map((preset) => {
+                                    const raw = isRawPerformerPreset(preset)
+                                    const fpsColor = getFpsColor(preset)
+                                    return (
+                                        <motion.div
+                                            key={preset.id}
+                                            onClick={() =>
+                                                handlePresetOpen(preset.id)
+                                            }
+                                            className={`flex flex-col gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-primary/30 ${
+                                                raw
+                                                    ? "border-green-500/30 bg-green-500/5"
+                                                    : "border-yellow-500/30 bg-yellow-500/5"
+                                            }`}
+                                            data-gamepad-focusable
+                                        >
+                                            {/* Header */}
+                                            <div className='flex items-start justify-between gap-2'>
+                                                <div className='min-w-0'>
+                                                    <div className='flex items-center gap-2'>
+                                                        <h3 className='font-semibold text-sm truncate'>
+                                                            {generatePresetName(
+                                                                preset,
+                                                            )}
+                                                        </h3>
+                                                        {raw && (
+                                                            <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-semibold'>
+                                                                <SparklesIcon className='h-2.5 w-2.5' />
+                                                                Raw
+                                                            </span>
+                                                        )}
+                                                        {isPoorPerformancePreset(
+                                                            preset,
+                                                        ) &&
+                                                            preset.fpsAvg !==
+                                                                null && (
+                                                                <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-semibold'>
+                                                                    ⚠ Slow
+                                                                </span>
+                                                            )}
+                                                    </div>
+                                                    <p className='text-xs text-text/50 mt-0.5'>
+                                                        {preset.hardwareName}
+                                                    </p>
+                                                </div>
+                                                <div className='flex items-center gap-2 text-xs text-text/60 shrink-0'>
+                                                    {preset.youtubeVideoId && (
+                                                        <svg
+                                                            className='h-3 w-3 text-red-400 shrink-0'
+                                                            viewBox='0 0 24 24'
+                                                            fill='currentColor'
+                                                        >
+                                                            <path d='M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z' />
+                                                        </svg>
+                                                    )}
+                                                    <span className='flex items-center gap-0.5'>
+                                                        <ThumbsUpIcon className='h-3 w-3' />
+                                                        {preset.upvotes}
+                                                    </span>
+                                                    <span className='flex items-center gap-0.5'>
+                                                        <ThumbsDownIcon className='h-3 w-3' />
+                                                        {preset.downvotes}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Settings count */}
+                                            <div className='text-xs text-text/50'>
+                                                {preset.settingsCount} settings
+                                            </div>
+
+                                            {/* FPS */}
+                                            {preset.fpsAvg !== null && (
+                                                <div
+                                                    className={`text-sm tabular-nums ${fpsColor}`}
+                                                >
+                                                    <span className='font-semibold'>
+                                                        {preset.fpsAvg}
+                                                    </span>
+                                                    <span className='text-text/40'>
+                                                        {" "}
+                                                        avg
+                                                    </span>
+                                                    {preset.fpsOnePercentLow !==
+                                                        null && (
+                                                        <span className='text-text/40'>
+                                                            {" "}
+                                                            ·{" "}
+                                                            {
+                                                                preset.fpsOnePercentLow
+                                                            }{" "}
+                                                            1% low
+                                                        </span>
+                                                    )}
+                                                    {preset.fpsLow !== null &&
+                                                        preset.fpsHigh !==
+                                                            null &&
+                                                        !preset.fpsOnePercentLow && (
+                                                            <span className='text-text/40'>
+                                                                {" "}
+                                                                ({preset.fpsLow}
+                                                                –
+                                                                {preset.fpsHigh}
+                                                                )
+                                                            </span>
+                                                        )}
+                                                </div>
+                                            )}
+
+                                            {/* Power / Battery quick-look */}
+                                            {(() => {
+                                                const dev =
+                                                    stats?.deviceBreakdown.find(
+                                                        (d) =>
+                                                            d.hardwareSlug ===
+                                                            preset.hardwareSlug,
+                                                    )
+                                                const isHandheld =
+                                                    dev?.deviceType ===
+                                                    "handheld"
+                                                const wh =
+                                                    dev?.wattHours ?? null
+                                                const tdp =
+                                                    preset.tdpWatts ?? null
+                                                const estHours =
+                                                    wh && tdp && tdp > 0
+                                                        ? wh / tdp
+                                                        : null
+
+                                                if (
+                                                    !isHandheld ||
+                                                    (!tdp && !wh)
+                                                )
+                                                    return null
+
+                                                return (
+                                                    <div className='text-[11px] text-text/50 flex items-center gap-1.5 flex-wrap'>
+                                                        {tdp && (
+                                                            <span>
+                                                                ⚡{" "}
+                                                                {Math.round(
+                                                                    tdp,
+                                                                )}
+                                                                W
+                                                            </span>
+                                                        )}
+                                                        {wh && (
+                                                            <span>
+                                                                🔋{" "}
+                                                                {Math.round(wh)}
+                                                                Wh
+                                                            </span>
+                                                        )}
+                                                        {estHours !== null && (
+                                                            <span>
+                                                                ⏱ ~
+                                                                {estHours.toFixed(
+                                                                    1,
+                                                                )}
+                                                                h
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )
+                                            })()}
+
+                                            {/* Technology tags */}
+                                            <div className='flex flex-wrap items-center gap-1.5'>
+                                                {preset.upscalerType &&
+                                                    preset.upscalerType !==
+                                                        "none" && (
+                                                        <span className='px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20'>
+                                                            {preset.upscalerType.toUpperCase()}
+                                                            {preset.upscalerVersion
+                                                                ? ` ${preset.upscalerVersion}`
+                                                                : ""}
+                                                        </span>
+                                                    )}
+                                                {preset.frameGenMethod &&
+                                                    preset.frameGenMethod !==
+                                                        "none" && (
+                                                        <span
+                                                            className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                                                                preset.frameGenMethod ===
+                                                                "dlss_fg"
+                                                                    ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                                                    : "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                                                            }`}
+                                                        >
+                                                            {preset.frameGenMethod ===
+                                                            "fsr_fg"
+                                                                ? "FSR FG"
+                                                                : preset.frameGenMethod ===
+                                                                    "dlss_fg"
+                                                                  ? "DLSS FG"
+                                                                  : preset.frameGenMethod}
+                                                        </span>
+                                                    )}
+                                            </div>
+
+                                            {/* Proton + OS */}
+                                            <div className='flex flex-wrap items-center gap-2 text-[10px] text-text/40'>
+                                                {preset.protonVersion && (
+                                                    <span>
+                                                        Proton{" "}
+                                                        {preset.protonVersion}
                                                     </span>
                                                 )}
-                                                {isPoorPerformancePreset(preset) && preset.fpsAvg !== null && (
-                                                    <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-semibold'>
-                                                        ⚠ Slow
+                                                {preset.osVersion && (
+                                                    <span>
+                                                        {preset.osVersion}
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className='text-xs text-text/50 mt-0.5'>
-                                                {preset.hardwareName}
-                                            </p>
-                                        </div>
-                                        <div className='flex items-center gap-2 text-xs text-text/60 shrink-0'>
-                                            {preset.youtubeVideoId && (
-                                              <svg className="h-3 w-3 text-red-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                                              </svg>
-                                            )}
-                                            <span className='flex items-center gap-0.5'>
-                                                <ThumbsUpIcon className='h-3 w-3' />
-                                                {preset.upvotes}
-                                            </span>
-                                            <span className='flex items-center gap-0.5'>
-                                                <ThumbsDownIcon className='h-3 w-3' />
-                                                {preset.downvotes}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Settings count */}
-                                    <div className='text-xs text-text/50'>
-                                        {preset.settingsCount} settings
-                                    </div>
-
-                                    {/* FPS */}
-                                    {preset.fpsAvg !== null && (
-                                        <div
-                                            className={`text-sm tabular-nums ${fpsColor}`}
-                                        >
-                                            <span className='font-semibold'>
-                                                {preset.fpsAvg}
-                                            </span>
-                                            <span className='text-text/40'>
-                                                {" "}
-                                                avg
-                                            </span>
-                                            {preset.fpsOnePercentLow !== null && (
-                                                <span className='text-text/40'>
-                                                    {" "}
-                                                    · {preset.fpsOnePercentLow} 1% low
-                                                </span>
-                                            )}
-                                            {preset.fpsLow !== null && preset.fpsHigh !== null && !preset.fpsOnePercentLow && (
-                                                <span className='text-text/40'>
-                                                    {" "}
-                                                    ({preset.fpsLow}–{preset.fpsHigh})
-                                                </span>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Power / Battery quick-look */}
-                                    {(() => {
-                                      const dev = stats?.deviceBreakdown.find((d) => d.hardwareSlug === preset.hardwareSlug)
-                                      const isHandheld = dev?.deviceType === "handheld"
-                                      const wh = dev?.wattHours ?? null
-                                      const tdp = preset.tdpWatts ?? null
-                                      const estHours = wh && tdp && tdp > 0 ? wh / tdp : null
-
-                                      if (!isHandheld || (!tdp && !wh)) return null
-
-                                      return (
-                                        <div className="text-[11px] text-text/50 flex items-center gap-1.5 flex-wrap">
-                                          {tdp && <span>⚡ {Math.round(tdp)}W</span>}
-                                          {wh && <span>🔋 {Math.round(wh)}Wh</span>}
-                                          {estHours !== null && (
-                                            <span>⏱ ~{estHours.toFixed(1)}h</span>
-                                          )}
-                                        </div>
-                                      )
-                                    })()}
-
-                                    {/* Technology tags */}
-                                    <div className='flex flex-wrap items-center gap-1.5'>
-                                        {preset.upscalerType &&
-                                            preset.upscalerType !==
-                                                "none" && (
-                                                <span className='px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20'>
-                                                    {preset.upscalerType.toUpperCase()}
-                                                    {preset.upscalerVersion ? ` ${preset.upscalerVersion}` : ""}
-                                                </span>
-                                            )}
-                                        {preset.frameGenMethod &&
-                                            preset.frameGenMethod !==
-                                                "none" && (
-                                                <span
-                                                    className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
-                                                        preset.frameGenMethod ===
-                                                        "dlss_fg"
-                                                            ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                                                            : "bg-orange-500/10 text-orange-400 border-orange-500/20"
-                                                    }`}
-                                                >
-                                                    {preset.frameGenMethod ===
-                                                    "fsr_fg"
-                                                        ? "FSR FG"
-                                                        : preset.frameGenMethod ===
-                                                            "dlss_fg"
-                                                          ? "DLSS FG"
-                                                          : preset.frameGenMethod}
-                                                </span>
-                                            )}
-                                    </div>
-
-                                    {/* Proton + OS */}
-                                    <div className='flex flex-wrap items-center gap-2 text-[10px] text-text/40'>
-                                        {preset.protonVersion && (
-                                            <span>
-                                                Proton{" "}
-                                                {preset.protonVersion}
-                                            </span>
-                                        )}
-                                        {preset.osVersion && (
-                                            <span>
-                                                {preset.osVersion}
-                                            </span>
-                                        )}
-                                    </div>
-                                </motion.div>
-                            )
-                        })}
-                    </div>
-                </div>
-            </motion.div>
-            )}
-
-            {/* Section 4b: Community Presets */}
-            <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.2 }}
-                className='px-4 md:px-[10svw]'
-            >
-                <div className='max-w-7xl mx-auto flex flex-col gap-4'>
-                    <div className='flex items-center justify-between'>
-                        <h2 className='text-lg font-semibold'>
-                            Community Presets
-                        </h2>
-                        <span className='text-xs text-text/50'>
-                            {regularPresets.length} preset
-                            {regularPresets.length !== 1 ? "s" : ""}
-                        </span>
-                    </div>
-
-                    {regularPresets.length === 0 ? (
-                        <div className='flex flex-col items-center justify-center py-16 gap-3 rounded-xl border border-border bg-text/2'>
-                            <SettingsIcon className='h-10 w-10 text-text/20' />
-                            <p className='text-sm text-text/40'>
-                                No presets match the selected filters
-                            </p>
+                                        </motion.div>
+                                    )
+                                })}
+                            </div>
                         </div>
-                    ) : (
-                        <div
-                            ref={presetsRef}
-                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-                        >
+                    </motion.div>
+                )}
+
+                {/* Section 4b: Community Presets */}
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                    className='px-4 md:px-[10svw]'
+                >
+                    <div className='max-w-7xl mx-auto flex flex-col gap-4'>
+                        <div className='flex items-center justify-between'>
+                            <h2 className='text-lg font-semibold'>
+                                Community Presets
+                            </h2>
+                            <span className='text-xs text-text/50'>
+                                {regularPresets.length} preset
+                                {regularPresets.length !== 1 ? "s" : ""}
+                            </span>
+                        </div>
+
+                        {regularPresets.length === 0 ? (
+                            <div className='flex flex-col items-center justify-center py-16 gap-3 rounded-xl border border-border bg-text/2'>
+                                <SettingsIcon className='h-10 w-10 text-text/20' />
+                                <p className='text-sm text-text/40'>
+                                    No presets match the selected filters
+                                </p>
+                            </div>
+                        ) : (
+                            <div
+                                ref={presetsRef}
+                                className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'
+                            >
                                 {regularPresets.map((preset) => {
                                     const raw = isRawPerformerPreset(preset)
                                     const fpsColor = getFpsColor(preset)
                                     return (
                                         <motion.div
                                             key={preset.id}
-                                            onClick={() => handlePresetOpen(preset.id)}
+                                            onClick={() =>
+                                                handlePresetOpen(preset.id)
+                                            }
                                             className={`flex flex-col gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-primary/30 ${
                                                 raw
                                                     ? "border-green-500/30 bg-green-500/5"
@@ -1264,357 +1460,453 @@ export function GamePageClient({
                                             }`}
                                             data-gamepad-focusable
                                         >
-                                                {/* Header */}
-                                                <div className='flex items-start justify-between gap-2'>
-                                                    <div className='min-w-0'>
-                                                        <div className='flex items-center gap-2'>
-                                                            <h3 className='font-semibold text-sm truncate'>
-                                                                {generatePresetName(preset)}
-                                                            </h3>
-                                                            {raw && (
-                                                                <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-semibold'>
-                                                                    <SparklesIcon className='h-2.5 w-2.5' />
-                                                                    Raw
-                                                                </span>
+                                            {/* Header */}
+                                            <div className='flex items-start justify-between gap-2'>
+                                                <div className='min-w-0'>
+                                                    <div className='flex items-center gap-2'>
+                                                        <h3 className='font-semibold text-sm truncate'>
+                                                            {generatePresetName(
+                                                                preset,
                                                             )}
-                                                            {isPoorPerformancePreset(preset) && preset.fpsAvg !== null && (
+                                                        </h3>
+                                                        {raw && (
+                                                            <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-semibold'>
+                                                                <SparklesIcon className='h-2.5 w-2.5' />
+                                                                Raw
+                                                            </span>
+                                                        )}
+                                                        {isPoorPerformancePreset(
+                                                            preset,
+                                                        ) &&
+                                                            preset.fpsAvg !==
+                                                                null && (
                                                                 <span className='inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-semibold'>
                                                                     ⚠ Slow
                                                                 </span>
                                                             )}
-                                                        </div>
-                                                        <p className='text-xs text-text/50 mt-0.5'>
-                                                            {preset.hardwareName}
-                                                        </p>
                                                     </div>
-                                                    <div className='flex items-center gap-2 text-xs text-text/60 shrink-0'>
-                                                        {preset.youtubeVideoId && (
-                                                          <svg className="h-3 w-3 text-red-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                                                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                                                          </svg>
-                                                        )}
-                                                        <span className='flex items-center gap-0.5'>
-                                                            <ThumbsUpIcon className='h-3 w-3' />
-                                                            {preset.upvotes}
-                                                        </span>
-                                                        <span className='flex items-center gap-0.5'>
-                                                            <ThumbsDownIcon className='h-3 w-3' />
-                                                            {preset.downvotes}
-                                                        </span>
-                                                    </div>
+                                                    <p className='text-xs text-text/50 mt-0.5'>
+                                                        {preset.hardwareName}
+                                                    </p>
                                                 </div>
-
-                                                {/* Settings count */}
-                                                <div className='text-xs text-text/50'>
-                                                    {preset.settingsCount} settings
+                                                <div className='flex items-center gap-2 text-xs text-text/60 shrink-0'>
+                                                    {preset.youtubeVideoId && (
+                                                        <svg
+                                                            className='h-3 w-3 text-red-400 shrink-0'
+                                                            viewBox='0 0 24 24'
+                                                            fill='currentColor'
+                                                        >
+                                                            <path d='M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z' />
+                                                        </svg>
+                                                    )}
+                                                    <span className='flex items-center gap-0.5'>
+                                                        <ThumbsUpIcon className='h-3 w-3' />
+                                                        {preset.upvotes}
+                                                    </span>
+                                                    <span className='flex items-center gap-0.5'>
+                                                        <ThumbsDownIcon className='h-3 w-3' />
+                                                        {preset.downvotes}
+                                                    </span>
                                                 </div>
+                                            </div>
 
-                                                {/* FPS */}
-                                                {preset.fpsAvg !== null && (
-                                                    <div
-                                                        className={`text-sm tabular-nums ${fpsColor}`}
-                                                    >
-                                                        <span className='font-semibold'>
-                                                            {preset.fpsAvg}
-                                                        </span>
+                                            {/* Settings count */}
+                                            <div className='text-xs text-text/50'>
+                                                {preset.settingsCount} settings
+                                            </div>
+
+                                            {/* FPS */}
+                                            {preset.fpsAvg !== null && (
+                                                <div
+                                                    className={`text-sm tabular-nums ${fpsColor}`}
+                                                >
+                                                    <span className='font-semibold'>
+                                                        {preset.fpsAvg}
+                                                    </span>
+                                                    <span className='text-text/40'>
+                                                        {" "}
+                                                        avg
+                                                    </span>
+                                                    {preset.fpsOnePercentLow !==
+                                                        null && (
                                                         <span className='text-text/40'>
                                                             {" "}
-                                                            avg
+                                                            ·{" "}
+                                                            {
+                                                                preset.fpsOnePercentLow
+                                                            }{" "}
+                                                            1% low
                                                         </span>
-                                                        {preset.fpsOnePercentLow !== null && (
+                                                    )}
+                                                    {preset.fpsLow !== null &&
+                                                        preset.fpsHigh !==
+                                                            null &&
+                                                        !preset.fpsOnePercentLow && (
                                                             <span className='text-text/40'>
                                                                 {" "}
-                                                                · {preset.fpsOnePercentLow} 1% low
+                                                                ({preset.fpsLow}
+                                                                –
+                                                                {preset.fpsHigh}
+                                                                )
                                                             </span>
                                                         )}
-                                                        {preset.fpsLow !== null && preset.fpsHigh !== null && !preset.fpsOnePercentLow && (
-                                                            <span className='text-text/40'>
-                                                                {" "}
-                                                                ({preset.fpsLow}–{preset.fpsHigh})
+                                                </div>
+                                            )}
+
+                                            {/* Power / Battery quick-look */}
+                                            {(() => {
+                                                const dev =
+                                                    stats?.deviceBreakdown.find(
+                                                        (d) =>
+                                                            d.hardwareSlug ===
+                                                            preset.hardwareSlug,
+                                                    )
+                                                const isHandheld =
+                                                    dev?.deviceType ===
+                                                    "handheld"
+                                                const wh =
+                                                    dev?.wattHours ?? null
+                                                const tdp =
+                                                    preset.tdpWatts ?? null
+                                                const estHours =
+                                                    wh && tdp && tdp > 0
+                                                        ? wh / tdp
+                                                        : null
+
+                                                if (
+                                                    !isHandheld ||
+                                                    (!tdp && !wh)
+                                                )
+                                                    return null
+
+                                                return (
+                                                    <div className='text-[11px] text-text/50 flex items-center gap-1.5 flex-wrap'>
+                                                        {tdp && (
+                                                            <span>
+                                                                ⚡{" "}
+                                                                {Math.round(
+                                                                    tdp,
+                                                                )}
+                                                                W
+                                                            </span>
+                                                        )}
+                                                        {wh && (
+                                                            <span>
+                                                                🔋{" "}
+                                                                {Math.round(wh)}
+                                                                Wh
+                                                            </span>
+                                                        )}
+                                                        {estHours !== null && (
+                                                            <span>
+                                                                ⏱ ~
+                                                                {estHours.toFixed(
+                                                                    1,
+                                                                )}
+                                                                h
                                                             </span>
                                                         )}
                                                     </div>
-                                                )}
+                                                )
+                                            })()}
 
-                                                {/* Power / Battery quick-look */}
-                                                {(() => {
-                                                  const dev = stats?.deviceBreakdown.find((d) => d.hardwareSlug === preset.hardwareSlug)
-                                                  const isHandheld = dev?.deviceType === "handheld"
-                                                  const wh = dev?.wattHours ?? null
-                                                  const tdp = preset.tdpWatts ?? null
-                                                  const estHours = wh && tdp && tdp > 0 ? wh / tdp : null
-
-                                                  if (!isHandheld || (!tdp && !wh)) return null
-
-                                                  return (
-                                                    <div className="text-[11px] text-text/50 flex items-center gap-1.5 flex-wrap">
-                                                      {tdp && <span>⚡ {Math.round(tdp)}W</span>}
-                                                      {wh && <span>🔋 {Math.round(wh)}Wh</span>}
-                                                      {estHours !== null && (
-                                                        <span>⏱ ~{estHours.toFixed(1)}h</span>
-                                                      )}
-                                                    </div>
-                                                  )
-                                                })()}
-
-                                                {/* Technology tags */}
-                                                <div className='flex flex-wrap items-center gap-1.5'>
-                                                    {preset.upscalerType &&
-                                                        preset.upscalerType !==
-                                                            "none" && (
-                                                            <span className='px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20'>
-                                                                {preset.upscalerType.toUpperCase()}
-                                                                {preset.upscalerVersion ? ` ${preset.upscalerVersion}` : ""}
-                                                            </span>
-                                                        )}
-                                                    {preset.frameGenMethod &&
-                                                        preset.frameGenMethod !==
-                                                            "none" && (
-                                                            <span
-                                                                className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
-                                                                    preset.frameGenMethod ===
+                                            {/* Technology tags */}
+                                            <div className='flex flex-wrap items-center gap-1.5'>
+                                                {preset.upscalerType &&
+                                                    preset.upscalerType !==
+                                                        "none" && (
+                                                        <span className='px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20'>
+                                                            {preset.upscalerType.toUpperCase()}
+                                                            {preset.upscalerVersion
+                                                                ? ` ${preset.upscalerVersion}`
+                                                                : ""}
+                                                        </span>
+                                                    )}
+                                                {preset.frameGenMethod &&
+                                                    preset.frameGenMethod !==
+                                                        "none" && (
+                                                        <span
+                                                            className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                                                                preset.frameGenMethod ===
+                                                                "dlss_fg"
+                                                                    ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                                                    : "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                                                            }`}
+                                                        >
+                                                            {preset.frameGenMethod ===
+                                                            "fsr_fg"
+                                                                ? "FSR FG"
+                                                                : preset.frameGenMethod ===
                                                                     "dlss_fg"
-                                                                        ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                                                                        : "bg-orange-500/10 text-orange-400 border-orange-500/20"
-                                                                }`}
-                                                            >
-                                                                {preset.frameGenMethod ===
-                                                                "fsr_fg"
-                                                                    ? "FSR FG"
-                                                                    : preset.frameGenMethod ===
-                                                                        "dlss_fg"
-                                                                      ? "DLSS FG"
-                                                                      : preset.frameGenMethod}
-                                                            </span>
-                                                        )}
-                                                </div>
-
-                                                {/* Proton + OS */}
-                                                <div className='flex flex-wrap items-center gap-2 text-[10px] text-text/40'>
-                                                    {preset.protonVersion && (
-                                                        <span>
-                                                            Proton{" "}
-                                                            {preset.protonVersion}
+                                                                  ? "DLSS FG"
+                                                                  : preset.frameGenMethod}
                                                         </span>
                                                     )}
-                                                    {preset.osVersion && (
-                                                        <span>
-                                                            {preset.osVersion}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </motion.div>
-                                        )
-                                    })}
-                            </div>
-                    )}
-                </div>
-            </motion.div>
+                                            </div>
 
-            {/* Section 5: Statistics Dashboard */}
-            <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.25 }}
-                className='px-4 md:px-[10svw]'
-            >
-                <div className='max-w-7xl mx-auto flex flex-col gap-6'>
-                    {/* Row 1 — Featured */}
-                    {filteredStats && (
-                        <div className='flex flex-col lg:flex-row gap-4'>
-                            <div className='flex-3 rounded-xl border border-border bg-text/3 p-4'>
-                                <h3 className='text-sm font-medium text-text/80 mb-2'>
-                                    Historical Performance
-                                </h3>
-                                {filteredStats.historical.length > 0 ? (
-                                    <HistoricalAreaChart
-                                        data={filteredStats.historical}
-                                    />
-                                ) : (
-                                    <div className='h-70 flex items-center justify-center text-sm text-text/40'>
-                                        No historical data
-                                    </div>
-                                )}
+                                            {/* Proton + OS */}
+                                            <div className='flex flex-wrap items-center gap-2 text-[10px] text-text/40'>
+                                                {preset.protonVersion && (
+                                                    <span>
+                                                        Proton{" "}
+                                                        {preset.protonVersion}
+                                                    </span>
+                                                )}
+                                                {preset.osVersion && (
+                                                    <span>
+                                                        {preset.osVersion}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    )
+                                })}
                             </div>
-                            <div className='flex-1 flex flex-col gap-3'>
-                                <StatCard
-                                    label='Overall Avg FPS'
-                                    value={
-                                        filteredStats.summary.avgFps?.toFixed(
-                                            1,
-                                        ) ?? "—"
-                                    }
-                                    icon={TrendingUpIcon}
-                                />
-                                <StatCard
-                                    label='Best Device'
-                                    value={
-                                        filteredStats.summary.bestDevice ?? "—"
-                                    }
-                                    icon={Gamepad2Icon}
-                                />
-                                <StatCard
-                                    label='Total Entries'
-                                    value={String(
-                                        filteredStats.summary.totalEntries,
+                        )}
+                    </div>
+                </motion.div>
+
+                {/* Section 5: Statistics Dashboard */}
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.25 }}
+                    className='px-4 md:px-[10svw]'
+                >
+                    <div className='max-w-7xl mx-auto flex flex-col gap-6'>
+                        {/* Row 1 — Featured */}
+                        {filteredStats && (
+                            <div className='flex flex-col lg:flex-row gap-4'>
+                                <div className='flex-3 rounded-xl border border-border bg-text/3 p-4'>
+                                    <h3 className='text-sm font-medium text-text/80 mb-2'>
+                                        Historical Performance
+                                    </h3>
+                                    {filteredStats.historical.length > 0 ? (
+                                        <HistoricalAreaChart
+                                            data={filteredStats.historical}
+                                        />
+                                    ) : (
+                                        <div className='h-70 flex items-center justify-center text-sm text-text/40'>
+                                            No historical data
+                                        </div>
                                     )}
-                                    icon={DatabaseIcon}
-                                />
-                                {filteredStats.summary.avgStability !== null && (
+                                </div>
+                                <div className='flex-1 flex flex-col gap-3'>
                                     <StatCard
-                                        label='Avg Stability'
-                                        value={`${Math.round(filteredStats.summary.avgStability * 100)}%`}
-                                        icon={GaugeIcon}
+                                        label='Overall Avg FPS'
+                                        value={
+                                            filteredStats.summary.avgFps?.toFixed(
+                                                1,
+                                            ) ?? "—"
+                                        }
+                                        icon={TrendingUpIcon}
                                     />
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Loading state */}
-                    {loading && (
-                        <div className='flex items-center justify-center py-12 text-sm text-text/40'>
-                            <ClockIcon className='h-4 w-4 animate-spin mr-2' />
-                            Loading statistics...
-                        </div>
-                    )}
-
-                    {/* Row 2 — Upscaler Bar */}
-                    {filteredStats &&
-                        filteredStats.upscalerStats.length > 0 && (
-                            <div className='rounded-xl border border-border bg-text/3 p-4'>
-                                <h3 className='text-sm font-medium text-text/80 mb-2'>
-                                    Upscaler Performance
-                                </h3>
-                                <UpscalerBarChart
-                                    data={filteredStats.upscalerStats}
-                                />
+                                    <StatCard
+                                        label='Best Device'
+                                        value={
+                                            filteredStats.summary.bestDevice ??
+                                            "—"
+                                        }
+                                        icon={Gamepad2Icon}
+                                    />
+                                    <StatCard
+                                        label='Total Entries'
+                                        value={String(
+                                            filteredStats.summary.totalEntries,
+                                        )}
+                                        icon={DatabaseIcon}
+                                    />
+                                    {filteredStats.summary.avgStability !==
+                                        null && (
+                                        <StatCard
+                                            label='Avg Stability'
+                                            value={`${Math.round(filteredStats.summary.avgStability * 100)}%`}
+                                            icon={GaugeIcon}
+                                        />
+                                    )}
+                                </div>
                             </div>
                         )}
 
-                    {/* Row 3 — 3-column grid */}
-                    {filteredStats && (
-                        <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                            {filteredStats.boxplot.length > 0 && (
+                        {/* Loading state */}
+                        {loading && (
+                            <div className='flex items-center justify-center py-12 text-sm text-text/40'>
+                                <ClockIcon className='h-4 w-4 animate-spin mr-2' />
+                                Loading statistics...
+                            </div>
+                        )}
+
+                        {/* Row 2 — Upscaler Bar */}
+                        {filteredStats &&
+                            filteredStats.upscalerStats.length > 0 && (
                                 <div className='rounded-xl border border-border bg-text/3 p-4'>
                                     <h3 className='text-sm font-medium text-text/80 mb-2'>
-                                        FPS Distribution
+                                        Upscaler Performance
                                     </h3>
-                                    <FpsBoxplot data={filteredStats.boxplot} />
-                                </div>
-                            )}
-                            {filteredStats.fpsRange.length > 0 && (
-                                <div className='rounded-xl border border-border bg-text/3 p-4'>
-                                    <h3 className='text-sm font-medium text-text/80 mb-2'>
-                                        FPS Range
-                                    </h3>
-                                    <FpsRangeChart
-                                        data={filteredStats.fpsRange}
+                                    <UpscalerBarChart
+                                        data={filteredStats.upscalerStats}
                                     />
                                 </div>
                             )}
-                            {filteredStats.deviceBreakdown.length > 0 && (
+
+                        {/* Row 3 — 3-column grid */}
+                        {filteredStats && (
+                            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                                {filteredStats.boxplot.length > 0 && (
+                                    <div className='rounded-xl border border-border bg-text/3 p-4'>
+                                        <h3 className='text-sm font-medium text-text/80 mb-2'>
+                                            FPS Distribution
+                                        </h3>
+                                        <FpsBoxplot
+                                            data={filteredStats.boxplot}
+                                        />
+                                    </div>
+                                )}
+                                {filteredStats.fpsRange.length > 0 && (
+                                    <div className='rounded-xl border border-border bg-text/3 p-4'>
+                                        <h3 className='text-sm font-medium text-text/80 mb-2'>
+                                            FPS Range
+                                        </h3>
+                                        <FpsRangeChart
+                                            data={filteredStats.fpsRange}
+                                        />
+                                    </div>
+                                )}
+                                {filteredStats.deviceBreakdown.length > 0 && (
+                                    <div className='rounded-xl border border-border bg-text/3 p-4'>
+                                        <h3 className='text-sm font-medium text-text/80 mb-2'>
+                                            Device Breakdown
+                                        </h3>
+                                        <DeviceDonut
+                                            data={filteredStats.deviceBreakdown}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Row 4 — Performance Tiers + Stability Scatter */}
+                        {filteredStats && (
+                            <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
+                                {filteredStats.performanceTiers.length > 0 && (
+                                    <div className='rounded-xl border border-border bg-text/3 p-4'>
+                                        <h3 className='text-sm font-medium text-text/80 mb-2'>
+                                            Performance Tiers
+                                        </h3>
+                                        <PerformanceTierChart
+                                            data={
+                                                filteredStats.performanceTiers
+                                            }
+                                        />
+                                    </div>
+                                )}
+                                {filteredStats.stabilityScatter.length > 0 && (
+                                    <div className='rounded-xl border border-border bg-text/3 p-4'>
+                                        <h3 className='text-sm font-medium text-text/80 mb-2'>
+                                            Avg FPS vs 1% Low (Stability)
+                                        </h3>
+                                        <StabilityScatterChart
+                                            data={
+                                                filteredStats.stabilityScatter
+                                            }
+                                            deviceNames={Object.fromEntries(
+                                                filteredStats.deviceBreakdown.map(
+                                                    (d) => [
+                                                        d.hardwareSlug,
+                                                        d.hardwareName,
+                                                    ],
+                                                ),
+                                            )}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Battery Life Estimates */}
+                        {filteredStats &&
+                            filteredStats.batteryLife &&
+                            filteredStats.batteryLife.length > 0 && (
                                 <div className='rounded-xl border border-border bg-text/3 p-4'>
                                     <h3 className='text-sm font-medium text-text/80 mb-2'>
-                                        Device Breakdown
+                                        Battery Life Estimates
                                     </h3>
-                                    <DeviceDonut
-                                        data={filteredStats.deviceBreakdown}
+                                    <BatteryLifeChart
+                                        data={filteredStats.batteryLife}
+                                        deviceNames={Object.fromEntries(
+                                            filteredStats.deviceBreakdown.map(
+                                                (d) => [
+                                                    d.hardwareSlug,
+                                                    d.hardwareName,
+                                                ],
+                                            ),
+                                        )}
                                     />
                                 </div>
                             )}
-                        </div>
-                    )}
-
-                    {/* Row 4 — Performance Tiers + Stability Scatter */}
-                    {filteredStats && (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                            {filteredStats.performanceTiers.length > 0 && (
-                                <div className="rounded-xl border border-border bg-text/3 p-4">
-                                    <h3 className="text-sm font-medium text-text/80 mb-2">
-                                        Performance Tiers
-                                    </h3>
-                                    <PerformanceTierChart data={filteredStats.performanceTiers} />
-                                </div>
-                            )}
-                            {filteredStats.stabilityScatter.length > 0 && (
-                                <div className="rounded-xl border border-border bg-text/3 p-4">
-                                    <h3 className="text-sm font-medium text-text/80 mb-2">
-                                        Avg FPS vs 1% Low (Stability)
-                                    </h3>
-                                    <StabilityScatterChart
-                                        data={filteredStats.stabilityScatter}
-                                        deviceNames={Object.fromEntries(filteredStats.deviceBreakdown.map((d) => [d.hardwareSlug, d.hardwareName]))}
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Battery Life Estimates */}
-                    {filteredStats && filteredStats.batteryLife && filteredStats.batteryLife.length > 0 && (
-                      <div className="rounded-xl border border-border bg-text/3 p-4">
-                        <h3 className="text-sm font-medium text-text/80 mb-2">
-                          Battery Life Estimates
-                        </h3>
-                        <BatteryLifeChart
-                          data={filteredStats.batteryLife}
-                          deviceNames={Object.fromEntries(filteredStats.deviceBreakdown.map((d) => [d.hardwareSlug, d.hardwareName]))}
-                        />
-                      </div>
-                    )}
-
-                </div>
-            </motion.div>
-
-            {/* Steam Reviews */}
-            {game.steamAppId && (
-                <section className="space-y-4 px-4 md:px-[10svw]">
-                    <div className="max-w-7xl mx-auto">
-                        <SteamReviews gameId={game.id} steamAppId={game.steamAppId} />
                     </div>
-                </section>
-            )}
+                </motion.div>
 
-            {/* Section 6: Comments */}
-            <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.3 }}
-                className='px-4 md:px-[10svw]'
-            >
-                <div className='max-w-7xl mx-auto' data-gamepad-focusable>
-                    <CommentSection gameId={gameId} initialCount={counts.comments} />
-                </div>
-            </motion.div>
+                {/* Steam Reviews */}
+                {game.steamAppId && (
+                    <section className='space-y-4 px-4 md:px-[10svw]'>
+                        <div className='max-w-7xl mx-auto'>
+                            <SteamReviews
+                                gameId={game.id}
+                                steamAppId={game.steamAppId}
+                            />
+                        </div>
+                    </section>
+                )}
 
-            {/* Mobile FAB for Add Benchmark */}
-            {session && (
-                <Link
-                    href={`/game/${game.id}/submit`}
-                    className='fixed right-4 bottom-4 z-50 inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-colors cursor-pointer sm:hidden'
-                    data-gamepad-focusable
+                {/* Section 6: Comments */}
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.3 }}
+                    className='px-4 md:px-[10svw]'
                 >
-                    <Plus className='h-6 w-6' />
-                </Link>
-            )}
-        </section>
-        <AnimatePresence>
-            {selectedPresetId && (() => {
-                const preset = filteredPresets.find((p) => p.id === selectedPresetId)
-                if (!preset) return null
-                return (
-                    <PresetDetailModal
-                        preset={preset}
-                        gameId={gameId}
-                        onClose={handlePresetClose}
-                        onDelete={handleDeletePreset}
-                        onReport={handleReportPreset}
-                        hasReported={reportedPresets.has(preset.id)}
-                    />
-                )
-            })()}
-        </AnimatePresence>
+                    <div
+                        className='max-w-7xl mx-auto'
+                        data-gamepad-focusable
+                    >
+                        <CommentSection
+                            gameId={gameId}
+                            initialCount={counts.comments}
+                        />
+                    </div>
+                </motion.div>
+
+                {/* Mobile FAB for Add Benchmark */}
+                {session && (
+                    <Link
+                        href={`/game/${game.id}/submit`}
+                        className='fixed right-4 bottom-4 z-50 inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-colors cursor-pointer sm:hidden'
+                        data-gamepad-focusable
+                    >
+                        <Plus className='h-6 w-6' />
+                    </Link>
+                )}
+            </section>
+            <AnimatePresence>
+                {selectedPresetId &&
+                    (() => {
+                        const preset = filteredPresets.find(
+                            (p) => p.id === selectedPresetId,
+                        )
+                        if (!preset) return null
+                        return (
+                            <PresetDetailModal
+                                preset={preset}
+                                gameId={gameId}
+                                onClose={handlePresetClose}
+                                onDelete={handleDeletePreset}
+                                onReport={handleReportPreset}
+                                hasReported={reportedPresets.has(preset.id)}
+                            />
+                        )
+                    })()}
+            </AnimatePresence>
         </>
     )
 }

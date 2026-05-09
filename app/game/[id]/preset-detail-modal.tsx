@@ -105,6 +105,7 @@ export function PresetDetailModal({
     const [userVote, setUserVote] = useState<"up" | "down" | null>(null)
     const [localUpvotes, setLocalUpvotes] = useState(preset.upvotes)
     const [localDownvotes, setLocalDownvotes] = useState(preset.downvotes)
+    const [mobileTab, setMobileTab] = useState<"details" | "settings">("settings")
 
     const isOwner = session?.user?.id === preset.userId
     const isAdmin = session?.user?.role === "admin"
@@ -203,7 +204,7 @@ export function PresetDetailModal({
                 >
                     {/* Modal card */}
                     <motion.div
-                        className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-xl border border-border bg-background flex flex-col"
+                        className="relative w-full max-w-4xl h-[90vh] md:max-h-[90vh] overflow-hidden rounded-xl border border-border bg-background flex flex-col"
                         initial={{ y: "100%", opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: "100%", opacity: 0 }}
@@ -230,10 +231,36 @@ export function PresetDetailModal({
                             </button>
                         </div>
 
+                        {/* Mobile tabs */}
+                        <div className="flex md:hidden shrink-0 border-b border-border">
+                            <button
+                                onClick={() => setMobileTab("details")}
+                                className={`flex-1 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
+                                    mobileTab === "details"
+                                        ? "text-primary border-b-2 border-primary"
+                                        : "text-text/50 hover:text-text/70"
+                                }`}
+                            >
+                                Details
+                            </button>
+                            <button
+                                onClick={() => setMobileTab("settings")}
+                                className={`flex-1 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
+                                    mobileTab === "settings"
+                                        ? "text-primary border-b-2 border-primary"
+                                        : "text-text/50 hover:text-text/70"
+                                }`}
+                            >
+                                Settings
+                            </button>
+                        </div>
+
                         {/* Two-column body */}
                         <div className="flex flex-col md:flex-row overflow-hidden flex-1">
                             {/* Left panel */}
-                            <div className="w-full md:w-1/3 md:min-w-[240px] flex flex-col gap-3 md:gap-4 p-4 md:p-5 border-b md:border-b-0 md:border-r border-border overflow-y-auto">
+                            <div className={`w-full md:w-1/3 md:min-w-60 flex-col gap-3 md:gap-4 p-4 md:p-5 border-b md:border-b-0 md:border-r border-border overflow-y-auto ${
+                                mobileTab === "details" ? "flex" : "hidden md:flex"
+                            }`}>
                                 {/* User info */}
                                 <div className="flex items-center gap-3">
                                     <div className="h-10 w-10 rounded-full bg-text/10 overflow-hidden flex items-center justify-center shrink-0">
@@ -271,137 +298,8 @@ export function PresetDetailModal({
 
                                 <div className="h-px bg-border" />
 
-                                {/* Vote buttons */}
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={handleUpvote}
-                                        disabled={!isAuthenticated || userVote === "up"}
-                                        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
-                                            userVote === "up"
-                                                ? "bg-green-500/10 border-green-500/30 text-green-400"
-                                                : "border-border text-text/70 hover:bg-text/5"
-                                        } ${!isAuthenticated ? "opacity-50 cursor-not-allowed" : ""}`}
-                                        title={!isAuthenticated ? "Sign in to vote" : undefined}
-                                    >
-                                        <ThumbsUpIcon className="h-4 w-4" />
-                                        {localUpvotes}
-                                    </button>
-                                    <button
-                                        onClick={handleDownvote}
-                                        disabled={!isAuthenticated || userVote === "down"}
-                                        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
-                                            userVote === "down"
-                                                ? "bg-red-500/10 border-red-500/30 text-red-400"
-                                                : "border-border text-text/70 hover:bg-text/5"
-                                        } ${!isAuthenticated ? "opacity-50 cursor-not-allowed" : ""}`}
-                                        title={!isAuthenticated ? "Sign in to vote" : undefined}
-                                    >
-                                        <ThumbsDownIcon className="h-4 w-4" />
-                                        {localDownvotes}
-                                    </button>
-                                </div>
-
-                                {/* FPS */}
-                                {preset.fpsAvg !== null && (
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-xs text-text/50 uppercase tracking-wider">
-                                            Avg FPS
-                                        </span>
-                                        <div className="text-sm text-text">
-                                            <span className="font-semibold tabular-nums">
-                                                {preset.fpsAvg}
-                                            </span>
-                                            {preset.fpsLow !== null && preset.fpsHigh !== null && (
-                                                <span className="text-text/50 ml-1">
-                                                    ({Math.round(preset.fpsLow)}–{Math.round(preset.fpsHigh)})
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                                {preset.fpsOnePercentLow !== null && (
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-[10px] text-text/50 uppercase tracking-wider">1% Low FPS</span>
-                                        <span className="text-sm font-semibold tabular-nums text-text">
-                                            {preset.fpsOnePercentLow} fps
-                                        </span>
-                                    </div>
-                                )}
-
-                                <div className="h-px bg-border" />
-
-                                {/* Metadata */}
-                                <div className="flex flex-col gap-3">
-                                    <MetaItem label="Proton" value={preset.protonVersion} />
-                                    <MetaItem label="OS" value={preset.osVersion} />
-                                    {preset.tdpWatts !== null && (
-                                        <MetaItem label="TDP" value={`${Math.round(preset.tdpWatts)}W`} />
-                                    )}
-                                    {preset.hardwareWattHours !== null && preset.hardwareDeviceType === "handheld" && (
-                                        <MetaItem label="Battery" value={`${Math.round(preset.hardwareWattHours)}Wh`} />
-                                    )}
-                                    {preset.tdpWatts !== null && preset.hardwareWattHours !== null && preset.hardwareDeviceType === "handheld" && (
-                                        <MetaItem label="Est. Battery" value={`~${(preset.hardwareWattHours / preset.tdpWatts).toFixed(1)}h`} />
-                                    )}
-                                    <MetaItem
-                                        label="Upscaler"
-                                        value={
-                                            preset.upscalerType && preset.upscalerType !== "none"
-                                                ? `${preset.upscalerType.toUpperCase()}${preset.upscalerVersion ? ` ${preset.upscalerVersion}` : ""}`
-                                                : null
-                                        }
-                                    />
-                                    <MetaItem
-                                        label="Frame Gen"
-                                        value={
-                                            preset.frameGenMethod && preset.frameGenMethod !== "none"
-                                                ? preset.frameGenMethod === "fsr_fg"
-                                                    ? "FSR FG"
-                                                    : preset.frameGenMethod === "dlss_fg"
-                                                      ? "DLSS FG"
-                                                      : preset.frameGenMethod
-                                                : null
-                                        }
-                                    />
-                                    <MetaItem label="Launch Options" value={preset.launchOptions} />
-                                    {preset.loadTimeSsd !== null && (
-                                        <MetaItem label="Load Time (SSD)" value={`${preset.loadTimeSsd}s`} />
-                                    )}
-                                    {preset.loadTimeSd !== null && (
-                                        <MetaItem label="Load Time (SD)" value={`${preset.loadTimeSd}s`} />
-                                    )}
-                                    {preset.estimatedBatteryMin !== null && (
-                                        <MetaItem label="Battery Life" value={`${preset.estimatedBatteryMin} min`} />
-                                    )}
-                                    {preset.customSystem && (
-                                        <MetaItem label="Custom System" value="Yes" />
-                                    )}
-                                </div>
-
-                                <div className="h-px bg-border" />
-
-                                {/* Screenshots */}
-                                <div className="h-px bg-border" />
-                                {preset.screenshots && preset.screenshots.length > 0 && (
-                                  <div className="flex flex-col gap-1">
-                                    <span className="text-[10px] text-text/50 uppercase tracking-wider">Screenshots</span>
-                                    <div className="flex gap-2">
-                                      {preset.screenshots.map((ss) => (
-                                        <a key={ss.id} href={ss.url} target="_blank" rel="noopener noreferrer" className="block">
-                                          <img
-                                            src={ss.url}
-                                            alt="Screenshot"
-                                            className="w-20 h-12 object-cover rounded border border-border hover:border-primary/50 transition-colors"
-                                            loading="lazy"
-                                          />
-                                        </a>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
                                 {/* Actions */}
-                                <div className="flex flex-wrap items-center gap-2 mt-auto">
+                                <div className="flex flex-wrap items-center gap-2">
                                     {isAdmin && (
                                         <button
                                             onClick={handleTogglePin}
@@ -535,10 +433,142 @@ export function PresetDetailModal({
                                         </span>
                                     )}
                                 </div>
+
+                                <div className="h-px bg-border" />
+
+                                {/* Vote buttons */}
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={handleUpvote}
+                                        disabled={!isAuthenticated || userVote === "up"}
+                                        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
+                                            userVote === "up"
+                                                ? "bg-green-500/10 border-green-500/30 text-green-400"
+                                                : "border-border text-text/70 hover:bg-text/5"
+                                        } ${!isAuthenticated ? "opacity-50 cursor-not-allowed" : ""}`}
+                                        title={!isAuthenticated ? "Sign in to vote" : undefined}
+                                    >
+                                        <ThumbsUpIcon className="h-4 w-4" />
+                                        {localUpvotes}
+                                    </button>
+                                    <button
+                                        onClick={handleDownvote}
+                                        disabled={!isAuthenticated || userVote === "down"}
+                                        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer ${
+                                            userVote === "down"
+                                                ? "bg-red-500/10 border-red-500/30 text-red-400"
+                                                : "border-border text-text/70 hover:bg-text/5"
+                                        } ${!isAuthenticated ? "opacity-50 cursor-not-allowed" : ""}`}
+                                        title={!isAuthenticated ? "Sign in to vote" : undefined}
+                                    >
+                                        <ThumbsDownIcon className="h-4 w-4" />
+                                        {localDownvotes}
+                                    </button>
+                                </div>
+
+                                {/* FPS */}
+                                {preset.fpsAvg !== null && (
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-xs text-text/50 uppercase tracking-wider">
+                                            Avg FPS
+                                        </span>
+                                        <div className="text-sm text-text">
+                                            <span className="font-semibold tabular-nums">
+                                                {preset.fpsAvg}
+                                            </span>
+                                            {preset.fpsLow !== null && preset.fpsHigh !== null && (
+                                                <span className="text-text/50 ml-1">
+                                                    ({Math.round(preset.fpsLow)}–{Math.round(preset.fpsHigh)})
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                                {preset.fpsOnePercentLow !== null && (
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[10px] text-text/50 uppercase tracking-wider">1% Low FPS</span>
+                                        <span className="text-sm font-semibold tabular-nums text-text">
+                                            {preset.fpsOnePercentLow} fps
+                                        </span>
+                                    </div>
+                                )}
+
+                                <div className="h-px bg-border" />
+
+                                {/* Metadata */}
+                                <div className="flex flex-col gap-3">
+                                    <MetaItem label="Proton" value={preset.protonVersion} />
+                                    <MetaItem label="OS" value={preset.osVersion} />
+                                    {preset.tdpWatts !== null && (
+                                        <MetaItem label="TDP" value={`${Math.round(preset.tdpWatts)}W`} />
+                                    )}
+                                    {preset.hardwareWattHours !== null && preset.hardwareDeviceType === "handheld" && (
+                                        <MetaItem label="Battery" value={`${Math.round(preset.hardwareWattHours)}Wh`} />
+                                    )}
+                                    {preset.tdpWatts !== null && preset.hardwareWattHours !== null && preset.hardwareDeviceType === "handheld" && (
+                                        <MetaItem label="Est. Battery" value={`~${(preset.hardwareWattHours / preset.tdpWatts).toFixed(1)}h`} />
+                                    )}
+                                    <MetaItem
+                                        label="Upscaler"
+                                        value={
+                                            preset.upscalerType && preset.upscalerType !== "none"
+                                                ? `${preset.upscalerType.toUpperCase()}${preset.upscalerVersion ? ` ${preset.upscalerVersion}` : ""}`
+                                                : null
+                                        }
+                                    />
+                                    <MetaItem
+                                        label="Frame Gen"
+                                        value={
+                                            preset.frameGenMethod && preset.frameGenMethod !== "none"
+                                                ? preset.frameGenMethod === "fsr_fg"
+                                                    ? "FSR FG"
+                                                    : preset.frameGenMethod === "dlss_fg"
+                                                      ? "DLSS FG"
+                                                      : preset.frameGenMethod
+                                                : null
+                                        }
+                                    />
+                                    <MetaItem label="Launch Options" value={preset.launchOptions} />
+                                    {preset.loadTimeSsd !== null && (
+                                        <MetaItem label="Load Time (SSD)" value={`${preset.loadTimeSsd}s`} />
+                                    )}
+                                    {preset.loadTimeSd !== null && (
+                                        <MetaItem label="Load Time (SD)" value={`${preset.loadTimeSd}s`} />
+                                    )}
+                                    {preset.estimatedBatteryMin !== null && (
+                                        <MetaItem label="Battery Life" value={`${preset.estimatedBatteryMin} min`} />
+                                    )}
+                                    {preset.customSystem && (
+                                        <MetaItem label="Custom System" value="Yes" />
+                                    )}
+                                </div>
+
+                                <div className="h-px bg-border" />
+
+                                {/* Screenshots */}
+                                {preset.screenshots && preset.screenshots.length > 0 && (
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-[10px] text-text/50 uppercase tracking-wider">Screenshots</span>
+                                    <div className="flex gap-2">
+                                      {preset.screenshots.map((ss) => (
+                                        <a key={ss.id} href={ss.url} target="_blank" rel="noopener noreferrer" className="block">
+                                          <img
+                                            src={ss.url}
+                                            alt="Screenshot"
+                                            className="w-20 h-12 object-cover rounded border border-border hover:border-primary/50 transition-colors"
+                                            loading="lazy"
+                                          />
+                                        </a>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                             </div>
 
                             {/* Right panel */}
-                            <div className="flex-1 overflow-y-auto p-5">
+                            <div className={`flex-1 overflow-y-auto p-5 ${
+                                mobileTab === "settings" ? "block" : "hidden md:block"
+                            }`}>
                                 {/* YouTube Video */}
                                 {preset.youtubeVideoId && (
                                   <div className="mb-4">
@@ -662,7 +692,7 @@ function MetaItem({
             <span className="text-[10px] text-text/50 uppercase tracking-wider">
                 {label}
             </span>
-            <span className="text-sm text-text/80 break-words">
+            <span className="text-sm text-text/80 wrap-break-words">
                 {value ?? "—"}
             </span>
         </div>

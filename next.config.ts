@@ -43,7 +43,7 @@ const nextConfig: NextConfig = {
       // Cloudflare R2
       {
         protocol: "https",
-        hostname: "**.r2.dev",
+        hostname: "cdn.deckyvault.xyz",
       }
     ],
   },

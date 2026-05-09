@@ -6,13 +6,14 @@ import {
   performanceEntries,
   hardware,
 } from "@/lib/db/schema"
-import { eq, and, sql } from "drizzle-orm"
+import { eq, and, inArray, sql } from "drizzle-orm"
 
 export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
   "/:gameId/stats",
   async ({ params, set }) => {
     const { gameId } = params
 
+    try {
     // Verify game exists
     const [game] = await db
       .select({ id: games.id, steamAppId: games.steamAppId })
@@ -163,7 +164,7 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
       Map<string, { sum: number; count: number }>
     >()
     for (const e of entries) {
-      const date = e.createdAt
+      const date = new Date(e.createdAt)
       const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
       if (!histMap.has(month)) histMap.set(month, new Map())
       const deviceMap = histMap.get(month)!
@@ -245,6 +246,22 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
     const bestOnePercentLow = entries.reduce((best, e) =>
       e.fpsOnePercentLow != null && e.fpsOnePercentLow > (best ?? 0) ? e.fpsOnePercentLow : best, null as number | null)
 
+    // Fetch hardware wattHours for the relevant devices (used by deviceBreakdown + batteryLife)
+    const deviceSlugs = [...new Set(entries.map((e) => e.hardwareSlug))]
+    const deviceData = await db
+      .select({
+        slug: hardware.slug,
+        wattHours: hardware.wattHours,
+        tdpMax: hardware.tdpMax,
+        deviceType: hardware.deviceType,
+      })
+      .from(hardware)
+      .where(inArray(hardware.slug, deviceSlugs))
+
+    const deviceWattHoursMap = new Map(
+      deviceData.map((d) => [d.slug, d]),
+    )
+
     // ── 8. Device breakdown ───────────────────────────────────────
     const deviceBreakdown = Array.from(boxplotMap.entries()).map(
       ([slug, { hardwareName, values }]) => {
@@ -288,22 +305,6 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
       }))
 
     // ── 12. Battery life estimates ─────────────────────────────
-    // Fetch hardware wattHours for the relevant devices
-    const deviceSlugs = [...new Set(entries.map((e) => e.hardwareSlug))]
-    const deviceData = await db
-      .select({
-        slug: hardware.slug,
-        wattHours: hardware.wattHours,
-        tdpMax: hardware.tdpMax,
-        deviceType: hardware.deviceType,
-      })
-      .from(hardware)
-      .where(sql`${hardware.slug} = ANY(${deviceSlugs})`)
-
-    const deviceWattHoursMap = new Map(
-      deviceData.map((d) => [d.slug, d]),
-    )
-
     const batteryLife = entries
       .filter((e) => e.tdpWatts != null && e.tdpWatts > 0)
       .map((e) => {
@@ -358,6 +359,11 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
       stabilityScatter,
       batteryLife,
       filterOptions: { protonVersions, osVersions },
+    }
+    } catch (err) {
+      console.error("Error computing game stats:", err)
+      set.status = 500
+      return { error: "Failed to compute game stats" }
     }
   },
   {
