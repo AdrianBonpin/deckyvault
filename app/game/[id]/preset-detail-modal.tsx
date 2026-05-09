@@ -43,6 +43,11 @@ interface Preset {
     loadTimeSsd: number | null
     loadTimeSd: number | null
     estimatedBatteryMin: number | null
+    tdpWatts: number | null
+    youtubeVideoId: string | null
+    screenshots: Array<{ id: string; url: string; width: number; height: number }> | null
+    hardwareWattHours: number | null
+    hardwareDeviceType: string | null
     customSystem: boolean
     userNotes: string | null
     userId: string
@@ -329,6 +334,15 @@ export function PresetDetailModal({
                                 <div className="flex flex-col gap-3">
                                     <MetaItem label="Proton" value={preset.protonVersion} />
                                     <MetaItem label="OS" value={preset.osVersion} />
+                                    {preset.tdpWatts !== null && (
+                                        <MetaItem label="TDP" value={`${Math.round(preset.tdpWatts)}W`} />
+                                    )}
+                                    {preset.hardwareWattHours !== null && preset.hardwareDeviceType === "handheld" && (
+                                        <MetaItem label="Battery" value={`${Math.round(preset.hardwareWattHours)}Wh`} />
+                                    )}
+                                    {preset.tdpWatts !== null && preset.hardwareWattHours !== null && preset.hardwareDeviceType === "handheld" && (
+                                        <MetaItem label="Est. Battery" value={`~${(preset.hardwareWattHours / preset.tdpWatts).toFixed(1)}h`} />
+                                    )}
                                     <MetaItem
                                         label="Upscaler"
                                         value={
@@ -365,6 +379,26 @@ export function PresetDetailModal({
                                 </div>
 
                                 <div className="h-px bg-border" />
+
+                                {/* Screenshots */}
+                                <div className="h-px bg-border" />
+                                {preset.screenshots && preset.screenshots.length > 0 && (
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-[10px] text-text/50 uppercase tracking-wider">Screenshots</span>
+                                    <div className="flex gap-2">
+                                      {preset.screenshots.map((ss) => (
+                                        <a key={ss.id} href={ss.url} target="_blank" rel="noopener noreferrer" className="block">
+                                          <img
+                                            src={ss.url}
+                                            alt="Screenshot"
+                                            className="w-20 h-12 object-cover rounded border border-border hover:border-primary/50 transition-colors"
+                                            loading="lazy"
+                                          />
+                                        </a>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
 
                                 {/* Actions */}
                                 <div className="flex flex-wrap items-center gap-2 mt-auto">
@@ -505,6 +539,23 @@ export function PresetDetailModal({
 
                             {/* Right panel */}
                             <div className="flex-1 overflow-y-auto p-5">
+                                {/* YouTube Video */}
+                                {preset.youtubeVideoId && (
+                                  <div className="mb-4">
+                                    <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                                      <iframe
+                                        src={`https://www.youtube-nocookie.com/embed/${preset.youtubeVideoId}`}
+                                        className="absolute inset-0 w-full h-full rounded-lg"
+                                        allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
+                                        sandbox="allow-scripts allow-same-origin allow-presentation"
+                                        allowFullScreen
+                                        loading="lazy"
+                                        title="Gameplay Video"
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+
                                 {hasCategories ? (
                                     <AnimatePresence mode="wait">
                                         <motion.div

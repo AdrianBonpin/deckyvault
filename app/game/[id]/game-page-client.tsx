@@ -43,6 +43,7 @@ import { FpsRangeChart } from "@/components/charts/FpsRangeChart"
 import { DeviceDonut } from "@/components/charts/DeviceDonut"
 import { PerformanceTierChart } from "@/components/charts/PerformanceTierChart"
 import { StabilityScatterChart } from "@/components/charts/StabilityScatterChart"
+import { BatteryLifeChart } from "@/components/charts/BatteryLifeChart"
 
 // Comments
 import { CommentSection } from "@/components/comments/comment-section"
@@ -122,6 +123,9 @@ interface Preset {
     loadTimeSsd: number | null
     loadTimeSd: number | null
     estimatedBatteryMin: number | null
+    tdpWatts: number | null
+    youtubeVideoId: string | null
+    screenshots: Array<{ id: string; url: string; width: number; height: number; orderIndex: number }> | null
     customSystem: boolean
     userNotes: string | null
     userId: string
@@ -131,6 +135,8 @@ interface Preset {
     isPinned: boolean
     pinnedAt: string | null
     createdAt: string
+    hardwareWattHours: number | null
+    hardwareDeviceType: string | null
 }
 
 interface StatsResponse {
@@ -184,6 +190,9 @@ interface StatsResponse {
         hardwareSlug: string
         hardwareName: string
         count: number
+        wattHours: number | null
+        tdpMax: number | null
+        deviceType: string | null
     }>
     performanceTiers: Array<{
         hardwareSlug: string
@@ -198,6 +207,16 @@ interface StatsResponse {
         fpsAvg: number
         fpsOnePercentLow: number
         stabilityRatio: number
+    }>
+    batteryLife: Array<{
+        id: string
+        hardwareSlug: string
+        tdpWatts: number
+        estimatedBatteryMin: number
+        estimatedBatteryHours: number
+        wattHours: number | null
+        tdpMax: number | null
+        estimatedAtMaxTdpMin: number | null
     }>
     filterOptions: {
         protonVersions: string[]
@@ -677,6 +696,7 @@ export function GamePageClient({
             deviceBreakdown: filterByDevice(stats.deviceBreakdown),
             performanceTiers: filterByDevice(stats.performanceTiers),
             stabilityScatter: filterByDevice(stats.stabilityScatter),
+            batteryLife: filterByDevice(stats.batteryLife),
         }
     }, [stats, selectedDevices, filters])
 
@@ -1089,6 +1109,11 @@ export function GamePageClient({
                                             </p>
                                         </div>
                                         <div className='flex items-center gap-2 text-xs text-text/60 shrink-0'>
+                                            {preset.youtubeVideoId && (
+                                              <svg className="h-3 w-3 text-red-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                              </svg>
+                                            )}
                                             <span className='flex items-center gap-0.5'>
                                                 <ThumbsUpIcon className='h-3 w-3' />
                                                 {preset.upvotes}
@@ -1131,6 +1156,27 @@ export function GamePageClient({
                                             )}
                                         </div>
                                     )}
+
+                                    {/* Power / Battery quick-look */}
+                                    {(() => {
+                                      const dev = stats?.deviceBreakdown.find((d) => d.hardwareSlug === preset.hardwareSlug)
+                                      const isHandheld = dev?.deviceType === "handheld"
+                                      const wh = dev?.wattHours ?? null
+                                      const tdp = preset.tdpWatts ?? null
+                                      const estHours = wh && tdp && tdp > 0 ? wh / tdp : null
+
+                                      if (!isHandheld || (!tdp && !wh)) return null
+
+                                      return (
+                                        <div className="text-[11px] text-text/50 flex items-center gap-1.5 flex-wrap">
+                                          {tdp && <span>⚡ {Math.round(tdp)}W</span>}
+                                          {wh && <span>🔋 {Math.round(wh)}Wh</span>}
+                                          {estHours !== null && (
+                                            <span>⏱ ~{estHours.toFixed(1)}h</span>
+                                          )}
+                                        </div>
+                                      )
+                                    })()}
 
                                     {/* Technology tags */}
                                     <div className='flex flex-wrap items-center gap-1.5'>
@@ -1254,6 +1300,11 @@ export function GamePageClient({
                                                         </p>
                                                     </div>
                                                     <div className='flex items-center gap-2 text-xs text-text/60 shrink-0'>
+                                                        {preset.youtubeVideoId && (
+                                                          <svg className="h-3 w-3 text-red-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                                                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                                                          </svg>
+                                                        )}
                                                         <span className='flex items-center gap-0.5'>
                                                             <ThumbsUpIcon className='h-3 w-3' />
                                                             {preset.upvotes}
@@ -1296,6 +1347,27 @@ export function GamePageClient({
                                                         )}
                                                     </div>
                                                 )}
+
+                                                {/* Power / Battery quick-look */}
+                                                {(() => {
+                                                  const dev = stats?.deviceBreakdown.find((d) => d.hardwareSlug === preset.hardwareSlug)
+                                                  const isHandheld = dev?.deviceType === "handheld"
+                                                  const wh = dev?.wattHours ?? null
+                                                  const tdp = preset.tdpWatts ?? null
+                                                  const estHours = wh && tdp && tdp > 0 ? wh / tdp : null
+
+                                                  if (!isHandheld || (!tdp && !wh)) return null
+
+                                                  return (
+                                                    <div className="text-[11px] text-text/50 flex items-center gap-1.5 flex-wrap">
+                                                      {tdp && <span>⚡ {Math.round(tdp)}W</span>}
+                                                      {wh && <span>🔋 {Math.round(wh)}Wh</span>}
+                                                      {estHours !== null && (
+                                                        <span>⏱ ~{estHours.toFixed(1)}h</span>
+                                                      )}
+                                                    </div>
+                                                  )
+                                                })()}
 
                                                 {/* Technology tags */}
                                                 <div className='flex flex-wrap items-center gap-1.5'>
@@ -1489,6 +1561,19 @@ export function GamePageClient({
                                 </div>
                             )}
                         </div>
+                    )}
+
+                    {/* Battery Life Estimates */}
+                    {filteredStats && filteredStats.batteryLife && filteredStats.batteryLife.length > 0 && (
+                      <div className="rounded-xl border border-border bg-text/3 p-4">
+                        <h3 className="text-sm font-medium text-text/80 mb-2">
+                          Battery Life Estimates
+                        </h3>
+                        <BatteryLifeChart
+                          data={filteredStats.batteryLife}
+                          deviceNames={Object.fromEntries(filteredStats.deviceBreakdown.map((d) => [d.hardwareSlug, d.hardwareName]))}
+                        />
+                      </div>
                     )}
 
                 </div>

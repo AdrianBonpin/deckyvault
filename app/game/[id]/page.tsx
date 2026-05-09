@@ -11,9 +11,11 @@ import {
     gamePlatformSupport,
     hardware,
     user,
+    entryScreenshots,
 } from "@/lib/db/schema"
 import { and, desc, eq, sql } from "drizzle-orm"
 import { isSyncStale, syncSteamGame, ensureSteamGame } from "@/lib/steam/sync"
+import { getR2PublicUrl } from "@/lib/storage"
 import { GamePageClient } from "./game-page-client"
 
 // This page needs live data — skip static generation at build time
@@ -177,6 +179,8 @@ export default async function GamePage({
                 loadTimeSsd: performanceEntries.loadTimeSsd,
                 loadTimeSd: performanceEntries.loadTimeSd,
                 estimatedBatteryMin: performanceEntries.estimatedBatteryMin,
+                tdpWatts: performanceEntries.tdpWatts,
+                youtubeVideoId: performanceEntries.youtubeVideoId,
                 customSystem: performanceEntries.customSystem,
                 userNotes: performanceEntries.userNotes,
                 verifiedAt: performanceEntries.verifiedAt,
@@ -278,6 +282,11 @@ export default async function GamePage({
         loadTimeSsd: p.loadTimeSsd ?? null,
         loadTimeSd: p.loadTimeSd ?? null,
         estimatedBatteryMin: p.estimatedBatteryMin ?? null,
+        tdpWatts: p.tdpWatts ?? null,
+        youtubeVideoId: p.youtubeVideoId ?? null,
+        screenshots: null,
+        hardwareWattHours: null,
+        hardwareDeviceType: null,
         customSystem: p.customSystem ?? false,
         userNotes: p.userNotes,
         userId: p.userId,
@@ -288,6 +297,42 @@ export default async function GamePage({
         isPinned: p.isPinned,
         pinnedAt: p.pinnedAt ? p.pinnedAt.toISOString() : null,
     }))
+
+    // Fetch screenshots and hardware details for each preset
+    const publicUrl = getR2PublicUrl()
+    for (const preset of serializedPresets) {
+        const screenshots = await db
+            .select({
+                id: entryScreenshots.id,
+                storageKey: entryScreenshots.storageKey,
+                orderIndex: entryScreenshots.orderIndex,
+                width: entryScreenshots.width,
+                height: entryScreenshots.height,
+            })
+            .from(entryScreenshots)
+            .where(eq(entryScreenshots.entryId, preset.id))
+            .orderBy(entryScreenshots.orderIndex)
+
+        preset.screenshots = screenshots.map((ss) => ({
+            id: ss.id,
+            url: `${publicUrl}/${ss.storageKey}`,
+            width: ss.width,
+            height: ss.height,
+            orderIndex: ss.orderIndex,
+        })) as any
+
+        const [hw] = await db
+            .select({
+                wattHours: hardware.wattHours,
+                deviceType: hardware.deviceType,
+            })
+            .from(hardware)
+            .where(eq(hardware.slug, preset.hardwareSlug))
+            .limit(1)
+
+        preset.hardwareWattHours = hw?.wattHours ? Number(hw.wattHours) : null as any
+        preset.hardwareDeviceType = (hw?.deviceType ?? null) as any
+    }
 
     return (
         <>
