@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { Gauge, Timer } from "lucide-react"
+import { Gauge, Timer, Zap } from "lucide-react"
 
 export interface PerformanceData {
   fpsAvg?: number
@@ -10,6 +10,7 @@ export interface PerformanceData {
   fpsHigh?: number
   loadTimeSsd?: number
   loadTimeSd?: number
+  tdpWatts?: number
 }
 
 interface PerformanceStepProps {
@@ -136,6 +137,34 @@ export function PerformanceStep({ value, onChange }: PerformanceStepProps) {
               value={value.loadTimeSd ?? ""}
               onChange={(e) => update("loadTimeSd", e.target.value)}
               placeholder="e.g. 35.0"
+              className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Power Section */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Zap className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-semibold text-text">Power</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-text/60">
+              TDP (Watts)
+              <span className="text-xs text-text/40 ml-1">Optional — thermal design power cap during benchmark</span>
+            </label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={value.tdpWatts ?? ""}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1")
+                const num = val === "" || val === "." ? undefined : Number(val)
+                onChange({ ...value, tdpWatts: num })
+              }}
+              placeholder="e.g. 10"
               className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
             />
           </div>

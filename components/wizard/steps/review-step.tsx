@@ -120,6 +120,7 @@ export function ReviewStep({
           <SummaryRow label="FPS High" value={formatNumber(performance.fpsHigh)} />
           <SummaryRow label="Load Time SSD" value={formatNumber(performance.loadTimeSsd)} />
           <SummaryRow label="Load Time SD" value={formatNumber(performance.loadTimeSd)} />
+          <SummaryRow label="TDP (Watts)" value={formatNumber(performance.tdpWatts)} />
         </div>
 
         {/* Environment */}
@@ -141,6 +142,7 @@ export function ReviewStep({
               }
             />
           )}
+          <SummaryRow label="YouTube Video" value={environment.youtubeVideoId || "Not set"} />
         </div>
 
         {/* Settings */}

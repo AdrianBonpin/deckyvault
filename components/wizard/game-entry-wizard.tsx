@@ -94,6 +94,7 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
           fpsHigh: editEntry.fpsHigh ?? undefined,
           loadTimeSsd: editEntry.loadTimeSsd ?? undefined,
           loadTimeSd: editEntry.loadTimeSd ?? undefined,
+          tdpWatts: editEntry.tdpWatts ?? undefined,
         }
       : {},
   )
@@ -115,6 +116,7 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
           launchOptions: editEntry.launchOptions ?? undefined,
           estimatedBatteryMin: editEntry.estimatedBatteryMin ?? undefined,
           customSystem: editEntry.customSystem ?? false,
+          youtubeVideoId: editEntry.youtubeVideoId ?? undefined,
         }
       : {
           upscalerType: "none",
@@ -259,6 +261,8 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
         fpsHigh: performance.fpsHigh !== undefined ? Number(performance.fpsHigh) : null,
         loadTimeSsd: performance.loadTimeSsd !== undefined ? Number(performance.loadTimeSsd) : null,
         loadTimeSd: performance.loadTimeSd !== undefined ? Number(performance.loadTimeSd) : null,
+        tdpWatts: performance.tdpWatts !== undefined ? Number(performance.tdpWatts) : null,
+        youtubeVideoId: environment.youtubeVideoId || null,
         protonVersion: environment.protonVersion || null,
         osVersion: environment.osVersion || null,
         upscalerType: environment.upscalerType ?? "none",

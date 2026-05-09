@@ -31,6 +31,7 @@ export interface EnvironmentData {
   launchOptions?: string
   estimatedBatteryMin?: number
   customSystem?: boolean
+  youtubeVideoId?: string  // NEW
 }
 
 interface EnvironmentStepProps {
@@ -306,6 +307,31 @@ export function EnvironmentStep({ value, onChange }: EnvironmentStepProps) {
             </span>
           </div>
         </div>
+      </div>
+
+      <div className="space-y-1.5 pt-2">
+        <label className="text-xs font-medium text-text/60">
+          YouTube Video
+          <span className="text-xs text-text/40 ml-1">Optional — link a gameplay video</span>
+        </label>
+        <input
+          type="text"
+          value={value.youtubeVideoId ?? ""}
+          onChange={(e) => {
+            const val = e.target.value
+            // Accept full URLs or just the 11-char ID
+            let videoId = val
+            const ytMatch = val.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/)
+            if (ytMatch) videoId = ytMatch[1]
+            onChange({ ...value, youtubeVideoId: videoId || undefined })
+          }}
+          placeholder="YouTube video ID or URL"
+          maxLength={200}
+          className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
+        />
+        {value.youtubeVideoId && !/^[a-zA-Z0-9_-]{11}$/.test(value.youtubeVideoId) && (
+          <p className="text-xs text-red-400 mt-1">Invalid YouTube video ID (must be 11 characters)</p>
+        )}
       </div>
     </div>
   )
