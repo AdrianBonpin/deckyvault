@@ -42,7 +42,6 @@ interface Preset {
     launchOptions: string | null
     loadTimeSsd: number | null
     loadTimeSd: number | null
-    estimatedBatteryMin: number | null
     tdpWatts: number | null
     youtubeVideoId: string | null
     screenshots: Array<{ id: string; url: string; width: number; height: number }> | null
@@ -535,9 +534,7 @@ export function PresetDetailModal({
                                     {preset.loadTimeSd !== null && (
                                         <MetaItem label="Load Time (SD)" value={`${preset.loadTimeSd}s`} />
                                     )}
-                                    {preset.estimatedBatteryMin !== null && (
-                                        <MetaItem label="Battery Life" value={`${preset.estimatedBatteryMin} min`} />
-                                    )}
+
                                     {preset.customSystem && (
                                         <MetaItem label="Custom System" value="Yes" />
                                     )}

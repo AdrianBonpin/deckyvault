@@ -117,7 +117,6 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
           upscalerVersion: editEntry.upscalerVersion ?? undefined,
           frameGenMethod: editEntry.frameGenMethod ?? "none",
           launchOptions: editEntry.launchOptions ?? undefined,
-          estimatedBatteryMin: editEntry.estimatedBatteryMin ?? undefined,
           customSystem: editEntry.customSystem ?? false,
           youtubeVideoId: editEntry.youtubeVideoId ?? undefined,
         }
@@ -272,7 +271,6 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
         upscalerVersion: environment.upscalerVersion || null,
         frameGenMethod: environment.frameGenMethod ?? "none",
         launchOptions: environment.launchOptions || null,
-        estimatedBatteryMin: environment.estimatedBatteryMin ?? null,
         customSystem: environment.customSystem ?? false,
         settingsJson: settingsJson.length > 0 ? settingsJson : null,
         userNotes: userNotes || null,

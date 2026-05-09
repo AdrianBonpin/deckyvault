@@ -33,7 +33,6 @@ interface PerformanceEntry {
   launchOptions: string | null
   settingsJson: string | null
   userNotes: string | null
-  estimatedBatteryMin: number | null
   customSystem: string | null
   isRemoved: boolean
   removedReason: string | null

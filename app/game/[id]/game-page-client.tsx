@@ -137,7 +137,6 @@ interface Preset {
     launchOptions: string | null
     loadTimeSsd: number | null
     loadTimeSd: number | null
-    estimatedBatteryMin: number | null
     tdpWatts: number | null
     youtubeVideoId: string | null
     screenshots: Array<{
@@ -233,7 +232,6 @@ interface StatsResponse {
         id: string
         hardwareSlug: string
         tdpWatts: number
-        estimatedBatteryMin: number
         estimatedBatteryHours: number
         wattHours: number | null
         tdpMax: number | null

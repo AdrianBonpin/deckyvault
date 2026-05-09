@@ -6,7 +6,6 @@ interface BatteryLifePoint {
   id: string
   hardwareSlug: string
   tdpWatts: number
-  estimatedBatteryMin: number
   estimatedBatteryHours: number
   wattHours: number | null
   tdpMax: number | null

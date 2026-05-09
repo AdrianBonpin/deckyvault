@@ -125,7 +125,6 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
           osVersion: body.osVersion ?? null,
           upscalerType: body.upscalerType ?? "none",
           upscalerVersion: body.upscalerVersion ?? null,
-          estimatedBatteryMin: body.estimatedBatteryMin ?? null,
           customSystem: body.customSystem ?? false,
           frameGenMethod: body.frameGenMethod ?? "none",
           loadTimeSsd: body.loadTimeSsd ?? null,
@@ -209,7 +208,6 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
           ]),
         ),
         upscalerVersion: t.Optional(t.Union([t.String(), t.Null()])),
-        estimatedBatteryMin: t.Optional(t.Union([t.Number(), t.Null()])),
         customSystem: t.Optional(t.Boolean()),
         frameGenMethod: t.Optional(
           t.Union([

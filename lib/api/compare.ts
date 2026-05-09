@@ -169,7 +169,6 @@ export const compareRoutes = new Elysia({ prefix: "/compare" })
           osVersion: performanceEntries.osVersion,
           loadTimeSsd: performanceEntries.loadTimeSsd,
           loadTimeSd: performanceEntries.loadTimeSd,
-          estimatedBatteryMin: performanceEntries.estimatedBatteryMin,
           settingsJson: performanceEntries.settingsJson,
           launchOptions: performanceEntries.launchOptions,
           hardwareSlug: performanceEntries.hardwareSlug,

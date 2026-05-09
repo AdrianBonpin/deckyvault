@@ -74,7 +74,6 @@ export const adminPerformanceRoutes = new Elysia({ prefix: "/admin" })
           launchOptions: performanceEntries.launchOptions,
           settingsJson: performanceEntries.settingsJson,
           userNotes: performanceEntries.userNotes,
-          estimatedBatteryMin: performanceEntries.estimatedBatteryMin,
           customSystem: performanceEntries.customSystem,
           isRemoved: performanceEntries.isRemoved,
           removedReason: performanceEntries.removedReason,

@@ -153,7 +153,6 @@ export function ReviewStep({
           <SummaryRow label="OS Version" value={environment.osVersion || "Not set"} />
           <SummaryRow label="Upscaler" value={upscalerLabel} />
           <SummaryRow label="Frame Gen" value={frameGenLabel} />
-          <SummaryRow label="Estimated Battery" value={environment.estimatedBatteryMin ? `${environment.estimatedBatteryMin} min` : "Not set"} />
           <SummaryRow label="Custom System" value={environment.customSystem ? "Yes" : "No"} />
           {environment.launchOptions && (
             <SummaryRow

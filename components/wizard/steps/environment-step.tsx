@@ -29,7 +29,6 @@ export interface EnvironmentData {
   upscalerVersion?: string
   frameGenMethod?: string
   launchOptions?: string
-  estimatedBatteryMin?: number
   customSystem?: boolean
   youtubeVideoId?: string  // NEW
 }
@@ -259,30 +258,6 @@ export function EnvironmentStep({ value, onChange }: EnvironmentStepProps) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-text/60">
-            Estimated Battery Life (minutes)
-          </label>
-          <input
-            type="number"
-            min={1}
-            step={1}
-            value={value.estimatedBatteryMin ?? ""}
-            onChange={(e) => {
-              const val = e.target.value
-              onChange({
-                ...value,
-                estimatedBatteryMin: val === "" ? undefined : Number(val),
-              })
-            }}
-            placeholder="e.g. 90"
-            className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
-          />
-          <p className="text-xs text-text/40">
-            Approximate battery life in minutes while playing this game.
-          </p>
-        </div>
-
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-text/60">
             Custom / Modified System
