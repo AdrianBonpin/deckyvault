@@ -14,9 +14,10 @@ interface SettingsProfileTabProps {
   createdAt: string
   image?: string | null
   userId: string
+  onImageChange?: (url: string | null) => void
 }
 
-export function SettingsProfileTab({ name, email, role, createdAt, image, userId }: SettingsProfileTabProps) {
+export function SettingsProfileTab({ name, email, role, createdAt, image, userId, onImageChange }: SettingsProfileTabProps) {
   const [displayName, setDisplayName] = useState(name)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -54,7 +55,15 @@ export function SettingsProfileTab({ name, email, role, createdAt, image, userId
       className="space-y-6"
     >
       {/* Profile Photo */}
-      <ProfilePhotoUpload currentImage={image ?? null} userName={name} userId={userId} />
+      <ProfilePhotoUpload
+        currentImage={image ?? null}
+        userName={name}
+        userId={userId}
+        onImageChange={async (url) => {
+          onImageChange?.(url)
+          await authClient.updateUser({ image: url ?? "" })
+        }}
+      />
 
       {/* Display Name */}
       <div className="rounded-xl border border-border bg-text/[0.03] p-5">

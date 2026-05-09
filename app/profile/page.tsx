@@ -82,6 +82,10 @@ export default function ProfilePage() {
         return null
     }
 
+    const handleImageChange = (url: string | null) => {
+        setProfile((prev) => (prev ? { ...prev, image: url } : null))
+    }
+
     const tabs: { id: Tab; label: string; icon: typeof Bookmark }[] = [
         { id: "overview", label: "Overview", icon: TrendingUp },
         { id: "saved", label: "Saved Games", icon: Bookmark },
@@ -178,6 +182,7 @@ export default function ProfilePage() {
                                 createdAt={profile.createdAt}
                                 image={profile.image}
                                 userId={profile.id}
+                                onImageChange={handleImageChange}
                             />
                         )}
                     </motion.div>

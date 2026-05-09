@@ -8,6 +8,7 @@ interface ProfilePhotoUploadProps {
   currentImage: string | null
   userName: string
   userId: string
+  onImageChange?: (url: string | null) => void
 }
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"]
@@ -22,7 +23,7 @@ function getInitials(name: string): string {
   return name.charAt(0).toUpperCase()
 }
 
-export function ProfilePhotoUpload({ currentImage, userName, userId }: ProfilePhotoUploadProps) {
+export function ProfilePhotoUpload({ currentImage, userName, userId, onImageChange }: ProfilePhotoUploadProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImage)
   const [uploadState, setUploadState] = useState<"idle" | "uploading" | "success" | "error">("idle")
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -89,6 +90,7 @@ export function ProfilePhotoUpload({ currentImage, userName, userId }: ProfilePh
       if (data.url) {
         setPreviewUrl(data.url)
         cleanupTempUrl()
+        onImageChange?.(data.url)
       }
       setUploadState("success")
     } catch (err) {
@@ -139,6 +141,7 @@ export function ProfilePhotoUpload({ currentImage, userName, userId }: ProfilePh
       setPreviewUrl(null)
       setUploadState("idle")
       setErrorMessage(null)
+      onImageChange?.(null)
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Delete failed")
       setUploadState("error")

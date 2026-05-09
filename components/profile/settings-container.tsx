@@ -28,6 +28,7 @@ interface SettingsContainerProps {
     createdAt: string
     image?: string | null
     userId: string
+    onImageChange?: (url: string | null) => void
 }
 
 export function SettingsContainer({
@@ -37,6 +38,7 @@ export function SettingsContainer({
     createdAt,
     image,
     userId,
+    onImageChange,
 }: SettingsContainerProps) {
     const [activeSubTab, setActiveSubTab] = useState<SettingsSubTab>("profile")
     const [authMethods, setAuthMethods] = useState<AuthMethods | null>(null)
@@ -126,6 +128,7 @@ export function SettingsContainer({
                         createdAt={createdAt}
                         image={image}
                         userId={userId}
+                        onImageChange={onImageChange}
                     />
                 )}
                 {activeSubTab === "security" && (
