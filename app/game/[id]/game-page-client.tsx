@@ -276,9 +276,6 @@ function HeroInfo({
     stats,
     session,
     counts,
-    coverImage,
-    imgError,
-    handleImgError,
     platformSupport,
     protonDbUrl,
     steamDbUrl,
@@ -290,9 +287,6 @@ function HeroInfo({
     stats: StatsResponse | null
     session: { user?: { id?: string } } | null
     counts: Counts
-    coverImage: string | null
-    imgError: boolean
-    handleImgError: () => void
     platformSupport: PlatformSupport[]
     protonDbUrl: string | null
     steamDbUrl: string | null
@@ -776,9 +770,6 @@ export function GamePageClient({
                             stats={stats}
                             session={session}
                             counts={counts}
-                            coverImage={coverImage}
-                            imgError={imgError}
-                            handleImgError={handleImgError}
                             platformSupport={platformSupport}
                             protonDbUrl={protonDbUrl}
                             steamDbUrl={steamDbUrl}
@@ -817,9 +808,6 @@ export function GamePageClient({
                             stats={stats}
                             session={session}
                             counts={counts}
-                            coverImage={coverImage}
-                            imgError={imgError}
-                            handleImgError={handleImgError}
                             platformSupport={platformSupport}
                             protonDbUrl={protonDbUrl}
                             steamDbUrl={steamDbUrl}

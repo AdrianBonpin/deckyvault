@@ -32,7 +32,7 @@ export function BatteryLifeChart({ data, deviceNames }: BatteryLifeChartProps) {
   }
 
   // Build trend lines: for each device, compute wattHours / tdp = hours for a range of TDPs
-  const series: any[] = []
+  const series: Array<Record<string, unknown>> = []
   let seriesIdx = 0
 
   for (const [slug, points] of deviceGroups.entries()) {
@@ -70,9 +70,10 @@ export function BatteryLifeChart({ data, deviceNames }: BatteryLifeChartProps) {
   const option = {
     tooltip: {
       trigger: "item" as const,
-      formatter: (params: any) => {
-        if (params.seriesName.includes("(est.)")) return ""
-        return `${params.seriesName}<br/>TDP: ${params.value[0]}W<br/>Battery: ~${params.value[1]}h`
+      formatter: (params: unknown) => {
+        const p = params as { seriesName?: string; value?: [number, number] }
+        if (!p.seriesName || p.seriesName.includes("(est.)")) return ""
+        return `${p.seriesName}<br/>TDP: ${p.value?.[0]}W<br/>Battery: ~${p.value?.[1]}h`
       },
     },
     legend: {

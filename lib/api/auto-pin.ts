@@ -1,6 +1,6 @@
 import { db } from "@/lib/db/index"
 import { performanceEntries } from "@/lib/db/schema"
-import { eq, and } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 
 /**
  * Auto-pin check: an entry is eligible for auto-pinning when:

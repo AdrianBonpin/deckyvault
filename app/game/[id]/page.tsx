@@ -284,9 +284,9 @@ export default async function GamePage({
         estimatedBatteryMin: p.estimatedBatteryMin ?? null,
         tdpWatts: p.tdpWatts ?? null,
         youtubeVideoId: p.youtubeVideoId ?? null,
-        screenshots: null,
-        hardwareWattHours: null,
-        hardwareDeviceType: null,
+        screenshots: null as Array<{ id: string; url: string; width: number; height: number; orderIndex: number }> | null,
+        hardwareWattHours: null as number | null,
+        hardwareDeviceType: null as string | null,
         customSystem: p.customSystem ?? false,
         userNotes: p.userNotes,
         userId: p.userId,
@@ -319,7 +319,7 @@ export default async function GamePage({
             width: ss.width,
             height: ss.height,
             orderIndex: ss.orderIndex,
-        })) as any
+        }))
 
         const [hw] = await db
             .select({
@@ -330,8 +330,8 @@ export default async function GamePage({
             .where(eq(hardware.slug, preset.hardwareSlug))
             .limit(1)
 
-        preset.hardwareWattHours = hw?.wattHours ? Number(hw.wattHours) : null as any
-        preset.hardwareDeviceType = (hw?.deviceType ?? null) as any
+        preset.hardwareWattHours = hw?.wattHours ? Number(hw.wattHours) : null
+        preset.hardwareDeviceType = hw?.deviceType ?? null
     }
 
     return (

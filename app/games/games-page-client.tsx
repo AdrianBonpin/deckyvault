@@ -269,9 +269,8 @@ export function GamesPageClient({
     )
   }
 
-  function FilterPanelContent() {
-    return (
-      <>
+  const filterPanelContent = (
+    <>
               {/* Device filter */}
               <div>
                 <span className="text-xs text-text/50 uppercase tracking-wider mb-1.5 block">
@@ -491,8 +490,7 @@ export function GamesPageClient({
               )}
 
       </>
-    )
-  }
+  )
 
   return (
     <section ref={pageRef} className={`w-full flex flex-col gap-8 py-8 ${isGamepadActive ? "gamepad-focus" : ""}`}>
@@ -608,7 +606,7 @@ export function GamesPageClient({
           {/* Mobile drawer */}
           <FilterDrawer isOpen={showFilters} onClose={() => setShowFilters(false)}>
             <div className="flex flex-col gap-3">
-              <FilterPanelContent />
+              {filterPanelContent}
             </div>
           </FilterDrawer>
 
@@ -620,7 +618,7 @@ export function GamesPageClient({
               exit={{ opacity: 0, height: 0 }}
               className="hidden lg:flex flex-col gap-3 pt-1"
             >
-              <FilterPanelContent />
+              {filterPanelContent}
             </motion.div>
           )}
         </div>

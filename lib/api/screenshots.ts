@@ -167,7 +167,7 @@ export const screenshotRoutes = new Elysia({ prefix: "/performance" })
   // ── List screenshots ────────────────────────────────────────────
   .get(
     "/:id/screenshots",
-    async ({ params, set }) => {
+    async ({ params }) => {
       const screenshots = await db
         .select({
           id: entryScreenshots.id,
