@@ -30,6 +30,13 @@ interface Suggestion {
 
 type ConfirmType = "approve" | "reject"
 
+interface SuggestionsApiResponse {
+  data: Suggestion[]
+  total: number
+  limit: number
+  offset: number
+}
+
 const LIMIT = 50
 
 function formatDate(value: string | Date | null | undefined) {
@@ -43,6 +50,7 @@ export function SuggestionsClient() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [offset, setOffset] = useState(0)
+  const [total, setTotal] = useState(0)
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({})
   const [confirmAction, setConfirmAction] = useState<{
     type: ConfirmType
@@ -60,10 +68,12 @@ export function SuggestionsClient() {
   const fetchSuggestions = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/community-suggestions/pending?limit=${LIMIT}`)
-      const json = await res.json()
-      const data = Array.isArray(json) ? json : (json.data ?? [])
-      setSuggestions(data)
+      const res = await fetch(`/api/community-suggestions/admin?limit=${LIMIT}`)
+      if (res.ok) {
+        const json = (await res.json()) as SuggestionsApiResponse
+        setSuggestions(json.data)
+        setTotal(json.total)
+      }
       setOffset(0)
     } finally {
       setLoading(false)
@@ -94,7 +104,6 @@ export function SuggestionsClient() {
   }, [suggestions, search, activeTab])
 
   const paginated = filtered.slice(offset, offset + LIMIT)
-  const total = filtered.length
   const hasMore = offset + LIMIT < total
 
   const handlePrev = () => setOffset((prev) => Math.max(0, prev - LIMIT))
