@@ -224,6 +224,12 @@ export function HardwareClient() {
                 <div className="text-xs text-text/60">
                   {device.totalBenchmarks ?? 0} benchmarks
                 </div>
+                {(device.wattHours != null || device.tdpMax != null) && (
+                  <div className="text-xs text-text/60 flex gap-2">
+                    {device.wattHours != null && <span>{device.wattHours} Wh</span>}
+                    {device.tdpMax != null && <span>{device.tdpMax}W TDP</span>}
+                  </div>
+                )}
                 <div className="flex items-center gap-2 mt-auto">
                   <button
                     onClick={() => openEdit(device)}
