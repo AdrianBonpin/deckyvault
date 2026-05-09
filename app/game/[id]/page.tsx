@@ -182,6 +182,10 @@ export default async function GamePage({
                 youtubeVideoId: performanceEntries.youtubeVideoId,
                 customSystem: performanceEntries.customSystem,
                 userNotes: performanceEntries.userNotes,
+                versionString: gameVersions.versionString,
+                buildId: gameVersions.buildId,
+                gameAntiCheatName: gamePlatformSupport.antiCheatName,
+                gameAntiCheatStatus: gamePlatformSupport.antiCheatStatus,
                 verifiedAt: performanceEntries.verifiedAt,
                 isPinned: performanceEntries.isPinned,
                 pinnedAt: performanceEntries.pinnedAt,
@@ -190,6 +194,13 @@ export default async function GamePage({
             .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
             .innerJoin(hardware, eq(performanceEntries.hardwareSlug, hardware.slug))
             .innerJoin(user, eq(performanceEntries.userId, user.id))
+            .innerJoin(
+                gamePlatformSupport,
+                and(
+                    eq(gamePlatformSupport.gameId, gameVersions.gameId),
+                    eq(gamePlatformSupport.hardwareSlug, performanceEntries.hardwareSlug),
+                ),
+            )
             .where(
                 and(
                     eq(gameVersions.gameId, game.id),
@@ -287,6 +298,10 @@ export default async function GamePage({
         hardwareDeviceType: null as string | null,
         customSystem: p.customSystem ?? false,
         userNotes: p.userNotes,
+        versionString: p.versionString ?? null,
+        buildId: p.buildId ?? null,
+        gameAntiCheatName: p.gameAntiCheatName ?? null,
+        gameAntiCheatStatus: p.gameAntiCheatStatus ?? null,
         userId: p.userId,
         userName: p.userName,
         userImage: p.userImage,

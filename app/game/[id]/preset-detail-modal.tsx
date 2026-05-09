@@ -56,6 +56,10 @@ interface Preset {
     isPinned: boolean
     pinnedAt: string | null
     createdAt: string
+    versionString: string | null
+    buildId: string | null
+    gameAntiCheatName: string | null
+    gameAntiCheatStatus: "none" | "supported" | "unsupported" | "unknown" | null
 }
 
 interface PresetDetailModalProps {
@@ -281,11 +285,11 @@ export function PresetDetailModal({
                                                 {preset.userName || "Anonymous"}
                                             </span>
                                             {preset.verifiedAt && (
-                                                <span
-                                                    className="inline-flex items-center gap-0.5 text-green-400"
-                                                    title="Verified"
-                                                >
+                                                <span className="inline-flex items-center gap-1 text-green-400">
                                                     <ShieldCheckIcon className="h-3.5 w-3.5" />
+                                                    <span className="text-[10px]">
+                                                        Verified on {new Date(preset.verifiedAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+                                                    </span>
                                                 </span>
                                             )}
                                         </div>
@@ -496,6 +500,18 @@ export function PresetDetailModal({
 
                                 {/* Metadata */}
                                 <div className="flex flex-col gap-3">
+                                    {preset.versionString && (
+                                        <MetaItem label="Version" value={`v${preset.versionString}`} />
+                                    )}
+                                    {preset.buildId && (
+                                        <MetaItem label="Build" value={String(preset.buildId)} />
+                                    )}
+                                    {preset.gameAntiCheatName && (
+                                        <MetaItem
+                                            label="Anti-Cheat"
+                                            value={`${preset.gameAntiCheatName} (${preset.gameAntiCheatStatus ?? "unknown"})`}
+                                        />
+                                    )}
                                     <MetaItem label="Proton" value={preset.protonVersion} />
                                     <MetaItem label="OS" value={preset.osVersion} />
                                     {preset.tdpWatts !== null && (

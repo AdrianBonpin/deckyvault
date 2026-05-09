@@ -157,6 +157,10 @@ interface Preset {
     createdAt: string
     hardwareWattHours: number | null
     hardwareDeviceType: string | null
+    versionString: string | null
+    buildId: string | null
+    gameAntiCheatName: string | null
+    gameAntiCheatStatus: "none" | "supported" | "unsupported" | "unknown" | null
 }
 
 interface StatsResponse {
