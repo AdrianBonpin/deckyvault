@@ -119,6 +119,8 @@ export function HardwareClient() {
             deviceType: form.deviceType,
             image: form.image || null,
             sortOrder: form.sortOrder,
+            wattHours: form.wattHours ? parseFloat(form.wattHours) : null,
+            tdpMax: form.tdpMax ? parseFloat(form.tdpMax) : null,
           }
         : {
             slug: form.slug,
@@ -126,6 +128,8 @@ export function HardwareClient() {
             deviceType: form.deviceType,
             image: form.image || null,
             sortOrder: form.sortOrder,
+            wattHours: form.wattHours ? parseFloat(form.wattHours) : null,
+            tdpMax: form.tdpMax ? parseFloat(form.tdpMax) : null,
           }
 
       const url = editingDevice
