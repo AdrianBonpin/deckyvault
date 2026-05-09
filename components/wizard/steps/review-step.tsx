@@ -30,10 +30,10 @@ interface ReviewStepProps {
   onSubmit: () => void
   isSubmitting: boolean
   error: string | null
-  screenshotFiles?: File[]
-  onScreenshotFilesChange?: (files: File[]) => void
-  screenshotUploading?: boolean
-  screenshotError?: string | null
+  screenshotFiles: File[]
+  onScreenshotFilesChange: (files: File[]) => void
+  screenshotUploading: boolean
+  screenshotError: string | null
 }
 
 function SectionHeader({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
