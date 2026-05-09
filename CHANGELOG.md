@@ -2,6 +2,36 @@
 
 All notable changes to DeckyVault will be documented in this file.
 
+## [2026.0.99] - 2026-05-09
+
+### Added
+- Screenshot uploads (1–2 per benchmark entry) with server-side compression and EXIF stripping
+- YouTube video linking on performance entries (privacy-enhanced embed)
+- Auto-pinning: entries with ≥10 votes and ≥80% approval auto-pin
+- Hardware watt-hours (battery capacity) and max TDP fields for battery life estimation
+- TDP tracking per performance entry (user-set TDP cap)
+- Auto-computed battery life estimates on performance cards and detail view
+- Battery Life vs TDP chart on game statistics dashboard
+- Mobile filter drawer: slide-out overlay on games list for narrow viewports
+- Mobile game cover hero: full-bleed background image with gradient overlay
+
+### Changed
+- Performance cards now show TDP/Wh/battery quick-look bar on handheld devices
+- Game details hero renders as full-bleed background on mobile (<md) viewports
+- Games list filter panel now uses a slide-out drawer on screens below `lg`
+- `estimatedBatteryMin` field deprecated in favor of auto-computed values from TDP + device watt-hours
+
+### Fixed
+- Games list filter panel no longer overflows the page on mobile
+
+### Technical
+- Added `entry_screenshots` database table
+- Added `tdpWatts` and `youtubeVideoId` columns to `performance_entries`
+- Added `wattHours` and `tdpMax` columns to `hardware`
+- Added `sharp` image processing dependency for screenshot compression
+- Added on-vote auto-pin trigger in performance vote handlers
+- Added `BatteryLifeChart` ECharts component
+
 ## [2026.0.98] - 2026-05-09
 
 ### Added
