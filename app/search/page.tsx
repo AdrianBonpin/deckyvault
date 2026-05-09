@@ -11,6 +11,8 @@ import {
   TrendingUpIcon,
   DatabaseIcon,
   SparklesIcon,
+  SlidersHorizontalIcon,
+  XIcon,
 } from "lucide-react"
 import { FaSteam } from "react-icons/fa"
 import Image from "next/image"
@@ -19,6 +21,7 @@ import { useSession } from "@/lib/auth-client"
 import { WindowsIcon, MacIcon, LinuxIcon } from "@/app/components/PlatformIcons"
 import { AntiCheatBadge } from "@/components/anti-cheat-badge"
 import { PlayabilityBadge } from "@/components/playability-badge"
+import { SavedFilters } from "@/components/saved-filters"
 
 interface UnifiedResult {
   kind: "local" | "steam"
@@ -57,6 +60,12 @@ interface UnifiedResult {
   antiCheatName?: string | null
 }
 
+const DEVICE_OPTIONS = [
+  { slug: "steam-deck-oled", name: "Steam Deck OLED" },
+  { slug: "steam-deck-lcd", name: 'Steam Deck LCD' },
+  { slug: "rog-ally", name: "ROG Ally" },
+]
+
 function SearchContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -67,6 +76,43 @@ function SearchContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const isValidQuery = query && query.length >= 2
+
+  // Filter state
+  const [showFilters, setShowFilters] = useState(false)
+  const [selectedDevice, setSelectedDevice] = useState("")
+  const [minFps, setMinFps] = useState("")
+  const [maxFps, setMaxFps] = useState("")
+  const [fsrSupport, setFsrSupport] = useState(false)
+  const [protonNative, setProtonNative] = useState("any")
+  const [antiCheatStatus, setAntiCheatStatus] = useState("any")
+  const [playabilityStatus, setPlayabilityStatus] = useState("")
+  const [steamReviewMin, setSteamReviewMin] = useState("")
+  const [isFree, setIsFree] = useState(false)
+  const [hasMultiplayer, setHasMultiplayer] = useState(false)
+
+  const hasActiveFilters =
+    selectedDevice ||
+    minFps ||
+    maxFps ||
+    fsrSupport ||
+    protonNative !== "any" ||
+    antiCheatStatus !== "any" ||
+    playabilityStatus ||
+    steamReviewMin ||
+    isFree ||
+    hasMultiplayer
+
+  const activeFilterCount =
+    (selectedDevice ? 1 : 0) +
+    (minFps ? 1 : 0) +
+    (maxFps ? 1 : 0) +
+    (fsrSupport ? 1 : 0) +
+    (protonNative !== "any" ? 1 : 0) +
+    (antiCheatStatus !== "any" ? 1 : 0) +
+    (playabilityStatus ? 1 : 0) +
+    (steamReviewMin ? 1 : 0) +
+    (isFree ? 1 : 0) +
+    (hasMultiplayer ? 1 : 0)
 
   // Handle direct navigation / browser back-forward
   useEffect(() => {
@@ -79,9 +125,20 @@ function SearchContent() {
       setError(null)
 
       try {
-        const res = await fetch(
-          `/api/search/unified?q=${encodeURIComponent(query)}`,
-        )
+        const params = new URLSearchParams()
+        params.set("q", query)
+        if (selectedDevice) params.set("device", selectedDevice)
+        if (minFps) params.set("minFps", minFps)
+        if (maxFps) params.set("maxFps", maxFps)
+        if (fsrSupport) params.set("fsrSupport", "true")
+        if (protonNative !== "any") params.set("protonNative", protonNative)
+        if (antiCheatStatus !== "any") params.set("antiCheatStatus", antiCheatStatus)
+        if (playabilityStatus) params.set("playabilityStatus", playabilityStatus)
+        if (steamReviewMin) params.set("steamReviewScore", steamReviewMin)
+        if (isFree) params.set("isFree", "true")
+        if (hasMultiplayer) params.set("hasMultiplayer", "true")
+
+        const res = await fetch(`/api/search/unified?${params.toString()}`)
         if (!res.ok) throw new Error(await res.text())
         const data = await res.json()
         if (!cancelled) setResults(data.results || [])
@@ -99,13 +156,26 @@ function SearchContent() {
     return () => {
       cancelled = true
     }
-  }, [isValidQuery, query])
+  }, [isValidQuery, query, selectedDevice, minFps, maxFps, fsrSupport, protonNative, antiCheatStatus, playabilityStatus, steamReviewMin, isFree, hasMultiplayer])
 
   function handleClick(result: UnifiedResult) {
     const path = result.appId
       ? `/game/${result.appId}?sync=1`
       : `/game/${result.id}?sync=1`
     router.push(path)
+  }
+
+  function clearAllFilters() {
+    setSelectedDevice("")
+    setMinFps("")
+    setMaxFps("")
+    setFsrSupport(false)
+    setProtonNative("any")
+    setAntiCheatStatus("any")
+    setPlayabilityStatus("")
+    setSteamReviewMin("")
+    setIsFree(false)
+    setHasMultiplayer(false)
   }
 
   return (
@@ -121,12 +191,213 @@ function SearchContent() {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1, transition: { delay: 0.1 } }}
-          className="text-text/60 text-sm mb-8"
+          className="text-text/60 text-sm mb-4"
         >
           {query
             ? `${results.length} result${results.length !== 1 ? "s" : ""} found`
             : "Enter a game name or AppID to find benchmarks, settings, and reviews."}
         </motion.p>
+
+        {/* Filter toggle button */}
+        <div className="flex items-center gap-3 mb-4">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm transition-colors cursor-pointer border min-h-[44px] ${
+              showFilters || hasActiveFilters
+                ? "bg-primary/10 text-primary border-primary/30"
+                : "bg-text/5 text-text/60 hover:text-text/80 border-border hover:border-border-active"
+            }`}
+          >
+            <SlidersHorizontalIcon className="h-4 w-4" />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="ml-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-background text-[10px] font-bold">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+          {hasActiveFilters && (
+            <button
+              onClick={clearAllFilters}
+              className="text-xs text-text/50 hover:text-primary transition-colors cursor-pointer min-h-[44px] flex items-center gap-1"
+            >
+              <XIcon className="h-3 w-3" />
+              Clear all filters
+            </button>
+          )}
+        </div>
+
+        {/* Filter panel */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden mb-4"
+            >
+              <div className="flex flex-col gap-4 p-4 rounded-xl border border-border bg-text/[0.03]">
+                {/* Device filter */}
+                <div>
+                  <span className="text-xs text-text/50 uppercase tracking-wider mb-1.5 block">
+                    Device
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => setSelectedDevice("")}
+                      className={`px-3 py-2.5 rounded-full text-xs font-medium transition-colors cursor-pointer min-h-[44px] ${
+                        selectedDevice === ""
+                          ? "bg-primary/10 text-primary border border-primary/30"
+                          : "text-text/50 hover:text-text/70 hover:bg-text/5 border border-transparent"
+                      }`}
+                    >
+                      All Devices
+                    </button>
+                    {DEVICE_OPTIONS.map((device) => (
+                      <button
+                        key={device.slug}
+                        onClick={() =>
+                          setSelectedDevice(selectedDevice === device.slug ? "" : device.slug)
+                        }
+                        className={`px-3 py-2.5 rounded-full text-xs font-medium transition-colors cursor-pointer min-h-[44px] ${
+                          selectedDevice === device.slug
+                            ? "bg-primary/10 text-primary border border-primary/30"
+                            : "text-text/50 hover:text-text/70 hover:bg-text/5 border border-transparent"
+                        }`}
+                      >
+                        {device.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Performance Filters */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-zinc-300">Performance</h4>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      placeholder="Min FPS"
+                      value={minFps}
+                      onChange={(e) => setMinFps(e.target.value)}
+                      className="w-24 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-2.5 text-sm min-h-[44px]"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Max FPS"
+                      value={maxFps}
+                      onChange={(e) => setMaxFps(e.target.value)}
+                      className="w-24 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-2.5 text-sm min-h-[44px]"
+                    />
+                  </div>
+                  <select
+                    value={playabilityStatus}
+                    onChange={(e) => setPlayabilityStatus(e.target.value)}
+                    className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-2.5 text-sm min-h-[44px]"
+                  >
+                    <option value="">Any Playability</option>
+                    <option value="great">Plays Great</option>
+                    <option value="playable">Playable</option>
+                    <option value="needs_tweaks">Needs Tweaks</option>
+                    <option value="unplayable">Unplayable</option>
+                  </select>
+                </div>
+
+                {/* Compatibility Filters */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-zinc-300">Compatibility</h4>
+                  <select
+                    value={protonNative}
+                    onChange={(e) => setProtonNative(e.target.value)}
+                    className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-2.5 text-sm min-h-[44px]"
+                  >
+                    <option value="any">Any Runtime</option>
+                    <option value="native">Native</option>
+                    <option value="proton">Proton</option>
+                  </select>
+                  <select
+                    value={antiCheatStatus}
+                    onChange={(e) => setAntiCheatStatus(e.target.value)}
+                    className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-2.5 text-sm min-h-[44px]"
+                  >
+                    <option value="any">Any Anti-Cheat</option>
+                    <option value="supported">AC Supported</option>
+                    <option value="unsupported">AC Unsupported</option>
+                    <option value="unknown">AC Unknown</option>
+                  </select>
+                  <label className="flex items-center gap-2 text-sm py-2 min-h-[44px]">
+                    <input
+                      type="checkbox"
+                      checked={fsrSupport}
+                      onChange={(e) => setFsrSupport(e.target.checked)}
+                      className="rounded border-zinc-600"
+                    />
+                    FSR Support
+                  </label>
+                </div>
+
+                {/* Other Filters */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-zinc-300">Other</h4>
+                  <label className="flex items-center gap-2 text-sm py-2 min-h-[44px]">
+                    <input
+                      type="checkbox"
+                      checked={isFree}
+                      onChange={(e) => setIsFree(e.target.checked)}
+                      className="rounded border-zinc-600"
+                    />
+                    Free to Play
+                  </label>
+                  <label className="flex items-center gap-2 text-sm py-2 min-h-[44px]">
+                    <input
+                      type="checkbox"
+                      checked={hasMultiplayer}
+                      onChange={(e) => setHasMultiplayer(e.target.checked)}
+                      className="rounded border-zinc-600"
+                    />
+                    Has Multiplayer
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Min Steam Review %"
+                    value={steamReviewMin}
+                    onChange={(e) => setSteamReviewMin(e.target.value)}
+                    className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-sm"
+                  />
+                </div>
+
+                {/* Saved Filters */}
+                <SavedFilters
+                  currentFilters={{
+                    minFps,
+                    maxFps,
+                    fsrSupport,
+                    protonNative,
+                    antiCheatStatus,
+                    playabilityStatus,
+                    steamReviewMin,
+                    isFree,
+                    hasMultiplayer,
+                    device: selectedDevice,
+                  }}
+                  onLoad={(filters) => {
+                    setMinFps((filters.minFps as string) || "")
+                    setMaxFps((filters.maxFps as string) || "")
+                    setFsrSupport((filters.fsrSupport as boolean) || false)
+                    setProtonNative((filters.protonNative as string) || "any")
+                    setAntiCheatStatus((filters.antiCheatStatus as string) || "any")
+                    setPlayabilityStatus((filters.playabilityStatus as string) || "")
+                    setSteamReviewMin((filters.steamReviewMin as string) || "")
+                    setIsFree((filters.isFree as boolean) || false)
+                    setHasMultiplayer((filters.hasMultiplayer as boolean) || false)
+                    if (filters.device) setSelectedDevice(filters.device as string)
+                    else setSelectedDevice("")
+                  }}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {!isValidQuery && (
           <motion.div

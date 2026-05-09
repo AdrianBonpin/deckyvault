@@ -6,7 +6,7 @@ import {
   performanceEntries,
   gameComments,
 } from "@/lib/db/schema"
-import { ilike, or, sql, eq, inArray, and } from "drizzle-orm"
+import { ilike, or, sql, eq, inArray, and, gte } from "drizzle-orm"
 import { fuzzySearchTerm } from "@/lib/db/search"
 
 interface SteamSearchItem {
@@ -35,22 +35,108 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
     const titleTerm = fuzzySearchTerm(query.q)
     const term = `%${query.q}%`
 
+    // ── Build filter conditions for columns on the games table ────
+    const baseFilterConditions = [
+      or(
+        ilike(games.title, titleTerm),
+        ilike(games.developer, term),
+        ilike(games.publisher, term),
+      ),
+    ]
+
+    if (query.playabilityStatus) {
+      baseFilterConditions.push(sql`${games.playabilityStatus} = ${query.playabilityStatus}`)
+    }
+    if (query.steamReviewScore) {
+      const minScore = parseInt(query.steamReviewScore, 10)
+      if (!isNaN(minScore)) {
+        baseFilterConditions.push(gte(games.steamReviewScore, minScore))
+      }
+    }
+    if (query.isFree === "true") {
+      baseFilterConditions.push(eq(games.isFree, true))
+    }
+    if (query.hasMultiplayer === "true") {
+      baseFilterConditions.push(sql`${games.onlineMultiplayerStatus} = 'supported'`)
+    }
+
     // ── 1. Search local database ────────────────────────────────────
     const localGames = await db
       .select()
       .from(games)
-      .where(
-        or(
-          ilike(games.title, titleTerm),
-          ilike(games.developer, term),
-          ilike(games.publisher, term),
-        ),
-      )
-      .limit(20)
+      .where(and(...baseFilterConditions))
+      .limit(40)
 
-    const localGameIds = localGames.map((g) => g.id)
+    // ── 1b. Post-process filters requiring joins ───────────────────
+    let filteredGameIds = new Set(localGames.map((g) => g.id))
+
+    // Device filter: keep only games that have at least one benchmark for the device
+    if (query.device && filteredGameIds.size > 0) {
+      const matchingGameIds = await db
+        .select({ gameId: gameVersions.gameId })
+        .from(performanceEntries)
+        .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+        .where(
+          and(
+            inArray(gameVersions.gameId, [...filteredGameIds]),
+            eq(performanceEntries.hardwareSlug, query.device),
+            eq(performanceEntries.isRemoved, false),
+          ),
+        )
+        .groupBy(gameVersions.gameId)
+      filteredGameIds = new Set(matchingGameIds.map((r) => r.gameId))
+    }
+
+    // FSR support filter: keep games with at least one benchmark using upscaler !== 'none'
+    if (query.fsrSupport === "true" && filteredGameIds.size > 0) {
+      const matchingGameIds = await db
+        .select({ gameId: gameVersions.gameId })
+        .from(performanceEntries)
+        .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+        .where(
+          and(
+            inArray(gameVersions.gameId, [...filteredGameIds]),
+            sql`${performanceEntries.upscalerType} != 'none'`,
+            eq(performanceEntries.isRemoved, false),
+          ),
+        )
+        .groupBy(gameVersions.gameId)
+      filteredGameIds = new Set(matchingGameIds.map((r) => r.gameId))
+    }
+
+    // FPS range filter: keep games whose bestFps falls within [minFps, maxFps]
+    const minFps = query.minFps ? parseInt(query.minFps, 10) : undefined
+    const maxFps = query.maxFps ? parseInt(query.maxFps, 10) : undefined
+    if ((minFps !== undefined || maxFps !== undefined) && filteredGameIds.size > 0) {
+      const fpsStats = await db
+        .select({
+          gameId: gameVersions.gameId,
+          bestFps: sql<number>`MAX(${performanceEntries.fpsAvg})::real`,
+        })
+        .from(performanceEntries)
+        .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+        .where(
+          and(
+            inArray(gameVersions.gameId, [...filteredGameIds]),
+            eq(performanceEntries.isRemoved, false),
+          ),
+        )
+        .groupBy(gameVersions.gameId)
+
+      const fpsMatchIds = new Set<string>()
+      for (const row of fpsStats) {
+        if (minFps !== undefined && row.bestFps < minFps) continue
+        if (maxFps !== undefined && row.bestFps > maxFps) continue
+        fpsMatchIds.add(row.gameId)
+      }
+      filteredGameIds = fpsMatchIds
+    }
+
+    // ── Filter local games to only those that passed all filters so far ──
+    const filteredLocalGames = localGames.filter((g) => filteredGameIds.has(g.id))
+    const filteredIds = filteredLocalGames.map((g) => g.id)
     const localSteamAppIds = new Set(
-      localGames.map((g) => g.steamAppId).filter(Boolean),
+      filteredLocalGames.map((g) => g.steamAppId).filter(Boolean),
     )
 
     // Fetch platform support + anti-cheat for local games
@@ -64,7 +150,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
         antiCheatStatus: string
       }
     >()
-    if (localGameIds.length > 0) {
+    if (filteredIds.length > 0) {
       const { gamePlatformSupport } = await import("@/lib/db/schema")
       const supportRows = await db
         .select({
@@ -76,7 +162,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
           antiCheatStatus: gamePlatformSupport.antiCheatStatus,
         })
         .from(gamePlatformSupport)
-        .where(inArray(gamePlatformSupport.gameId, localGameIds))
+        .where(inArray(gamePlatformSupport.gameId, filteredIds))
 
       for (const row of supportRows) {
         platformSupportMap.set(row.gameId, {
@@ -89,12 +175,53 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
       }
     }
 
+    // ── 1c. Proton/Native and Anti-cheat post-filters ─────────────
+    if (query.protonNative && query.protonNative !== "any" && filteredIds.length > 0) {
+      const protonMatchIds = new Set<string>()
+      for (const g of filteredLocalGames) {
+        const platform = platformSupportMap.get(g.id)
+        const protonStatus = platform
+          ? platform.protonStatus
+          : g.platforms?.linux
+            ? "native"
+            : g.platforms?.windows
+              ? "proton"
+              : "unknown"
+        if (
+          (query.protonNative === "native" && protonStatus === "native") ||
+          (query.protonNative === "proton" && protonStatus === "proton")
+        ) {
+          protonMatchIds.add(g.id)
+        }
+      }
+      filteredGameIds = protonMatchIds
+    }
+
+    if (query.antiCheatStatus && query.antiCheatStatus !== "any" && filteredIds.length > 0) {
+      const acMatchIds = new Set<string>()
+      for (const g of filteredLocalGames) {
+        const platform = platformSupportMap.get(g.id)
+        const acStatus = platform ? platform.antiCheatStatus : "unknown"
+        if (acStatus === query.antiCheatStatus) {
+          acMatchIds.add(g.id)
+        }
+      }
+      filteredGameIds = acMatchIds
+    }
+
+    // Final local games after all filters
+    const finalLocalGames = filteredLocalGames.filter((g) => filteredGameIds.has(g.id))
+    const finalIds = finalLocalGames.map((g) => g.id)
+    const finalSteamAppIds = new Set(
+      finalLocalGames.map((g) => g.steamAppId).filter(Boolean),
+    )
+
     // ── 2. Count related data for local games ───────────────────────
     let benchmarkCounts: { gameId: string; count: number }[] = []
     let presetCounts: { gameId: string; count: number }[] = []
     let commentCounts: { gameId: string; count: number }[] = []
 
-    if (localGameIds.length > 0) {
+    if (finalIds.length > 0) {
       const [bCounts, pCounts, cCounts] = await Promise.all([
         db
           .select({
@@ -108,7 +235,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
           )
           .where(
             and(
-              inArray(gameVersions.gameId, localGameIds),
+              inArray(gameVersions.gameId, finalIds),
               eq(performanceEntries.isRemoved, false),
             ),
           )
@@ -125,7 +252,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
           )
           .where(
             and(
-              inArray(gameVersions.gameId, localGameIds),
+              inArray(gameVersions.gameId, finalIds),
               eq(performanceEntries.isRemoved, false),
               sql`${performanceEntries.settingsJson} IS NOT NULL`,
             ),
@@ -137,7 +264,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
             count: sql<number>`count(*)::int`,
           })
           .from(gameComments)
-          .where(inArray(gameComments.gameId, localGameIds))
+          .where(inArray(gameComments.gameId, finalIds))
           .groupBy(gameComments.gameId),
       ])
       benchmarkCounts = bCounts
@@ -149,7 +276,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
       string,
       { benchmarks: number; presets: number; comments: number }
     >()
-    for (const g of localGames) {
+    for (const g of finalLocalGames) {
       countMap.set(g.id, { benchmarks: 0, presets: 0, comments: 0 })
     }
     for (const c of benchmarkCounts) {
@@ -167,7 +294,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
     const poorPerformerMap = new Map<string, boolean>()
     const bestFpsMap = new Map<string, number>()
 
-    if (localGameIds.length > 0) {
+    if (finalIds.length > 0) {
       const perfStats = await db
         .select({
           gameId: gameVersions.gameId,
@@ -186,7 +313,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
         )
         .where(
           and(
-            inArray(gameVersions.gameId, localGameIds),
+            inArray(gameVersions.gameId, finalIds),
             eq(performanceEntries.isRemoved, false),
           ),
         )
@@ -202,7 +329,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
     // ── 2c. Latest version ──────────────────────────────────────────
     const latestVersionMap = new Map<string, string>()
 
-    if (localGameIds.length > 0) {
+    if (finalIds.length > 0) {
       const versionRows = await db
         .select({
           gameId: gameVersions.gameId,
@@ -211,7 +338,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
         .from(gameVersions)
         .where(
           and(
-            inArray(gameVersions.gameId, localGameIds),
+            inArray(gameVersions.gameId, finalIds),
             eq(gameVersions.isLatest, true),
           ),
         )
@@ -267,7 +394,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
     const results = []
 
     // Add local games
-    for (const g of localGames) {
+    for (const g of finalLocalGames) {
       const counts = countMap.get(g.id)!
       const platform = platformSupportMap.get(g.id)
       results.push({
@@ -320,7 +447,7 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
 
     // Add Steam-only games
     for (const item of steamItems) {
-      if (localSteamAppIds.has(item.id)) continue
+      if (finalSteamAppIds.has(item.id)) continue
       results.push({
         kind: "steam" as const,
         appId: item.id,
@@ -355,6 +482,16 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
   {
     query: t.Object({
       q: t.String(),
+      device: t.Optional(t.String()),
+      minFps: t.Optional(t.String()),
+      maxFps: t.Optional(t.String()),
+      fsrSupport: t.Optional(t.String()),
+      protonNative: t.Optional(t.String()),
+      antiCheatStatus: t.Optional(t.String()),
+      playabilityStatus: t.Optional(t.String()),
+      steamReviewScore: t.Optional(t.String()),
+      isFree: t.Optional(t.String()),
+      hasMultiplayer: t.Optional(t.String()),
     }),
   },
 )
