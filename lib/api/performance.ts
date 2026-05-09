@@ -4,6 +4,7 @@ import { performanceEntries, games, gameVersions, hardware, user, gamePlatformSu
 import { db } from "@/lib/db/index"
 import { eq, and, desc, sql } from "drizzle-orm"
 import { requireRole } from "@/lib/auth/guard"
+import { checkAndAutoPin } from "./auto-pin"
 
 // ── Performance Entries CRUD ──────────────────────────────────────
 export const performanceRoutes = createCrudRoutes(performanceEntries, {
@@ -93,6 +94,11 @@ export const performanceVerifyRoutes = new Elysia({
         return { error: "Performance entry not found" }
       }
 
+      // Auto-pin check (fire and forget, result doesn't affect response)
+      checkAndAutoPin(updated.id).catch((err) =>
+        console.error("Auto-pin check failed:", err),
+      )
+
       return updated
     },
     {
@@ -131,6 +137,11 @@ export const performanceVerifyRoutes = new Elysia({
         set.status = 404
         return { error: "Performance entry not found" }
       }
+
+      // Auto-pin check (fire and forget, result doesn't affect response)
+      checkAndAutoPin(updated.id).catch((err) =>
+        console.error("Auto-pin check failed:", err),
+      )
 
       return updated
     },
