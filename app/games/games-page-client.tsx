@@ -16,6 +16,7 @@ import { useGamepadNavigation } from "@/lib/hooks/use-gamepad-navigation"
 import { AntiCheatBadge } from "@/components/anti-cheat-badge"
 import { PlayabilityBadge } from "@/components/playability-badge"
 import { SavedFilters } from "@/components/saved-filters"
+import { FilterDrawer } from "@/components/filter-drawer"
 
 interface GamesListItem {
   id: string
@@ -268,125 +269,9 @@ export function GamesPageClient({
     )
   }
 
-  return (
-    <section ref={pageRef} className={`w-full flex flex-col gap-8 py-8 ${isGamepadActive ? "gamepad-focus" : ""}`}>
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="px-4 md:px-[10svw]"
-      >
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-2xl sm:text-3xl font-bold">Games</h1>
-          <p className="text-sm text-text/60 mt-1">
-            Browse {total.toLocaleString()} games with benchmarks, settings, and performance data
-          </p>
-        </div>
-      </motion.div>
-
-      {/* Search & Filter Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.05 }}
-        className="px-4 md:px-[10svw]"
-      >
-        <div className="max-w-7xl mx-auto flex flex-col gap-3">
-          {/* Search + Sort Row */}
-          <div className="flex flex-row items-center gap-3">
-            <label className="flex-1 flex flex-row items-center gap-2 bg-text/5 px-3 py-2.5 rounded-md border border-border hover:border-border-active focus-within:border-primary/80 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 focus-within:ring-offset-background transition-colors cursor-text min-h-[44px]">
-              <SearchIcon className="h-4 w-4 text-text/40 shrink-0" />
-              <input
-                type="text"
-                placeholder="Search games..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="flex-1 outline-none bg-transparent text-sm min-w-0"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="text-text/40 hover:text-text/70 transition-colors cursor-pointer"
-                >
-                  <XIcon className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </label>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as SortOption)}
-              className="bg-text/5 border border-border rounded-md px-3 py-2 text-sm outline-none focus:border-primary/80 focus:ring-2 focus:ring-primary/50 cursor-pointer"
-            >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={() => setSortDirection(prev => prev === "asc" ? "desc" : "asc")}
-              className="px-2 py-2 rounded-md text-sm bg-text/5 border border-border hover:bg-text/10 transition-colors cursor-pointer min-h-[44px]"
-              title={sortDirection === "asc" ? "Sort ascending" : "Sort descending"}
-            >
-              {sortDirection === "asc" ? "↑" : "↓"}
-            </button>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`px-3 py-2 rounded-md text-sm transition-colors cursor-pointer border min-h-[44px] ${
-                showFilters ||
-                selectedDevice ||
-                selectedGenres.length > 0 ||
-                minFps ||
-                maxFps ||
-                fsrSupport ||
-                protonNative !== "any" ||
-                antiCheatStatus !== "any" ||
-                playabilityStatus ||
-                steamReviewMin ||
-                isFree ||
-                hasMultiplayer
-                  ? "bg-primary/10 text-primary border-primary/30"
-                  : "bg-text/5 text-text/60 hover:text-text/80 border-border hover:border-border-active"
-              }`}
-            >
-              Filters
-              {(selectedDevice ||
-                selectedGenres.length > 0 ||
-                minFps ||
-                maxFps ||
-                fsrSupport ||
-                protonNative !== "any" ||
-                antiCheatStatus !== "any" ||
-                playabilityStatus ||
-                steamReviewMin ||
-                isFree ||
-                hasMultiplayer) && (
-                <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-background text-[10px] font-bold">
-                  {selectedGenres.length +
-                    (selectedDevice ? 1 : 0) +
-                    (minFps ? 1 : 0) +
-                    (maxFps ? 1 : 0) +
-                    (fsrSupport ? 1 : 0) +
-                    (protonNative !== "any" ? 1 : 0) +
-                    (antiCheatStatus !== "any" ? 1 : 0) +
-                    (playabilityStatus ? 1 : 0) +
-                    (steamReviewMin ? 1 : 0) +
-                    (isFree ? 1 : 0) +
-                    (hasMultiplayer ? 1 : 0)}
-                </span>
-              )}
-            </button>
-          </div>
-
-          {/* Filter Panel (collapsible) */}
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="flex flex-col gap-3 pt-1"
-            >
+  function FilterPanelContent() {
+    return (
+      <>
               {/* Device filter */}
               <div>
                 <span className="text-xs text-text/50 uppercase tracking-wider mb-1.5 block">
@@ -604,6 +489,138 @@ export function GamesPageClient({
                   Clear all filters
                 </button>
               )}
+
+      </>
+    )
+  }
+
+  return (
+    <section ref={pageRef} className={`w-full flex flex-col gap-8 py-8 ${isGamepadActive ? "gamepad-focus" : ""}`}>
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="px-4 md:px-[10svw]"
+      >
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-2xl sm:text-3xl font-bold">Games</h1>
+          <p className="text-sm text-text/60 mt-1">
+            Browse {total.toLocaleString()} games with benchmarks, settings, and performance data
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Search & Filter Bar */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.05 }}
+        className="px-4 md:px-[10svw]"
+      >
+        <div className="max-w-7xl mx-auto flex flex-col gap-3">
+          {/* Search + Sort Row */}
+          <div className="flex flex-row items-center gap-3">
+            <label className="flex-1 flex flex-row items-center gap-2 bg-text/5 px-3 py-2.5 rounded-md border border-border hover:border-border-active focus-within:border-primary/80 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 focus-within:ring-offset-background transition-colors cursor-text min-h-[44px]">
+              <SearchIcon className="h-4 w-4 text-text/40 shrink-0" />
+              <input
+                type="text"
+                placeholder="Search games..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 outline-none bg-transparent text-sm min-w-0"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="text-text/40 hover:text-text/70 transition-colors cursor-pointer"
+                >
+                  <XIcon className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </label>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortOption)}
+              className="bg-text/5 border border-border rounded-md px-3 py-2 text-sm outline-none focus:border-primary/80 focus:ring-2 focus:ring-primary/50 cursor-pointer"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => setSortDirection(prev => prev === "asc" ? "desc" : "asc")}
+              className="px-2 py-2 rounded-md text-sm bg-text/5 border border-border hover:bg-text/10 transition-colors cursor-pointer min-h-[44px]"
+              title={sortDirection === "asc" ? "Sort ascending" : "Sort descending"}
+            >
+              {sortDirection === "asc" ? "↑" : "↓"}
+            </button>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`px-3 py-2 rounded-md text-sm transition-colors cursor-pointer border min-h-[44px] ${
+                showFilters ||
+                selectedDevice ||
+                selectedGenres.length > 0 ||
+                minFps ||
+                maxFps ||
+                fsrSupport ||
+                protonNative !== "any" ||
+                antiCheatStatus !== "any" ||
+                playabilityStatus ||
+                steamReviewMin ||
+                isFree ||
+                hasMultiplayer
+                  ? "bg-primary/10 text-primary border-primary/30"
+                  : "bg-text/5 text-text/60 hover:text-text/80 border-border hover:border-border-active"
+              }`}
+            >
+              Filters
+              {(selectedDevice ||
+                selectedGenres.length > 0 ||
+                minFps ||
+                maxFps ||
+                fsrSupport ||
+                protonNative !== "any" ||
+                antiCheatStatus !== "any" ||
+                playabilityStatus ||
+                steamReviewMin ||
+                isFree ||
+                hasMultiplayer) && (
+                <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-background text-[10px] font-bold">
+                  {selectedGenres.length +
+                    (selectedDevice ? 1 : 0) +
+                    (minFps ? 1 : 0) +
+                    (maxFps ? 1 : 0) +
+                    (fsrSupport ? 1 : 0) +
+                    (protonNative !== "any" ? 1 : 0) +
+                    (antiCheatStatus !== "any" ? 1 : 0) +
+                    (playabilityStatus ? 1 : 0) +
+                    (steamReviewMin ? 1 : 0) +
+                    (isFree ? 1 : 0) +
+                    (hasMultiplayer ? 1 : 0)}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Mobile drawer */}
+          <FilterDrawer isOpen={showFilters} onClose={() => setShowFilters(false)}>
+            <div className="flex flex-col gap-3">
+              <FilterPanelContent />
+            </div>
+          </FilterDrawer>
+
+          {/* Desktop inline panel */}
+          {showFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="hidden lg:flex flex-col gap-3 pt-1"
+            >
+              <FilterPanelContent />
             </motion.div>
           )}
         </div>
