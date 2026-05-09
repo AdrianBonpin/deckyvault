@@ -37,16 +37,30 @@ function getSlugs(): string[] {
     .map((file) => file.replace(/\.md$/, ""))
 }
 
+function compareVersion(a: string, b: string): number {
+  const pa = a.split(".").map(Number)
+  const pb = b.split(".").map(Number)
+  const len = Math.max(pa.length, pb.length)
+  for (let i = 0; i < len; i++) {
+    const na = pa[i] ?? 0
+    const nb = pb[i] ?? 0
+    if (na !== nb) return nb - na // descending
+  }
+  return 0
+}
+
 export function getAllUpdates(): UpdateMeta[] {
   const slugs = getSlugs()
   const updates = slugs.map((slug) => {
     const { meta } = getUpdateMeta(slug)
     return meta
   })
-  // Sort by date descending (newest first)
-  return updates.sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  )
+  // Sort by date descending, then by version descending (newest first)
+  return updates.sort((a, b) => {
+    const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime()
+    if (dateDiff !== 0) return dateDiff
+    return compareVersion(a.version, b.version)
+  })
 }
 
 function getUpdateMeta(slug: string): { meta: UpdateMeta } {
