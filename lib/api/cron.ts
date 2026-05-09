@@ -110,6 +110,21 @@ registerCronTask("orphan_detection", async () => {
   }
 })
 
+// ── Sitemap Regeneration Task ────────────────────────────────────────
+registerCronTask("sitemap_regeneration", async () => {
+  const start = Date.now()
+  const details: Record<string, unknown> = {}
+  try {
+    const { generateSitemaps } = await import("@/lib/sitemap/generate-static")
+    await generateSitemaps()
+    details.regenerated = true
+    return { name: "sitemap_regeneration", status: "success" as const, durationMs: Date.now() - start, details }
+  } catch (err) {
+    details.error = err instanceof Error ? err.message : String(err)
+    return { name: "sitemap_regeneration", status: "error" as const, durationMs: Date.now() - start, details }
+  }
+})
+
 // ── Cron Route ──────────────────────────────────────────────────────
 export const cronRoutes = new Elysia({ prefix: "/cron" }).post(
   "/daily",
