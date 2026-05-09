@@ -33,6 +33,7 @@ import { gamesListingRoutes } from "@/lib/api/games-listing"
 import { steamgridProxyRoutes } from "@/lib/api/steamgrid-proxy"
 import { dashboardRoutes } from "@/lib/api/dashboard"
 import { savedFilterRoutes } from "@/lib/api/saved-filters"
+import { cronRoutes } from "@/lib/api/cron"
 
 const betterAuth = new Elysia({ name: "better-auth" })
   .mount(auth.handler)
@@ -114,6 +115,8 @@ export const app = new Elysia({ prefix: "/api" })
   .use(communitySuggestionRoutes)
   // Saved filters
   .use(savedFilterRoutes)
+  // Cron
+  .use(cronRoutes)
   // Dashboard
   .use(dashboardRoutes)
   // Root
