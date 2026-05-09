@@ -13,6 +13,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "lucide-react"
+import { ConfirmDialog } from "@/components/ui/modal"
 
 interface PerformanceEntry {
   id: string
@@ -517,145 +518,64 @@ export function BenchmarksClient() {
       )}
 
       {/* Confirmation Dialogs */}
-      {confirmAction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background border border-border rounded-xl p-6 max-w-sm w-full mx-4 space-y-4">
-            {confirmAction.type === "verify" && (
-              <>
-                <h2 className="text-base font-semibold text-text">
-                  Confirm Verify
-                </h2>
-                <p className="text-sm text-text/70">
-                  Are you sure you want to verify this benchmark? It will be
-                  marked as verified.
-                </p>
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    onClick={() => setConfirmAction(null)}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium bg-text/5 text-text hover:bg-text/10 transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => handleVerify(confirmAction.entry)}
-                    disabled={actionLoading[confirmAction.entry.id]}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-                  >
-                    {actionLoading[confirmAction.entry.id] ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <ShieldCheckIcon className="h-3.5 w-3.5" />
-                    )}
-                    Verify
-                  </button>
-                </div>
-              </>
-            )}
+      {confirmAction?.type === "verify" && (
+        <ConfirmDialog
+          open={!!confirmAction}
+          onClose={() => setConfirmAction(null)}
+          onConfirm={() => handleVerify(confirmAction.entry)}
+          title="Confirm Verify"
+          message="Are you sure you want to verify this benchmark? It will be marked as verified."
+          confirmLabel="Verify"
+          variant="default"
+          loading={actionLoading[confirmAction.entry.id]}
+        />
+      )}
 
-            {confirmAction.type === "remove" && (
-              <>
-                <h2 className="text-base font-semibold text-text">
-                  Confirm Remove
-                </h2>
-                <p className="text-sm text-text/70">
-                  Are you sure you want to remove this benchmark?
-                </p>
-                <textarea
-                  rows={3}
-                  value={removeReason}
-                  onChange={(e) => setRemoveReason(e.target.value)}
-                  placeholder="Optional reason..."
-                  className="w-full px-3 py-2 rounded-md bg-text/5 border border-border text-sm text-text placeholder:text-text/40 focus:outline-none focus:border-primary/60 transition-colors resize-none"
-                />
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    onClick={() => {
-                      setConfirmAction(null)
-                      setRemoveReason("")
-                    }}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium bg-text/5 text-text hover:bg-text/10 transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => handleRemove(confirmAction.entry)}
-                    disabled={actionLoading[confirmAction.entry.id]}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-                  >
-                    {actionLoading[confirmAction.entry.id] ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <TrashIcon className="h-3.5 w-3.5" />
-                    )}
-                    Remove
-                  </button>
-                </div>
-              </>
-            )}
+      {confirmAction?.type === "remove" && (
+        <ConfirmDialog
+          open={!!confirmAction}
+          onClose={() => setConfirmAction(null)}
+          onConfirm={() => handleRemove(confirmAction.entry)}
+          title="Confirm Remove"
+          message="Are you sure you want to remove this benchmark?"
+          confirmLabel="Remove"
+          variant="destructive"
+          loading={actionLoading[confirmAction.entry.id]}
+        >
+          <textarea
+            rows={3}
+            value={removeReason}
+            onChange={(e) => setRemoveReason(e.target.value)}
+            placeholder="Optional reason..."
+            className="w-full px-3 py-2 rounded-md bg-text/5 border border-border text-sm text-text placeholder:text-text/40 focus:outline-none focus:border-primary/60 transition-colors resize-none"
+          />
+        </ConfirmDialog>
+      )}
 
-            {confirmAction.type === "restore" && (
-              <>
-                <h2 className="text-base font-semibold text-text">
-                  Confirm Restore
-                </h2>
-                <p className="text-sm text-text/70">
-                  Are you sure you want to restore this benchmark?
-                </p>
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    onClick={() => setConfirmAction(null)}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium bg-text/5 text-text hover:bg-text/10 transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => handleRestore(confirmAction.entry)}
-                    disabled={actionLoading[confirmAction.entry.id]}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-                  >
-                    {actionLoading[confirmAction.entry.id] ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <RefreshCwIcon className="h-3.5 w-3.5" />
-                    )}
-                    Restore
-                  </button>
-                </div>
-              </>
-            )}
+      {confirmAction?.type === "restore" && (
+        <ConfirmDialog
+          open={!!confirmAction}
+          onClose={() => setConfirmAction(null)}
+          onConfirm={() => handleRestore(confirmAction.entry)}
+          title="Confirm Restore"
+          message="Are you sure you want to restore this benchmark?"
+          confirmLabel="Restore"
+          variant="default"
+          loading={actionLoading[confirmAction.entry.id]}
+        />
+      )}
 
-            {confirmAction.type === "hardDelete" && (
-              <>
-                <h2 className="text-base font-semibold text-text">
-                  ⚠️ Permanent Delete
-                </h2>
-                <p className="text-sm text-text/70">
-                  This will permanently delete this benchmark entry. This action cannot be undone.
-                </p>
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    onClick={() => setConfirmAction(null)}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium bg-text/5 text-text hover:bg-text/10 transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => handleHardDelete(confirmAction.entry)}
-                    disabled={actionLoading[confirmAction.entry.id]}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium bg-red-600/10 text-red-500 hover:bg-red-600/20 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-                  >
-                    {actionLoading[confirmAction.entry.id] ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <TrashIcon className="h-3.5 w-3.5" />
-                    )}
-                    Delete Forever
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+      {confirmAction?.type === "hardDelete" && (
+        <ConfirmDialog
+          open={!!confirmAction}
+          onClose={() => setConfirmAction(null)}
+          onConfirm={() => handleHardDelete(confirmAction.entry)}
+          title="⚠️ Permanent Delete"
+          message="This will permanently delete this benchmark entry. This action cannot be undone."
+          confirmLabel="Delete Forever"
+          variant="destructive"
+          loading={actionLoading[confirmAction.entry.id]}
+        />
       )}
     </div>
   )
