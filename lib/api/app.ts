@@ -36,6 +36,7 @@ import { dashboardPublicRoutes } from "@/lib/api/dashboard-public"
 import { savedFilterRoutes } from "@/lib/api/saved-filters"
 import { cronRoutes } from "@/lib/api/cron"
 import { profilePhotoRoutes } from "@/lib/api/profile-photo"
+import { screenshotRoutes } from "@/lib/api/screenshots"
 
 const betterAuth = new Elysia({ name: "better-auth" })
   .mount(auth.handler)
@@ -87,6 +88,7 @@ export const app = new Elysia({ prefix: "/api" })
   .use(performanceRoutes)
   .use(performanceVerifyRoutes)
   .use(performanceSubmitRoutes)
+  .use(screenshotRoutes)
   .use(reportRoutes)
   .use(adminReportRoutes)
   .use(adminPerformanceRoutes)
