@@ -288,6 +288,20 @@ export const performanceVerifyRoutes = new Elysia({
         updateData.settingsJson = body.settingsJson
       if (body.userNotes !== undefined)
         updateData.userNotes = body.userNotes
+      if (body.tdpWatts !== undefined) updateData.tdpWatts = body.tdpWatts ?? undefined
+      if (body.youtubeVideoId !== undefined) {
+        // Validate format
+        if (body.youtubeVideoId !== null) {
+          const ytId = body.youtubeVideoId.trim()
+          if (!/^[a-zA-Z0-9_-]{11}$/.test(ytId)) {
+            set.status = 400
+            return { error: "Invalid YouTube video ID format" }
+          }
+          updateData.youtubeVideoId = ytId
+        } else {
+          updateData.youtubeVideoId = null
+        }
+      }
 
       const [updated] = await db
         .update(performanceEntries)
@@ -398,6 +412,8 @@ export const performanceVerifyRoutes = new Elysia({
         launchOptions: t.Optional(t.Union([t.String(), t.Null()])),
         settingsJson: t.Optional(t.Union([t.Array(t.Any()), t.Null()])),
         userNotes: t.Optional(t.Union([t.String(), t.Null()])),
+        tdpWatts: t.Optional(t.Union([t.Number(), t.Null()])),
+        youtubeVideoId: t.Optional(t.Union([t.String(), t.Null()])),
         antiCheatRelevant: t.Optional(t.Boolean()),
         antiCheatName: t.Optional(t.Union([t.String(), t.Null()])),
         antiCheatStatus: t.Optional(

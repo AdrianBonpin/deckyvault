@@ -95,6 +95,21 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
         return { error: "Hardware not found" }
       }
 
+      // Validate YouTube video ID format (11 alphanumeric + dash/underscore)
+      if (body.youtubeVideoId) {
+        const ytId = body.youtubeVideoId.trim()
+        if (!/^[a-zA-Z0-9_-]{11}$/.test(ytId)) {
+          set.status = 400
+          return { error: "Invalid YouTube video ID format (must be 11 characters)" }
+        }
+      }
+
+      // Validate TDP
+      if (body.tdpWatts !== null && body.tdpWatts !== undefined && body.tdpWatts <= 0) {
+        set.status = 400
+        return { error: "TDP must be greater than 0" }
+      }
+
       // Create the performance entry
       const [entry] = await db
         .insert(performanceEntries)
@@ -115,6 +130,10 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
           frameGenMethod: body.frameGenMethod ?? "none",
           loadTimeSsd: body.loadTimeSsd ?? null,
           loadTimeSd: body.loadTimeSd ?? null,
+          tdpWatts: body.tdpWatts ?? null,
+          youtubeVideoId: body.youtubeVideoId
+            ? body.youtubeVideoId.trim()
+            : null,
           launchOptions: body.launchOptions ?? null,
           settingsJson: body.settingsJson ?? null,
           userNotes: body.userNotes ?? null,
@@ -203,6 +222,8 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
         ),
         loadTimeSsd: t.Optional(t.Union([t.Number(), t.Null()])),
         loadTimeSd: t.Optional(t.Union([t.Number(), t.Null()])),
+        tdpWatts: t.Optional(t.Union([t.Number(), t.Null()])),
+        youtubeVideoId: t.Optional(t.Union([t.String(), t.Null()])),
         launchOptions: t.Optional(t.Union([t.String(), t.Null()])),
         settingsJson: t.Optional(
           t.Union([
