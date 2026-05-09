@@ -339,6 +339,42 @@ export function HardwareClient() {
                   className="w-full px-3 py-2 rounded-md bg-text/5 border border-border text-sm text-text placeholder:text-text/40 focus:outline-none focus:border-primary/60 transition-colors"
                 />
               </div>
+              <div>
+                <label className="block text-xs font-medium text-text/70 mb-1">
+                  Battery Capacity (Wh)
+                </label>
+                <input
+                  type="number"
+                  value={form.wattHours}
+                  onChange={(e) => setForm((f) => ({ ...f, wattHours: e.target.value }))}
+                  placeholder="e.g. 50.0"
+                  min="0"
+                  max="200"
+                  step="0.1"
+                  className="w-full px-3 py-2 rounded-md bg-text/5 border border-border text-sm text-text placeholder:text-text/40 focus:outline-none focus:border-primary/60 transition-colors"
+                />
+                <p className="text-[10px] text-text/40 mt-1">
+                  Watt-hours (used for battery life estimation)
+                </p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-text/70 mb-1">
+                  Max TDP (W)
+                </label>
+                <input
+                  type="number"
+                  value={form.tdpMax}
+                  onChange={(e) => setForm((f) => ({ ...f, tdpMax: e.target.value }))}
+                  placeholder="e.g. 15"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  className="w-full px-3 py-2 rounded-md bg-text/5 border border-border text-sm text-text placeholder:text-text/40 focus:outline-none focus:border-primary/60 transition-colors"
+                />
+                <p className="text-[10px] text-text/40 mt-1">
+                  Maximum TDP in watts (used for battery life estimation)
+                </p>
+              </div>
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
