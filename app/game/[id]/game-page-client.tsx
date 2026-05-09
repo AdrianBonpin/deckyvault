@@ -273,7 +273,7 @@ export function GamePageClient({
     })
     const [loading, setLoading] = useState(true)
     const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
-    const [showSystemReq, setShowSystemReq] = useState(false)
+    const [showSystemReq, setShowSystemReq] = useState(true)
     const [reportedPresets, setReportedPresets] = useState<Set<string>>(new Set())
     const presetsRef = useRef<HTMLDivElement>(null)
 
@@ -462,7 +462,7 @@ export function GamePageClient({
             >
                 <div className='max-w-7xl mx-auto flex gap-4 sm:gap-6'>
                     {/* Cover image */}
-                    <div className='relative shrink-0 aspect-2/3 w-28 sm:w-32 md:w-36 rounded-lg overflow-hidden border border-border bg-text/5 h-max'>
+                    <div className='relative shrink-0 aspect-2/3 w-20 sm:w-28 md:w-36 rounded-lg overflow-hidden border border-border bg-text/5 h-max'>
                         {coverImage && !imgError ? (
                             <Image
                                 src={coverImage}
@@ -574,6 +574,52 @@ export function GamePageClient({
                                 )}
                         </div>
 
+                        {/* Metadata pills */}
+                        <div className='flex flex-wrap items-center gap-2 mt-2'>
+                            {game.releaseDate && (
+                                <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/60 text-[10px]'>
+                                    {game.releaseDate}
+                                </span>
+                            )}
+                            {game.isFree && (
+                                <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-semibold'>
+                                    Free to Play
+                                </span>
+                            )}
+                            {game.priceCurrent != null && !game.isFree && game.priceCurrency && (
+                                <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/60 text-[10px]'>
+                                    {new Intl.NumberFormat("en-US", { style: "currency", currency: game.priceCurrency }).format(game.priceCurrent / 100)}
+                                </span>
+                            )}
+                            {game.priceCurrent != null && !game.isFree && game.priceInitial != null && game.priceInitial > game.priceCurrent && game.priceCurrency && (
+                                <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/40 text-[10px] line-through'>
+                                    {new Intl.NumberFormat("en-US", { style: "currency", currency: game.priceCurrency }).format(game.priceInitial / 100)}
+                                </span>
+                            )}
+                            {game.metacriticScore != null && (
+                                <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[10px] font-semibold'>
+                                    ★ {game.metacriticScore}/100
+                                </span>
+                            )}
+                            {game.onlineMultiplayerStatus && (
+                                <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/60 text-[10px]'>
+                                    {game.onlineMultiplayerStatus}
+                                </span>
+                            )}
+                            {game.platforms && (
+                                <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/60 text-[10px]'>
+                                    {game.platforms.windows && <WindowsIcon className='h-3 w-3 text-blue-400' />}
+                                    {game.platforms.mac && <MacIcon className='h-3 w-3 text-text/60' />}
+                                    {game.platforms.linux && <LinuxIcon className='h-3 w-3 text-yellow-500' />}
+                                </span>
+                            )}
+                            {game.steamAppId !== null && (
+                                <span className='inline-flex items-center px-2 py-0.5 rounded-full bg-text/5 border border-border text-text/40 text-[10px]'>
+                                    AppID {game.steamAppId}
+                                </span>
+                            )}
+                        </div>
+
                         {/* External links */}
                         <div className='flex flex-wrap items-center gap-3 mt-1'>
                             {game.storeUrl && (
@@ -638,11 +684,12 @@ export function GamePageClient({
                         )}
                         {stats && (
                             <div className='flex flex-wrap items-center gap-2 mt-2'>
-                                <BookmarkButton gameId={game.id} />
+                                <BookmarkButton gameId={game.id} data-gamepad-focusable />
                                 {session?.user && game.source !== "steam" && (
                                     <Link
                                         href={`/game/${gameId}/edit`}
                                         className='inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-sm text-text/70 hover:bg-text/5 transition-colors cursor-pointer'
+                                        data-gamepad-focusable
                                     >
                                         <PencilIcon className='h-4 w-4' />
                                         Edit Game
@@ -652,6 +699,7 @@ export function GamePageClient({
                                     <Link
                                         href={`/game/${game.id}/submit`}
                                         className='inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer'
+                                        data-gamepad-focusable
                                     >
                                         <Plus className='h-4 w-4' />
                                         Add Benchmark
@@ -683,9 +731,9 @@ export function GamePageClient({
                 transition={{ duration: 0.4, delay: 0.1 }}
                 className='px-4 md:px-[10svw]'
             >
-                <div className='max-w-7xl mx-auto flex flex-col md:flex-row gap-6'>
-                    {/* Left: Description */}
-                    <div className='flex-2'>
+                <div className='max-w-7xl mx-auto flex flex-col gap-6'>
+                    {/* Description */}
+                    <div>
                         <h2 className='text-sm font-medium uppercase tracking-wider text-text/60 mb-3'>
                             About
                         </h2>
@@ -703,6 +751,7 @@ export function GamePageClient({
                                 <button
                                     onClick={() => setShowSystemReq(!showSystemReq)}
                                     className="flex items-center gap-2 text-sm font-medium text-text/80 hover:text-primary transition-colors cursor-pointer"
+                                    data-gamepad-focusable
                                 >
                                     <ChevronDownIcon className={`h-4 w-4 transition-transform ${showSystemReq ? 'rotate-180' : ''}`} />
                                     System Requirements
@@ -727,154 +776,87 @@ export function GamePageClient({
                         )}
                     </div>
 
-                    {/* Right: Metadata grid */}
-                    <div className='flex-1'>
-                        <h2 className='text-sm font-medium uppercase tracking-wider text-text/60 mb-3'>
-                            Details
-                        </h2>
-                        <div className='grid grid-cols-2 gap-3 text-sm'>
-                            <MetaItem
-                                label='Source'
-                                value={game.source}
-                            />
-                            {game.steamAppId !== null && (
-                                <MetaItem
-                                    label='Steam AppID'
-                                    value={String(game.steamAppId)}
-                                />
-                            )}
-                            <MetaItem
-                                label='Added'
-                                value={formatDate(game.createdAt)}
-                            />
-                            <MetaItem
-                                label='Last Sync'
-                                value={formatDate(game.lastSync)}
-                            />
-                            {game.onlineMultiplayerStatus && (
-                                <MetaItem
-                                    label='Online Multiplayer'
-                                    value={game.onlineMultiplayerStatus}
-                                />
-                            )}
-                            {game.isFree && <MetaItem label="Price" value="Free to Play" />}
-                            {game.priceCurrent != null && !game.isFree && game.priceCurrency && (
-                                <MetaItem
-                                    label="Price"
-                                    value={new Intl.NumberFormat("en-US", { style: "currency", currency: game.priceCurrency }).format(game.priceCurrent / 100)}
-                                />
-                            )}
-                            {game.priceCurrent != null && !game.isFree && game.priceInitial != null && game.priceInitial > game.priceCurrent && game.priceCurrency && (
-                                <MetaItem
-                                    label="Original Price"
-                                    value={new Intl.NumberFormat("en-US", { style: "currency", currency: game.priceCurrency }).format(game.priceInitial / 100)}
-                                />
-                            )}
-                            {game.metacriticScore != null && (
-                                <MetaItem
-                                    label="Metacritic"
-                                    value={`${game.metacriticScore}/100`}
-                                />
-                            )}
-                            {game.recommendationsTotal != null && (
-                                <MetaItem
-                                    label="Reviews"
-                                    value={game.recommendationsTotal.toLocaleString()}
-                                />
-                            )}
-                            {game.releaseDate && <MetaItem label="Release Date" value={game.releaseDate} />}
-                            {game.steamReviewScore != null && (
-                                <div>
-                                    <span className="text-xs text-zinc-500">Steam Reviews</span>
-                                    <p className="text-sm">
-                                        {game.steamReviewSentiment} ({game.steamReviewScore}%)
-                                    </p>
-                                </div>
-                            )}
+                    {/* Platforms */}
+                    {game.platforms && (
+                        <div>
+                            <h3 className='text-xs font-medium uppercase tracking-wider text-text/50 mb-2'>
+                                Platforms
+                            </h3>
+                            <div className='flex items-center gap-1.5'>
+                                <span title="Windows">
+                                    <WindowsIcon
+                                        className={`h-3.5 w-3.5 ${game.platforms.windows ? "text-blue-400" : "text-text/20"}`}
+                                    />
+                                </span>
+                                <span title="macOS">
+                                    <MacIcon
+                                        className={`h-3.5 w-3.5 ${game.platforms.mac ? "text-text/60" : "text-text/20"}`}
+                                    />
+                                </span>
+                                <span title="Linux">
+                                    <LinuxIcon
+                                        className={`h-3.5 w-3.5 ${game.platforms.linux ? "text-yellow-500" : "text-text/20"}`}
+                                    />
+                                </span>
+                            </div>
                         </div>
-
-                        {/* Platforms */}
-                        {game.platforms && (
-                            <div className='mt-4'>
-                                <h3 className='text-xs font-medium uppercase tracking-wider text-text/50 mb-2'>
-                                    Platforms
-                                </h3>
-                                <div className='flex items-center gap-1.5'>
-                                    <span title="Windows">
-                                        <WindowsIcon
-                                            className={`h-3.5 w-3.5 ${game.platforms.windows ? "text-blue-400" : "text-text/20"}`}
-                                        />
-                                    </span>
-                                    <span title="macOS">
-                                        <MacIcon
-                                            className={`h-3.5 w-3.5 ${game.platforms.mac ? "text-text/60" : "text-text/20"}`}
-                                        />
-                                    </span>
-                                    <span title="Linux">
-                                        <LinuxIcon
-                                            className={`h-3.5 w-3.5 ${game.platforms.linux ? "text-yellow-500" : "text-text/20"}`}
-                                        />
-                                    </span>
-                                </div>
-                            </div>
-                        )}
-                        {platformSupport.length > 0 && (
-                            <div className='mt-4'>
-                                <h3 className='text-xs font-medium uppercase tracking-wider text-text/50 mb-2'>
-                                    Platform Support
-                                </h3>
-                                <div className='flex flex-col gap-2'>
-                                    {platformSupport.map((ps) => (
-                                        <div
-                                            key={ps.id}
-                                            className='flex items-center justify-between p-2 rounded-md border border-border bg-text/3'
-                                        >
-                                            <span className='text-xs font-medium capitalize'>
-                                                {ps.hardwareSlug.replace(
-                                                    /-/g,
-                                                    " ",
-                                                )}
+                    )}
+                    {platformSupport.length > 0 && (
+                        <div>
+                            <h3 className='text-xs font-medium uppercase tracking-wider text-text/50 mb-2'>
+                                Platform Support
+                            </h3>
+                            <div className='flex flex-col gap-2'>
+                                {platformSupport.map((ps) => (
+                                    <div
+                                        key={ps.id}
+                                        className='flex items-center justify-between p-2 rounded-md border border-border bg-text/3'
+                                    >
+                                        <span className='text-xs font-medium capitalize'>
+                                            {ps.hardwareSlug.replace(
+                                                /-/g,
+                                                " ",
+                                            )}
+                                        </span>
+                                        <div className='flex items-center gap-2'>
+                                            <span
+                                                className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                                    ps.isSupported
+                                                        ? "bg-green-500/20 text-green-400"
+                                                        : "bg-red-500/20 text-red-400"
+                                                }`}
+                                            >
+                                                {ps.isSupported
+                                                    ? "Supported"
+                                                    : "Unsupported"}
                                             </span>
-                                            <div className='flex items-center gap-2'>
-                                                <span
-                                                    className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                                                        ps.isSupported
-                                                            ? "bg-green-500/20 text-green-400"
-                                                            : "bg-red-500/20 text-red-400"
-                                                    }`}
-                                                >
-                                                    {ps.isSupported
-                                                        ? "Supported"
-                                                        : "Unsupported"}
-                                                </span>
-                                                <span className='text-[10px] text-text/50 capitalize'>
-                                                    {ps.protonStatus}
-                                                </span>
+                                            <span className='text-[10px] text-text/50 capitalize'>
+                                                {ps.protonStatus}
+                                            </span>
 
-                                                {/* Per-device playability */}
-                                                {ps.playabilityStatus && (
-                                                    <PlayabilityBadge
-                                                        status={ps.playabilityStatus}
-                                                        compact
-                                                    />
-                                                )}
+                                            {/* Per-device playability */}
+                                            {ps.playabilityStatus && (
+                                                <PlayabilityBadge
+                                                    status={ps.playabilityStatus}
+                                                    compact
+                                                />
+                                            )}
 
-                                                {/* Per-device anti-cheat */}
-                                                {ps.antiCheatRelevant && (
-                                                    <AntiCheatBadge
-                                                        antiCheatRelevant={true}
-                                                        antiCheatStatus={ps.antiCheatStatus}
-                                                        antiCheatName={ps.antiCheatName}
-                                                        compact
-                                                    />
-                                                )}
-                                            </div>
+                                            {/* Per-device anti-cheat */}
+                                            {ps.antiCheatRelevant && (
+                                                <AntiCheatBadge
+                                                    antiCheatRelevant={true}
+                                                    antiCheatStatus={ps.antiCheatStatus}
+                                                    antiCheatName={ps.antiCheatName}
+                                                    compact
+                                                />
+                                            )}
                                         </div>
-                                    ))}
-                                </div>
+                                    </div>
+                                ))}
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
             </motion.div>
 
@@ -904,6 +886,7 @@ export function GamePageClient({
                                                 ? "bg-primary/20 border-primary text-primary"
                                                 : "bg-transparent border-border text-text/60 hover:text-text/80"
                                         }`}
+                                        data-gamepad-focusable
                                     >
                                         {device.hardwareName}
                                         <span className='ml-1 text-text/40'>
@@ -979,7 +962,7 @@ export function GamePageClient({
                         </span>
                     </div>
                     <div
-                        className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-1"
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
                     >
                         {pinnedPresets.map((preset) => {
                             const raw = isRawPerformerPreset(preset)
@@ -988,11 +971,12 @@ export function GamePageClient({
                                 <motion.div
                                     key={preset.id}
                                     onClick={() => handlePresetOpen(preset.id)}
-                                    className={`shrink-0 w-72 flex flex-col gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-primary/30 ${
+                                    className={`flex flex-col gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-primary/30 ${
                                         raw
                                             ? "border-green-500/30 bg-green-500/5"
                                             : "border-yellow-500/30 bg-yellow-500/5"
                                     }`}
+                                    data-gamepad-focusable
                                 >
                                     {/* Header */}
                                     <div className='flex items-start justify-between gap-2'>
@@ -1143,7 +1127,7 @@ export function GamePageClient({
                     ) : (
                         <div
                             ref={presetsRef}
-                            className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-1"
+                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
                         >
                                 {regularPresets.map((preset) => {
                                     const raw = isRawPerformerPreset(preset)
@@ -1152,11 +1136,12 @@ export function GamePageClient({
                                         <motion.div
                                             key={preset.id}
                                             onClick={() => handlePresetOpen(preset.id)}
-                                            className={`shrink-0 w-72 flex flex-col gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-primary/30 ${
+                                            className={`flex flex-col gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-primary/30 ${
                                                 raw
                                                     ? "border-green-500/30 bg-green-500/5"
                                                     : "border-border bg-text/3"
                                             }`}
+                                            data-gamepad-focusable
                                         >
                                                 {/* Header */}
                                                 <div className='flex items-start justify-between gap-2'>
@@ -1438,10 +1423,21 @@ export function GamePageClient({
                 transition={{ duration: 0.4, delay: 0.3 }}
                 className='px-4 md:px-[10svw]'
             >
-                <div className='max-w-7xl mx-auto'>
+                <div className='max-w-7xl mx-auto' data-gamepad-focusable>
                     <CommentSection gameId={gameId} initialCount={counts.comments} />
                 </div>
             </motion.div>
+
+            {/* Mobile FAB for Add Benchmark */}
+            {session && (
+                <Link
+                    href={`/game/${game.id}/submit`}
+                    className='fixed right-4 bottom-4 z-50 inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-colors cursor-pointer sm:hidden'
+                    data-gamepad-focusable
+                >
+                    <Plus className='h-6 w-6' />
+                </Link>
+            )}
         </section>
         <AnimatePresence>
             {selectedPresetId && (() => {
@@ -1533,6 +1529,7 @@ function FilterSelect({
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 className='text-xs bg-background border border-border rounded-md px-2 py-1 text-text/80 focus:outline-none focus:border-primary min-w-25'
+                data-gamepad-focusable
             >
                 {options.map((opt) => (
                     <option
