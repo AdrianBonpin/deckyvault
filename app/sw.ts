@@ -64,9 +64,9 @@ const serwist = new Serwist({
         ],
       }),
     },
-    // Navigation fallback: offline.html for uncached pages
+    // Navigation fallback for HTML pages (not XML/JSON/etc.)
     {
-      matcher: ({ request }) => request.mode === "navigate",
+      matcher: ({ request }) => request.mode === "navigate" && !request.url.endsWith(".xml"),
       handler: new NetworkFirst({
         cacheName: "navigation",
         plugins: [

@@ -135,9 +135,6 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
     // ── Filter local games to only those that passed all filters so far ──
     const filteredLocalGames = localGames.filter((g) => filteredGameIds.has(g.id))
     const filteredIds = filteredLocalGames.map((g) => g.id)
-    const localSteamAppIds = new Set(
-      filteredLocalGames.map((g) => g.steamAppId).filter(Boolean),
-    )
 
     // Fetch platform support + anti-cheat for local games
     const platformSupportMap = new Map<

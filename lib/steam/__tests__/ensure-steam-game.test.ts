@@ -2,19 +2,19 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 
 // ── Mock global fetch so syncSteamGame doesn't hit real APIs ──
 const mockFetch = vi.fn()
-Object.assign(globalThis, { fetch: mockFetch as any })
+Object.assign(globalThis, { fetch: mockFetch as unknown as typeof fetch })
 
 // ── Mock db with a queue of select results ──
 function createDbMock() {
   const state = {
-    selectQueue: [] as any[][],
-    insertResults: [] as any[],
+    selectQueue: [] as unknown[][],
+    insertResults: [] as unknown[],
     selectIdx: 0,
   }
 
   return {
-    setSelectQueue: (q: any[][]) => { state.selectQueue = q; state.selectIdx = 0 },
-    setInsertResults: (r: any[]) => { state.insertResults = r },
+    setSelectQueue: (q: unknown[][]) => { state.selectQueue = q; state.selectIdx = 0 },
+    setInsertResults: (r: unknown[]) => { state.insertResults = r },
 
     select: vi.fn().mockImplementation(() => ({
       from: vi.fn().mockImplementation(() => ({

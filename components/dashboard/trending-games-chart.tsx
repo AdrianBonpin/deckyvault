@@ -17,8 +17,6 @@ function buildOption(games: TrendingGame[]): EChartsOption {
   const titles = sorted.map((g) => g.title)
   const scores = sorted.map((g) => g.activity_score)
   const benchmarks = sorted.map((g) => g.benchmark_count)
-  const comments = sorted.map((g) => g.comment_count)
-  const upvotes = sorted.map((g) => g.upvote_count)
 
   return {
     backgroundColor: CHART_THEME.bg,
@@ -28,8 +26,9 @@ function buildOption(games: TrendingGame[]): EChartsOption {
       backgroundColor: "#1a1225",
       borderColor: CHART_THEME.border,
       textStyle: { color: CHART_THEME.text },
-      formatter: (params: any) => {
-        const idx = params[0].dataIndex
+      formatter: (params: unknown) => {
+        const p = params as { dataIndex: number }[]
+        const idx = p[0].dataIndex
         const g = sorted[idx]
         return `<div style="font-weight:600;margin-bottom:4px">${g.title}</div>
 <div>Activity Score: <b>${g.activity_score}</b></div>

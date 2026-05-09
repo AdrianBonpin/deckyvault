@@ -1,4 +1,4 @@
-import { Elysia, t } from "elysia"
+import { Elysia } from "elysia"
 import { db } from "@/lib/db/index"
 import { user } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
@@ -14,7 +14,6 @@ import { storageObjects } from "@/lib/db/schema"
 
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"]
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const AVATAR_SIZE = 256
 
 // Magic byte signatures for file type validation
 const MAGIC_BYTES: Record<string, number[]> = {
@@ -78,10 +77,6 @@ export const profilePhotoRoutes = new Elysia({ prefix: "/user" })
 
       // Generate unique key
       const timestamp = Date.now()
-      const key = `avatars/${guard.user.id}-${timestamp}.webp`
-
-      // Upload to R2 (store original; client-side resize handled later or store as-is)
-      // For MVP: store the original file as-is with its original MIME type
       const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg"
       const actualKey = `avatars/${guard.user.id}-${timestamp}.${ext}`
       const publicUrl = await uploadObject(actualKey, buffer, file.type, {

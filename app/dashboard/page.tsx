@@ -131,7 +131,7 @@ export default async function DashboardPage() {
   `)
 
   // Serialize rows for the client component
-  const serializedTrending = trending.rows.map((row: any) => ({
+  const serializedTrending = trending.rows.map((row) => ({
     id: String(row.id),
     title: String(row.title),
     capsule_image: row.capsule_image ? String(row.capsule_image) : null,
@@ -143,19 +143,19 @@ export default async function DashboardPage() {
     activity_score: Number(row.activity_score ?? 0),
   }))
 
-  const serializedBestNew = bestNew.rows.map((row: any) => ({
+  const serializedBestNew = bestNew.rows.map((row) => ({
     id: String(row.id),
     title: String(row.title),
     capsule_image: row.capsule_image ? String(row.capsule_image) : null,
     header_image: row.header_image ? String(row.header_image) : null,
-    release_date: row.release_date ? new Date(row.release_date).toISOString() : null,
-    created_at: row.created_at ? new Date(row.created_at).toISOString() : null,
+    release_date: row.release_date ? new Date(String(row.release_date)).toISOString() : null,
+    created_at: row.created_at ? new Date(String(row.created_at)).toISOString() : null,
     playability_status: row.playability_status ? String(row.playability_status) : null,
     avg_fps: row.avg_fps ? Number(row.avg_fps) : null,
     benchmark_count: Number(row.benchmark_count ?? 0),
   }))
 
-  const serializedMostTested = mostTested.rows.map((row: any) => ({
+  const serializedMostTested = mostTested.rows.map((row) => ({
     id: String(row.id),
     title: String(row.title),
     capsule_image: row.capsule_image ? String(row.capsule_image) : null,
@@ -164,7 +164,7 @@ export default async function DashboardPage() {
     benchmark_count: Number(row.benchmark_count ?? 0),
   }))
 
-  const serializedMostReported = mostReported.rows.map((row: any) => ({
+  const serializedMostReported = mostReported.rows.map((row) => ({
     id: String(row.id),
     title: String(row.title),
     capsule_image: row.capsule_image ? String(row.capsule_image) : null,

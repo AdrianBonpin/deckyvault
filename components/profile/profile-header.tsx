@@ -1,6 +1,6 @@
 "use client"
 
-import { Shield, Crown, CheckCircle, Mail, User } from "lucide-react"
+import { Shield, Crown, CheckCircle, Mail } from "lucide-react"
 import { motion } from "motion/react"
 
 interface ProfileHeaderProps {
@@ -44,6 +44,7 @@ export function ProfileHeader({ name, email, role, verified, createdAt, image }:
       <div className="flex flex-wrap items-center gap-3">
         {image ? (
           <div className={`shrink-0 w-16 h-16 rounded-full overflow-hidden ${isR2Avatar(image) ? "ring-2 ring-primary/30 ring-offset-2 ring-offset-background" : ""}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={image} alt={`${name}'s profile photo`} className="w-full h-full object-cover" />
           </div>
         ) : (

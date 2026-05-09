@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia"
 import { db } from "@/lib/db/index"
 import { storageObjects } from "@/lib/db/schema"
-import { eq, and, isNull, sql } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { deleteObject, isR2Configured } from "@/lib/storage"
 
 // ── Task Result Type ────────────────────────────────────────────────
@@ -107,21 +107,6 @@ registerCronTask("orphan_detection", async () => {
   } catch (err) {
     details.error = err instanceof Error ? err.message : String(err)
     return { name: "orphan_detection", status: "error" as const, durationMs: Date.now() - start, details }
-  }
-})
-
-// ── Sitemap Regeneration Task ────────────────────────────────────────
-registerCronTask("sitemap_regeneration", async () => {
-  const start = Date.now()
-  const details: Record<string, unknown> = {}
-  try {
-    const { generateSitemaps } = await import("@/lib/sitemap/generate-static")
-    await generateSitemaps()
-    details.regenerated = true
-    return { name: "sitemap_regeneration", status: "success" as const, durationMs: Date.now() - start, details }
-  } catch (err) {
-    details.error = err instanceof Error ? err.message : String(err)
-    return { name: "sitemap_regeneration", status: "error" as const, durationMs: Date.now() - start, details }
   }
 })
 

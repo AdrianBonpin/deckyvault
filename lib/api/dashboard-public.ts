@@ -1,16 +1,8 @@
-import { Elysia, t } from "elysia"
+import { Elysia } from "elysia"
 import { db } from "@/lib/db/index"
-import {
-  games,
-  gameVersions,
-  performanceEntries,
-  gameComments,
-  reports,
-} from "@/lib/db/schema"
-import { eq, and, gte, sql, desc, count } from "drizzle-orm"
+import { sql } from "drizzle-orm"
 
 const SEVEN_DAYS_AGO = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-const NINETY_DAYS_AGO = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
 
 export const dashboardPublicRoutes = new Elysia({ prefix: "/dashboard" })
 

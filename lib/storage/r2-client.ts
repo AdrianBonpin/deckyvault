@@ -14,7 +14,6 @@ const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME ?? "deckyvault"
 const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL ?? ""
 
 let _client: S3Client | null = null
-let _configured = false
 
 function getR2ConfigStatus(): { configured: boolean; reason?: string } {
   if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
@@ -37,7 +36,6 @@ function getClient(): S3Client {
       secretAccessKey: R2_SECRET_ACCESS_KEY!,
     },
   })
-  _configured = true
   return _client
 }
 

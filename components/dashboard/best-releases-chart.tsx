@@ -37,9 +37,10 @@ function buildOption(games: BestRelease[]): EChartsOption {
       backgroundColor: "#1a1225",
       borderColor: CHART_THEME.border,
       textStyle: { color: CHART_THEME.text },
-      formatter: (params: any) => {
-        const v = params.value
-        return `<div style="font-weight:600;margin-bottom:4px">${params.name}</div>
+      formatter: (params: unknown) => {
+        const p = params as { name: string; value: number[] }
+        const v = p.value
+        return `<div style="font-weight:600;margin-bottom:4px">${p.name}</div>
 <div>Avg FPS: <b>${v[1]}</b></div>
 <div>Benchmarks: <b>${v[2]}</b></div>`
       },
@@ -78,7 +79,7 @@ function buildOption(games: BestRelease[]): EChartsOption {
         symbolSize: (val: number[]) => Math.max(12, Math.min(40, val[2] * 3)),
         label: {
           show: true,
-          formatter: (p: any) => p.name,
+          formatter: (p: unknown) => (p as { name: string }).name,
           position: "top",
           color: CHART_THEME.text,
           fontSize: 10,

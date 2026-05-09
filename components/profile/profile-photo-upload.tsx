@@ -23,7 +23,7 @@ function getInitials(name: string): string {
   return name.charAt(0).toUpperCase()
 }
 
-export function ProfilePhotoUpload({ currentImage, userName, userId, onImageChange }: ProfilePhotoUploadProps) {
+export function ProfilePhotoUpload({ currentImage, userName, onImageChange }: ProfilePhotoUploadProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentImage)
   const [uploadState, setUploadState] = useState<"idle" | "uploading" | "success" | "error">("idle")
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -42,7 +42,9 @@ export function ProfilePhotoUpload({ currentImage, userName, userId, onImageChan
     return cleanupTempUrl
   }, [])
 
+  // Sync previewUrl when parent updates currentImage externally
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPreviewUrl(currentImage)
   }, [currentImage])
 
@@ -56,7 +58,7 @@ export function ProfilePhotoUpload({ currentImage, userName, userId, onImageChan
     return null
   }
 
-  const handleFile = async (file: File) => {
+  const handleFile = useCallback(async (file: File) => {
     const validationError = validateFile(file)
     if (validationError) {
       setErrorMessage(validationError)
@@ -99,7 +101,7 @@ export function ProfilePhotoUpload({ currentImage, userName, userId, onImageChan
       setPreviewUrl(currentImage)
       cleanupTempUrl()
     }
-  }
+  }, [currentImage, onImageChange])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -112,7 +114,7 @@ export function ProfilePhotoUpload({ currentImage, userName, userId, onImageChan
     setIsDragging(false)
     const file = e.dataTransfer.files?.[0]
     if (file) handleFile(file)
-  }, [currentImage])
+  }, [handleFile])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -179,6 +181,7 @@ export function ProfilePhotoUpload({ currentImage, userName, userId, onImageChan
           }}
         >
           {previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={previewUrl}
               alt={`${userName}'s profile photo`}

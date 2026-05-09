@@ -1476,17 +1476,6 @@ function Badge({
     )
 }
 
-function MetaItem({ label, value }: { label: string; value: string }) {
-    return (
-        <div className='flex flex-col gap-1'>
-            <span className='text-[10px] text-text/50 uppercase tracking-wider'>
-                {label}
-            </span>
-            <span className='text-text/80 text-sm'>{value}</span>
-        </div>
-    )
-}
-
 function StatCard({
     label,
     value,
