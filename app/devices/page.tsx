@@ -31,6 +31,8 @@ export default async function DevicesPage() {
       deviceType: hardware.deviceType,
       image: hardware.image,
       sortOrder: hardware.sortOrder,
+      wattHours: hardware.wattHours,
+      tdpMax: hardware.tdpMax,
     })
     .from(hardware)
     .orderBy(hardware.sortOrder)
@@ -102,6 +104,8 @@ export default async function DevicesPage() {
       gameCount: stats?.gameCount ?? 0,
       verifiedCount: stats?.verifiedCount ?? 0,
       bestGame: bestGame ?? null,
+      wattHours: device.wattHours ? Number(device.wattHours) : null,
+      tdpMax: device.tdpMax ? Number(device.tdpMax) : null,
     }
   })
 

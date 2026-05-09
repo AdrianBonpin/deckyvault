@@ -20,6 +20,8 @@ export const hardwareStatsRoutes = new Elysia({ prefix: "/hardware" })
           name: hardware.name,
           deviceType: hardware.deviceType,
           sortOrder: hardware.sortOrder,
+          wattHours: hardware.wattHours,
+          tdpMax: hardware.tdpMax,
         })
         .from(hardware)
         .orderBy(hardware.sortOrder)
@@ -79,6 +81,8 @@ export const hardwareStatsRoutes = new Elysia({ prefix: "/hardware" })
           name: device.name,
           deviceType: device.deviceType,
           sortOrder: device.sortOrder,
+          wattHours: device.wattHours ? Number(device.wattHours) : null,
+          tdpMax: device.tdpMax ? Number(device.tdpMax) : null,
           totalBenchmarks: stats?.totalBenchmarks ?? 0,
           avgFps: stats?.avgFps ? Number(stats.avgFps) : null,
           gameCount: stats?.gameCount ?? 0,
@@ -100,6 +104,8 @@ export const hardwareStatsRoutes = new Elysia({ prefix: "/hardware" })
           slug: hardware.slug,
           name: hardware.name,
           deviceType: hardware.deviceType,
+          wattHours: hardware.wattHours,
+          tdpMax: hardware.tdpMax,
         })
         .from(hardware)
         .where(eq(hardware.slug, slug))
@@ -144,6 +150,8 @@ export const hardwareStatsRoutes = new Elysia({ prefix: "/hardware" })
       if (entries.length === 0) {
         return {
           ...device,
+          wattHours: null,
+          tdpMax: null,
           totalBenchmarks: 0,
           avgFps: null,
           verifiedCount: 0,

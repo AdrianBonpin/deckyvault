@@ -46,6 +46,7 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
         userNotes: performanceEntries.userNotes,
         createdAt: performanceEntries.createdAt,
         versionId: performanceEntries.versionId,
+        tdpWatts: performanceEntries.tdpWatts,
       })
       .from(performanceEntries)
       .innerJoin(
@@ -76,6 +77,7 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
         fpsRange: [],
         deviceBreakdown: [],
         filterOptions: { protonVersions: [], osVersions: [] },
+        batteryLife: [],
       }
     }
 
@@ -245,11 +247,17 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
 
     // ── 8. Device breakdown ───────────────────────────────────────
     const deviceBreakdown = Array.from(boxplotMap.entries()).map(
-      ([slug, { hardwareName, values }]) => ({
-        hardwareSlug: slug,
-        hardwareName,
-        count: values.length,
-      }),
+      ([slug, { hardwareName, values }]) => {
+        const dev = deviceWattHoursMap.get(slug)
+        return {
+          hardwareSlug: slug,
+          hardwareName,
+          count: values.length,
+          wattHours: dev?.wattHours ? Number(dev.wattHours) : null,
+          tdpMax: dev?.tdpMax ? Number(dev.tdpMax) : null,
+          deviceType: dev?.deviceType ?? null,
+        }
+      },
     )
 
     // ── 9. Performance tier breakdown per device ────────────────
@@ -279,6 +287,48 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
         stabilityRatio: e.fpsAvg > 0 ? Math.min(1, e.fpsOnePercentLow! / e.fpsAvg) : 0,
       }))
 
+    // ── 12. Battery life estimates ─────────────────────────────
+    // Fetch hardware wattHours for the relevant devices
+    const deviceSlugs = [...new Set(entries.map((e) => e.hardwareSlug))]
+    const deviceData = await db
+      .select({
+        slug: hardware.slug,
+        wattHours: hardware.wattHours,
+        tdpMax: hardware.tdpMax,
+        deviceType: hardware.deviceType,
+      })
+      .from(hardware)
+      .where(sql`${hardware.slug} = ANY(${deviceSlugs})`)
+
+    const deviceWattHoursMap = new Map(
+      deviceData.map((d) => [d.slug, d]),
+    )
+
+    const batteryLife = entries
+      .filter((e) => e.tdpWatts != null && e.tdpWatts > 0)
+      .map((e) => {
+        const device = deviceWattHoursMap.get(e.hardwareSlug)
+        const wh = device?.wattHours ? Number(device.wattHours) : null
+        const tdpMax = device?.tdpMax ? Number(device.tdpMax) : null
+        if (!wh) return null
+        const estimatedBatteryHours = wh / e.tdpWatts!
+        const estimatedBatteryMin = estimatedBatteryHours * 60
+        const estimatedAtMaxTdpMin = tdpMax ? (wh / tdpMax) * 60 : null
+        return {
+          id: e.id,
+          hardwareSlug: e.hardwareSlug,
+          tdpWatts: Number(e.tdpWatts),
+          estimatedBatteryMin: Math.round(estimatedBatteryMin),
+          estimatedBatteryHours: Math.round(estimatedBatteryHours * 10) / 10,
+          wattHours: wh,
+          tdpMax,
+          estimatedAtMaxTdpMin: estimatedAtMaxTdpMin
+            ? Math.round(estimatedAtMaxTdpMin)
+            : null,
+        }
+      })
+      .filter(Boolean)
+
     // ── 11. Filter options ────────────────────────────────────────
     const protonVersions = [
       ...new Set(entries.map((e) => e.protonVersion).filter(Boolean)),
@@ -306,6 +356,7 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
       deviceBreakdown,
       performanceTiers,
       stabilityScatter,
+      batteryLife,
       filterOptions: { protonVersions, osVersions },
     }
   },
