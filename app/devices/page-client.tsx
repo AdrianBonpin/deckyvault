@@ -11,6 +11,8 @@ import {
     ArrowRightIcon,
     MonitorIcon,
     CheckCircleIcon,
+    Zap,
+    Gauge,
 } from "lucide-react"
 import { getDeviceColor } from "@/components/charts/EChartWrapper"
 
@@ -31,6 +33,8 @@ export interface DeviceStats {
         headerImage: string | null
         fpsAvg: number
     } | null
+    wattHours: number | null
+    tdpMax: number | null
 }
 
 const deviceTypeLabel: Record<string, string> = {
@@ -232,6 +236,24 @@ export function DevicesPageClient({ devices }: { devices: DeviceStats[] }) {
                                             </span>
                                         </div>
                                     </div>
+
+                                    {/* Power specs */}
+                                    {(device.wattHours || device.tdpMax) && (
+                                        <div className="flex items-center gap-3 mt-3 text-xs text-text/40">
+                                            {device.wattHours && (
+                                                <span className="inline-flex items-center gap-1">
+                                                    <Zap className="h-3 w-3" />
+                                                    {Math.round(device.wattHours)}Wh
+                                                </span>
+                                            )}
+                                            {device.tdpMax && (
+                                                <span className="inline-flex items-center gap-1">
+                                                    <Gauge className="h-3 w-3" />
+                                                    Up to {Math.round(device.tdpMax)}W TDP
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
 
                                     {/* Best game */}
                                     {device.bestGame && (
