@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { ConfirmDialog } from "@/components/ui/modal"
@@ -65,24 +65,25 @@ export function SuggestionsClient() {
     { label: "Rejected", value: "rejected" },
   ]
 
-  const fetchSuggestions = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/community-suggestions/admin?limit=${LIMIT}`)
-      if (res.ok) {
-        const json = (await res.json()) as SuggestionsApiResponse
-        setSuggestions(json.data)
-        setTotal(json.total)
-      }
-      setOffset(0)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
   useEffect(() => {
-    fetchSuggestions()
-  }, [fetchSuggestions])
+    let cancelled = false
+    const run = async () => {
+      try {
+        const res = await fetch(`/api/community-suggestions/admin?limit=${LIMIT}`)
+        if (res.ok && !cancelled) {
+          const json = (await res.json()) as SuggestionsApiResponse
+          setSuggestions(json.data)
+          setTotal(json.total)
+        }
+      } catch {
+        // ignore
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    run()
+    return () => { cancelled = true }
+  }, [])
 
   const filtered = useMemo(() => {
     let result = suggestions

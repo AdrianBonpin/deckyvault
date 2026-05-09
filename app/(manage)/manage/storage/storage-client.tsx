@@ -101,7 +101,6 @@ export function StorageClient() {
   const isSearchChangeRef = useRef(false)
 
   useEffect(() => {
-    setStatsLoading(true)
     fetch("/api/admin/storage/stats")
       .then((res) => res.json())
       .then((data) => {
