@@ -12,6 +12,8 @@ import { UPSCALER_TYPE_OPTIONS, FRAME_GEN_OPTIONS } from "./environment-step"
 export interface ReviewData {
   hardwareSlug: string
   hardwareName: string
+  hardwareWattHours: number | null
+  hardwareDeviceType: string | null
   gameVersionLabel: string
   antiCheat: {
     antiCheatRelevant: boolean
@@ -144,6 +146,19 @@ export function ReviewStep({
           <SummaryRow label="Load Time SSD" value={formatNumber(performance.loadTimeSsd)} />
           <SummaryRow label="Load Time SD" value={formatNumber(performance.loadTimeSd)} />
           <SummaryRow label="TDP (Watts)" value={formatNumber(performance.tdpWatts)} />
+          <SummaryRow
+            label="Est. Battery"
+            value={(() => {
+              const wh = data.hardwareWattHours
+              const tdp = performance.tdpWatts
+              if (wh && tdp && tdp > 0 && data.hardwareDeviceType === "handheld") {
+                const hours = wh / tdp
+                const mins = Math.round(hours * 60)
+                return `~${hours.toFixed(1)}h (${mins} min)`
+              }
+              return "Not available — requires TDP and a handheld device"
+            })()}
+          />
         </div>
 
         {/* Environment */}

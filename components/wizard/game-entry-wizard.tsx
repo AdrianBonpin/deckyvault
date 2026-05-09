@@ -52,6 +52,8 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
   // Step 0: Setup — Hardware
   const [hardwareSlug, setHardwareSlug] = useState(editEntry?.hardwareSlug ?? "")
   const [hardwareName, setHardwareName] = useState("")
+  const [hardwareWattHours, setHardwareWattHours] = useState<number | null>(null)
+  const [hardwareDeviceType, setHardwareDeviceType] = useState<string | null>(null)
 
   // Step 0: Setup — Game Version
   const [selectedVersionId, setSelectedVersionId] = useState(defaultVersionId)
@@ -134,14 +136,20 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
     setHardwareSlug(slug)
     if (!slug) {
       setHardwareName("")
+      setHardwareWattHours(null)
+      setHardwareDeviceType(null)
       return
     }
     try {
       const res = await fetch("/api/performance/hardware")
       if (res.ok) {
-        const data = await res.json() as { data: Array<{ slug: string; name: string }> }
+        const data = await res.json() as { data: Array<{ slug: string; name: string; deviceType: string; wattHours: number | null; tdpMax: number | null }> }
         const device = data.data.find((d) => d.slug === slug)
-        if (device) setHardwareName(device.name)
+        if (device) {
+          setHardwareName(device.name)
+          setHardwareWattHours(device.wattHours ?? null)
+          setHardwareDeviceType(device.deviceType ?? null)
+        }
       }
     } catch {
       // ignore
@@ -156,9 +164,13 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
       try {
         const res = await fetch("/api/performance/hardware")
         if (res.ok && !cancelled) {
-          const data = await res.json() as { data: Array<{ slug: string; name: string }> }
+          const data = await res.json() as { data: Array<{ slug: string; name: string; deviceType: string; wattHours: number | null; tdpMax: number | null }> }
           const device = data.data.find((d) => d.slug === hardwareSlug)
-          if (device && !cancelled) setHardwareName(device.name)
+          if (device && !cancelled) {
+            setHardwareName(device.name)
+            setHardwareWattHours(device.wattHours ?? null)
+            setHardwareDeviceType(device.deviceType ?? null)
+          }
         }
       } catch {
         // ignore
@@ -402,6 +414,8 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
               data={{
                 hardwareSlug,
                 hardwareName,
+                hardwareWattHours,
+                hardwareDeviceType,
                 gameVersionLabel: getVersionLabel(),
                 antiCheat,
                 performance,

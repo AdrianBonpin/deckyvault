@@ -51,6 +51,8 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
           slug: hardware.slug,
           name: hardware.name,
           deviceType: hardware.deviceType,
+          wattHours: hardware.wattHours,
+          tdpMax: hardware.tdpMax,
         })
         .from(hardware)
         .orderBy(hardware.sortOrder)
