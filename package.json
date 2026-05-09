@@ -1,6 +1,6 @@
 {
   "name": "deckyvault",
-  "version": "2026.0.99",
+  "version": "2026.0.100",
   "private": true,
   "scripts": {
     "dev": "next dev --experimental-https --webpack",

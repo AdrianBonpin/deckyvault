@@ -2,6 +2,26 @@
 
 All notable changes to DeckyVault will be documented in this file.
 
+## [2026.0.100] - 2026-05-10
+
+### Added
+- Screenshot upload during benchmark submission (Review step), gated on settings presence
+- Best FPS and performance badges on games list cards
+- Game version info and anti-cheat context in preset detail modal
+- Auto-computed battery life estimate in submit wizard Review step
+
+### Changed
+- Screenshot upload moved from post-submission interstitial into wizard Review step
+- Preset detail modal shows game version/build and game-level anti-cheat info
+
+### Removed
+- Manual `estimatedBatteryMin` field; all battery estimates now auto-computed from TDP + watt-hours
+
+### Technical
+- Dropped `estimated_battery_min` column from `performance_entries`
+- Listing API returns `bestFps`, `isRawPerformer`, `isPoorPerformance`
+- Updated all component interfaces to remove deprecated battery field
+
 ## [2026.0.99] - 2026-05-09
 
 ### Added
