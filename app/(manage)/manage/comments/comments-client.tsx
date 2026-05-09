@@ -13,6 +13,7 @@ import {
   ChevronRightIcon,
   MessageSquareIcon,
 } from "lucide-react"
+import { ConfirmDialog } from "@/components/ui/modal"
 
 interface Comment {
   id: string
@@ -419,72 +420,30 @@ export function CommentsClient() {
       )}
 
       {/* Confirmation Dialogs */}
-      {confirmAction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-background border border-border rounded-xl p-6 max-w-sm w-full mx-4 space-y-4">
-            {confirmAction.type === "remove" && (
-              <>
-                <h2 className="text-base font-semibold text-text">
-                  Confirm Remove
-                </h2>
-                <p className="text-sm text-text/70">
-                  Are you sure you want to remove this comment?
-                </p>
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    onClick={() => setConfirmAction(null)}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium bg-text/5 text-text hover:bg-text/10 transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => handleRemove(confirmAction.comment)}
-                    disabled={actionLoading[confirmAction.comment.id]}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-                  >
-                    {actionLoading[confirmAction.comment.id] ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <TrashIcon className="h-3.5 w-3.5" />
-                    )}
-                    Remove
-                  </button>
-                </div>
-              </>
-            )}
+      {confirmAction?.type === "remove" && (
+        <ConfirmDialog
+          open={!!confirmAction}
+          onClose={() => setConfirmAction(null)}
+          onConfirm={() => handleRemove(confirmAction.comment)}
+          title="Confirm Remove"
+          message="Are you sure you want to remove this comment?"
+          confirmLabel="Remove"
+          variant="destructive"
+          loading={actionLoading[confirmAction.comment.id]}
+        />
+      )}
 
-            {confirmAction.type === "restore" && (
-              <>
-                <h2 className="text-base font-semibold text-text">
-                  Confirm Restore
-                </h2>
-                <p className="text-sm text-text/70">
-                  Are you sure you want to restore this comment?
-                </p>
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    onClick={() => setConfirmAction(null)}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium bg-text/5 text-text hover:bg-text/10 transition-colors cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => handleRestore(confirmAction.comment)}
-                    disabled={actionLoading[confirmAction.comment.id]}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-                  >
-                    {actionLoading[confirmAction.comment.id] ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <RotateCcwIcon className="h-3.5 w-3.5" />
-                    )}
-                    Restore
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+      {confirmAction?.type === "restore" && (
+        <ConfirmDialog
+          open={!!confirmAction}
+          onClose={() => setConfirmAction(null)}
+          onConfirm={() => handleRestore(confirmAction.comment)}
+          title="Confirm Restore"
+          message="Are you sure you want to restore this comment?"
+          confirmLabel="Restore"
+          variant="default"
+          loading={actionLoading[confirmAction.comment.id]}
+        />
       )}
     </div>
   )
