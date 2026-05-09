@@ -169,6 +169,13 @@
       "when": 1778336095477,
       "tag": "0023_married_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1778359948438,
+      "tag": "0024_violet_psynapse",
+      "breakpoints": true
     }
   ]
 }

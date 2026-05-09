@@ -79,8 +79,6 @@ export const performanceEntries = pgTable(
     settingsJson: jsonb("settings_json").$type<GameSettingCategory[]>(),
     userNotes: text("user_notes"),
 
-    // Battery estimate (minutes) — @deprecated: auto-computed from tdpWatts + hardware.wattHours
-    estimatedBatteryMin: integer("estimated_battery_min"),
 
     // TDP tracking (watts) — user-set TDP cap during benchmark
     tdpWatts: real("tdp_watts"),

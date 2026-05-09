@@ -1,0 +1,1 @@
+ALTER TABLE "performance_entries" DROP COLUMN "estimated_battery_min";
