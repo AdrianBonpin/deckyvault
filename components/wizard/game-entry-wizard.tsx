@@ -45,6 +45,10 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [createdEntryId, setCreatedEntryId] = useState<string | null>(null)
+  const [screenshotFiles, setScreenshotFiles] = useState<File[]>([])
+  const [screenshotUploading, setScreenshotUploading] = useState(false)
+  const [screenshotError, setScreenshotError] = useState<string | null>(null)
 
   // Step 0: Setup — Hardware
   const [hardwareSlug, setHardwareSlug] = useState(editEntry?.hardwareSlug ?? "")
@@ -294,10 +298,15 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
         throw new Error(data.error || `Failed to ${editEntry ? "update" : "submit"} entry`)
       }
 
-      setSuccess(true)
-      setTimeout(() => {
-        router.push(`/game/${gameId}`)
-      }, 2000)
+      const data = await res.json()
+      if (!editEntry && data.id) {
+        setCreatedEntryId(data.id)
+      } else {
+        setSuccess(true)
+        setTimeout(() => {
+          router.push(`/game/${gameId}`)
+        }, 2000)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
@@ -319,6 +328,87 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
         </div>
         <h2 className="text-xl font-bold mb-2">Entry Submitted!</h2>
         <p className="text-sm text-text/60">Redirecting to game page...</p>
+      </motion.div>
+    )
+  }
+
+  if (createdEntryId) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="flex flex-col items-center justify-center py-16 text-center max-w-md mx-auto"
+      >
+        <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
+          <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-bold mb-2">Entry Submitted!</h2>
+        <p className="text-sm text-text/60 mb-6">Your benchmark has been saved.</p>
+
+        <div className="w-full p-4 border border-border rounded-lg text-left">
+          <h3 className="text-sm font-medium mb-2">Add Screenshots (Optional)</h3>
+          <p className="text-xs text-text/50 mb-3">Upload up to 2 screenshots of your in-game settings or FPS overlay.</p>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            onChange={(e) => {
+              const files = Array.from(e.target.files || []).slice(0, 2)
+              setScreenshotFiles(files)
+            }}
+            className="block w-full text-sm text-text/70 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+          />
+          {screenshotFiles.length > 0 && (
+            <div className="mt-2 flex gap-2">
+              {screenshotFiles.map((file, i) => (
+                <div key={i} className="text-xs text-text/60">{file.name}</div>
+              ))}
+            </div>
+          )}
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={async () => {
+                if (!createdEntryId || screenshotFiles.length === 0) return
+                setScreenshotUploading(true)
+                setScreenshotError(null)
+                try {
+                  const formData = new FormData()
+                  screenshotFiles.forEach((file) => formData.append("screenshots", file))
+                  const res = await fetch(`/api/performance/${createdEntryId}/screenshots`, {
+                    method: "POST",
+                    body: formData,
+                  })
+                  if (!res.ok) {
+                    const data = await res.json()
+                    setScreenshotError(data.error || "Upload failed")
+                  } else {
+                    setSuccess(true)
+                    setTimeout(() => {
+                      router.push(`/game/${gameId}`)
+                    }, 1500)
+                  }
+                } catch {
+                  setScreenshotError("Upload failed")
+                } finally {
+                  setScreenshotUploading(false)
+                }
+              }}
+              disabled={screenshotFiles.length === 0 || screenshotUploading}
+              className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {screenshotUploading ? "Uploading..." : "Upload"}
+            </button>
+            <button
+              onClick={() => router.push(`/game/${gameId}`)}
+              className="px-4 py-2 rounded-lg border border-border text-sm text-text/70 hover:bg-text/5 transition-colors"
+            >
+              Skip
+            </button>
+          </div>
+          {screenshotError && <p className="mt-2 text-xs text-red-400">{screenshotError}</p>}
+        </div>
       </motion.div>
     )
   }
