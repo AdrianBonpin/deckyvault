@@ -4,7 +4,18 @@ import { db } from "@/lib/db/index"
 import { games, hardware } from "@/lib/db/schema"
 import { or, ne, isNull } from "drizzle-orm"
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://deckyvault.xyz"
+const PRODUCTION_URL = "https://deckyvault.xyz"
+
+function getBaseUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL
+  // Never use localhost for sitemaps — they're for production search engines
+  if (envUrl && !envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")) {
+    return envUrl.replace(/\/$/, "")
+  }
+  return PRODUCTION_URL
+}
+
+const BASE_URL = getBaseUrl()
 const MAX_URLS_PER_SITEMAP = 45000 // Leave buffer below 50k limit
 
 interface SitemapEntry {
