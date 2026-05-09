@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia"
 import { db } from "@/lib/db/index"
 import { communitySuggestions, games, user, suggestionStatusEnum } from "@/lib/db/schema"
-import { eq, and, desc } from "drizzle-orm"
+import { eq, and, desc, sql, ilike } from "drizzle-orm"
 import { requireAuth, requireContributorOrAdmin } from "@/lib/auth/guard"
 
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL
@@ -59,6 +59,66 @@ const allowedFields = [
 export const communitySuggestionRoutes = new Elysia({
   prefix: "/community-suggestions",
 })
+
+  // Admin list with pagination and filtering
+  .get(
+    "/admin",
+    async ({ query, request, set }) => {
+      const guard = await requireContributorOrAdmin(request.headers)
+      if (!guard.ok) {
+        set.status = guard.status
+        return { error: guard.error }
+      }
+
+      const { limit, offset, status } = query
+
+      const conditions = []
+      if (status) {
+        conditions.push(eq(communitySuggestions.status, status as typeof suggestionStatusEnum.enumValues[number]))
+      }
+
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined
+
+      const [countResult] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(communitySuggestions)
+        .leftJoin(games, eq(communitySuggestions.gameId, games.id))
+        .leftJoin(user, eq(communitySuggestions.userId, user.id))
+        .where(whereClause)
+
+      const data = await db
+        .select({
+          id: communitySuggestions.id,
+          gameId: communitySuggestions.gameId,
+          gameTitle: games.title,
+          fieldName: communitySuggestions.fieldName,
+          currentValue: communitySuggestions.currentValue,
+          proposedValue: communitySuggestions.proposedValue,
+          reason: communitySuggestions.reason,
+          status: communitySuggestions.status,
+          createdAt: communitySuggestions.createdAt,
+          reviewedAt: communitySuggestions.reviewedAt,
+          reviewNote: communitySuggestions.reviewNote,
+          userName: user.name,
+        })
+        .from(communitySuggestions)
+        .leftJoin(games, eq(communitySuggestions.gameId, games.id))
+        .leftJoin(user, eq(communitySuggestions.userId, user.id))
+        .where(whereClause)
+        .orderBy(desc(communitySuggestions.createdAt))
+        .limit(limit)
+        .offset(offset)
+
+      return { data, total: countResult.count, limit, offset }
+    },
+    {
+      query: t.Object({
+        limit: t.Number({ default: 20 }),
+        offset: t.Number({ default: 0 }),
+        status: t.Optional(t.String()),
+      }),
+    },
+  )
 
   // Submit a suggestion
   .post(
