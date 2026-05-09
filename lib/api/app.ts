@@ -32,6 +32,7 @@ import { communitySuggestionRoutes } from "@/lib/api/community-suggestions"
 import { gamesListingRoutes } from "@/lib/api/games-listing"
 import { steamgridProxyRoutes } from "@/lib/api/steamgrid-proxy"
 import { dashboardRoutes } from "@/lib/api/dashboard"
+import { dashboardPublicRoutes } from "@/lib/api/dashboard-public"
 import { savedFilterRoutes } from "@/lib/api/saved-filters"
 import { cronRoutes } from "@/lib/api/cron"
 import { profilePhotoRoutes } from "@/lib/api/profile-photo"
@@ -122,6 +123,7 @@ export const app = new Elysia({ prefix: "/api" })
   .use(cronRoutes)
   // Dashboard
   .use(dashboardRoutes)
+  .use(dashboardPublicRoutes)
   // Root
   .get("/", () => ({
     name: "DeckyVault API",
