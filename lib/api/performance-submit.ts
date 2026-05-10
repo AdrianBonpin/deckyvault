@@ -5,10 +5,18 @@ import {
   gameVersions,
   hardware,
   gamePlatformSupport,
+  entryScreenshots,
+  storageObjects,
 } from "@/lib/db/schema"
+import type { GameSettingCategory } from "@/lib/db/schema"
 import { eq, and, sql } from "drizzle-orm"
 import { requireRole } from "@/lib/auth/guard"
 import { recalculatePlayability } from "./playability"
+import { uploadObject, deleteObject, isR2Configured } from "@/lib/storage/r2-client"
+import { processScreenshot, isAllowedMimeType, validateMagicBytes } from "@/lib/image-processing"
+
+const MAX_SCREENSHOTS_PER_ENTRY = 2
+const MAX_UPLOAD_SIZE = 10 * 1024 * 1024 // 10 MB
 
 export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
   .get(
@@ -62,7 +70,7 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
   )
   .post(
     "/submit",
-    async ({ request, body, set }) => {
+    async ({ request, set }) => {
       const guard = await requireRole(request.headers, [
         "user",
         "contributor",
@@ -73,11 +81,75 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
         return { error: guard.error }
       }
 
+      // Parse multipart form data
+      let formData: FormData
+      try {
+        formData = await request.formData()
+      } catch {
+        set.status = 400
+        return { error: "Invalid multipart/form-data" }
+      }
+
+      // Extract and parse the JSON payload field
+      const payloadField = formData.get("payload")
+      if (!payloadField || typeof payloadField !== "string") {
+        set.status = 400
+        return { error: "Missing or invalid payload field" }
+      }
+
+      let payload: Record<string, unknown>
+      try {
+        payload = JSON.parse(payloadField)
+      } catch {
+        set.status = 400
+        return { error: "Invalid JSON in payload field" }
+      }
+
+      // Extract fields from payload
+      const versionId = payload.versionId as string
+      const hardwareSlug = payload.hardwareSlug as string
+      const fpsAvg = payload.fpsAvg as number
+      const fpsOnePercentLow = (payload.fpsOnePercentLow as number | null | undefined) ?? null
+      const fpsLow = (payload.fpsLow as number | null | undefined) ?? null
+      const fpsHigh = (payload.fpsHigh as number | null | undefined) ?? null
+      const protonVersion = (payload.protonVersion as string | null | undefined) ?? null
+      const osVersion = (payload.osVersion as string | null | undefined) ?? null
+      const VALID_UPSCALER_TYPES = ["none", "fsr", "dlss", "xess", "lsfg", "other"] as const
+      const VALID_FRAME_GEN_METHODS = ["none", "fsr_fg", "dlss_fg", "lsfg", "other"] as const
+      const VALID_ANTICHEAT_STATUSES = ["none", "supported", "unsupported", "unknown"] as const
+      type UpscalerType = (typeof VALID_UPSCALER_TYPES)[number]
+      type FrameGenMethod = (typeof VALID_FRAME_GEN_METHODS)[number]
+      type AntiCheatStatus = (typeof VALID_ANTICHEAT_STATUSES)[number]
+
+      const rawUpscalerType = payload.upscalerType as string | undefined
+      const upscalerType: UpscalerType = rawUpscalerType && VALID_UPSCALER_TYPES.includes(rawUpscalerType as UpscalerType) ? (rawUpscalerType as UpscalerType) : "none"
+      const upscalerVersion = (payload.upscalerVersion as string | null | undefined) ?? null
+      const customSystem = (payload.customSystem as boolean | undefined) ?? false
+      const rawFrameGenMethod = payload.frameGenMethod as string | undefined
+      const frameGenMethod: FrameGenMethod = rawFrameGenMethod && VALID_FRAME_GEN_METHODS.includes(rawFrameGenMethod as FrameGenMethod) ? (rawFrameGenMethod as FrameGenMethod) : "none"
+      const loadTimeSsd = (payload.loadTimeSsd as number | null | undefined) ?? null
+      const loadTimeSd = (payload.loadTimeSd as number | null | undefined) ?? null
+      const tdpWatts = (payload.tdpWatts as number | null | undefined) ?? null
+      const youtubeVideoId = (payload.youtubeVideoId as string | null | undefined) ?? null
+      const launchOptions = (payload.launchOptions as string | null | undefined) ?? null
+      const settingsJson = (payload.settingsJson as GameSettingCategory[] | null | undefined) ?? null
+      const userNotes = (payload.userNotes as string | null | undefined) ?? null
+      const antiCheatRelevant = (payload.antiCheatRelevant as boolean | undefined) ?? false
+      const antiCheatName = (payload.antiCheatName as string | null | undefined) ?? null
+      const rawAntiCheatStatus = payload.antiCheatStatus as string | undefined
+      const antiCheatStatus: AntiCheatStatus = rawAntiCheatStatus && VALID_ANTICHEAT_STATUSES.includes(rawAntiCheatStatus as AntiCheatStatus) ? (rawAntiCheatStatus as AntiCheatStatus) : "unknown"
+
+      // Validate required fields
+      if (!versionId || !hardwareSlug || fpsAvg === undefined || fpsAvg === null) {
+        set.status = 400
+        return { error: "Missing required fields: versionId, hardwareSlug, fpsAvg" }
+      }
+
       // Verify the game version exists
       const [version] = await db
         .select({ id: gameVersions.id, gameId: gameVersions.gameId })
         .from(gameVersions)
-        .where(eq(gameVersions.id, body.versionId))
+        .where(eq(gameVersions.id, versionId))
         .limit(1)
 
       if (!version) {
@@ -89,7 +161,7 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
       const [device] = await db
         .select({ slug: hardware.slug })
         .from(hardware)
-        .where(eq(hardware.slug, body.hardwareSlug))
+        .where(eq(hardware.slug, hardwareSlug))
         .limit(1)
 
       if (!device) {
@@ -98,8 +170,8 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
       }
 
       // Validate YouTube video ID format (11 alphanumeric + dash/underscore)
-      if (body.youtubeVideoId) {
-        const ytId = body.youtubeVideoId.trim()
+      if (youtubeVideoId) {
+        const ytId = youtubeVideoId.trim()
         if (!/^[a-zA-Z0-9_-]{11}$/.test(ytId)) {
           set.status = 400
           return { error: "Invalid YouTube video ID format (must be 11 characters)" }
@@ -107,48 +179,212 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
       }
 
       // Validate TDP
-      if (body.tdpWatts !== null && body.tdpWatts !== undefined && body.tdpWatts <= 0) {
+      if (tdpWatts !== null && tdpWatts <= 0) {
         set.status = 400
         return { error: "TDP must be greater than 0" }
       }
 
-      // Create the performance entry
+      // ── Process screenshots ──────────────────────────────────────────
+      const screenshotFiles = formData.getAll("screenshots").filter((f): f is File => f instanceof File)
+
+      if (screenshotFiles.length > MAX_SCREENSHOTS_PER_ENTRY) {
+        set.status = 400
+        return { error: `Maximum ${MAX_SCREENSHOTS_PER_ENTRY} screenshots allowed` }
+      }
+
+      // Process all screenshots with sharp BEFORE any DB writes
+      const processedScreenshots: Array<{
+        buffer: Buffer
+        width: number
+        height: number
+        mimeType: string
+        size: number
+        originalName: string | null
+      }> = []
+
+      for (const file of screenshotFiles) {
+        if (file.size > MAX_UPLOAD_SIZE) {
+          set.status = 400
+          return { error: `Screenshot "${file.name}" exceeds 10 MB limit` }
+        }
+
+        if (!isAllowedMimeType(file.type)) {
+          set.status = 400
+          return { error: `Screenshot "${file.name}" has unsupported MIME type: ${file.type}` }
+        }
+
+        const arrayBuffer = await file.arrayBuffer()
+        const rawBuffer = Buffer.from(arrayBuffer)
+
+        if (!validateMagicBytes(rawBuffer, file.type)) {
+          set.status = 400
+          return { error: `Screenshot "${file.name}" content does not match declared type` }
+        }
+
+        try {
+          const processed = await processScreenshot(rawBuffer, file.type)
+          processedScreenshots.push({
+            ...processed,
+            originalName: file.name || null,
+          })
+        } catch (err) {
+          set.status = 400
+          return { error: `Failed to process screenshot "${file.name}": ${err instanceof Error ? err.message : "Unknown error"}` }
+        }
+      }
+
+      // ── Create performance entry ────────────────────────────────────
       const [entry] = await db
         .insert(performanceEntries)
         .values({
-          versionId: body.versionId,
-          hardwareSlug: body.hardwareSlug,
+          versionId,
+          hardwareSlug,
           userId: guard.user.id,
-          fpsAvg: body.fpsAvg,
-          fpsOnePercentLow: body.fpsOnePercentLow ?? null,
-          fpsLow: body.fpsLow ?? null,
-          fpsHigh: body.fpsHigh ?? null,
-          protonVersion: body.protonVersion ?? null,
-          osVersion: body.osVersion ?? null,
-          upscalerType: body.upscalerType ?? "none",
-          upscalerVersion: body.upscalerVersion ?? null,
-          customSystem: body.customSystem ?? false,
-          frameGenMethod: body.frameGenMethod ?? "none",
-          loadTimeSsd: body.loadTimeSsd ?? null,
-          loadTimeSd: body.loadTimeSd ?? null,
-          tdpWatts: body.tdpWatts ?? null,
-          youtubeVideoId: body.youtubeVideoId
-            ? body.youtubeVideoId.trim()
-            : null,
-          launchOptions: body.launchOptions ?? null,
-          settingsJson: body.settingsJson ?? null,
-          userNotes: body.userNotes ?? null,
+          fpsAvg,
+          fpsOnePercentLow,
+          fpsLow,
+          fpsHigh,
+          protonVersion,
+          osVersion,
+          upscalerType,
+          upscalerVersion,
+          customSystem,
+          frameGenMethod,
+          loadTimeSsd,
+          loadTimeSd,
+          tdpWatts,
+          youtubeVideoId: youtubeVideoId ? youtubeVideoId.trim() : null,
+          launchOptions,
+          settingsJson,
+          userNotes,
         })
         .returning()
 
-      // Update or create gamePlatformSupport with anti-cheat info
+      // ── Upload screenshots to R2 ─────────────────────────────────────
+      const uploadedKeys: string[] = []
+      const uploadedStorageIds: string[] = []
+      const screenshotResults: Array<{
+        id: string
+        storageKey: string
+        url: string
+        width: number
+        height: number
+        mimeType: string
+        size: number
+        originalName: string | null
+        orderIndex: number
+      }> = []
+
+      let uploadFailed = false
+      let uploadError = ""
+
+      for (let i = 0; i < processedScreenshots.length; i++) {
+        const shot = processedScreenshots[i]
+        const r2Key = `screenshots/${entry.id}/${crypto.randomUUID()}.jpg`
+
+        try {
+          if (!isR2Configured()) {
+            throw new Error("R2 storage is not configured")
+          }
+          const url = await uploadObject(r2Key, shot.buffer, shot.mimeType, {
+            entryId: entry.id,
+            orderIndex: String(i),
+          })
+          uploadedKeys.push(r2Key)
+
+          // Insert into storageObjects
+          const [storageObj] = await db
+            .insert(storageObjects)
+            .values({
+              key: r2Key,
+              bucket: "deckyvault",
+              size: shot.size,
+              mimeType: shot.mimeType,
+              entityType: "entry_screenshot",
+              entityId: entry.id,
+              uploadedBy: guard.user.id,
+            })
+            .returning()
+          uploadedStorageIds.push(storageObj.id)
+
+          // Insert into entryScreenshots
+          const [screenshotRow] = await db
+            .insert(entryScreenshots)
+            .values({
+              entryId: entry.id,
+              storageKey: r2Key,
+              orderIndex: i,
+              mimeType: shot.mimeType,
+              width: shot.width,
+              height: shot.height,
+              originalName: shot.originalName,
+            })
+            .returning()
+
+          screenshotResults.push({
+            id: screenshotRow.id,
+            storageKey: r2Key,
+            url,
+            width: shot.width,
+            height: shot.height,
+            mimeType: shot.mimeType,
+            size: shot.size,
+            originalName: shot.originalName,
+            orderIndex: i,
+          })
+        } catch (err) {
+          uploadFailed = true
+          uploadError = err instanceof Error ? err.message : "Upload failed"
+          break
+        }
+      }
+
+      // Roll back if any upload failed
+      if (uploadFailed) {
+        // Delete uploaded R2 objects
+        for (const key of uploadedKeys) {
+          try {
+            await deleteObject(key)
+          } catch {
+            // Best-effort cleanup
+          }
+        }
+
+        // Delete storageObjects rows
+        for (const id of uploadedStorageIds) {
+          try {
+            await db.delete(storageObjects).where(eq(storageObjects.id, id))
+          } catch {
+            // Best-effort cleanup
+          }
+        }
+
+        // Delete entry screenshots (should cascade, but be explicit)
+        try {
+          await db.delete(entryScreenshots).where(eq(entryScreenshots.entryId, entry.id))
+        } catch {
+          // Best-effort cleanup
+        }
+
+        // Delete the performance entry
+        try {
+          await db.delete(performanceEntries).where(eq(performanceEntries.id, entry.id))
+        } catch {
+          // Best-effort cleanup
+        }
+
+        set.status = 500
+        return { error: `Screenshot upload failed: ${uploadError}` }
+      }
+
+      // ── Update / create gamePlatformSupport ──────────────────────────
       const [existingSupport] = await db
         .select()
         .from(gamePlatformSupport)
         .where(
           and(
             eq(gamePlatformSupport.gameId, version.gameId),
-            eq(gamePlatformSupport.hardwareSlug, body.hardwareSlug),
+            eq(gamePlatformSupport.hardwareSlug, hardwareSlug),
           ),
         )
         .limit(1)
@@ -157,23 +393,23 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
         await db
           .update(gamePlatformSupport)
           .set({
-            antiCheatRelevant: body.antiCheatRelevant ?? existingSupport.antiCheatRelevant,
-            antiCheatName: body.antiCheatRelevant
-              ? (body.antiCheatName ?? existingSupport.antiCheatName)
+            antiCheatRelevant: antiCheatRelevant ?? existingSupport.antiCheatRelevant,
+            antiCheatName: antiCheatRelevant
+              ? (antiCheatName ?? existingSupport.antiCheatName)
               : null,
-            antiCheatStatus: body.antiCheatStatus ?? existingSupport.antiCheatStatus,
+            antiCheatStatus: antiCheatStatus ?? existingSupport.antiCheatStatus,
             updatedAt: new Date(),
           })
           .where(eq(gamePlatformSupport.id, existingSupport.id))
       } else {
         await db.insert(gamePlatformSupport).values({
           gameId: version.gameId,
-          hardwareSlug: body.hardwareSlug,
+          hardwareSlug,
           isSupported: true,
           protonStatus: "unknown",
-          antiCheatRelevant: body.antiCheatRelevant ?? false,
-          antiCheatName: body.antiCheatRelevant ? body.antiCheatName ?? null : null,
-          antiCheatStatus: body.antiCheatStatus ?? "unknown",
+          antiCheatRelevant,
+          antiCheatName: antiCheatRelevant ? antiCheatName : null,
+          antiCheatStatus,
           playabilityStatus: "unknown",
         })
       }
@@ -187,71 +423,7 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
       return {
         id: entry.id,
         createdAt: entry.createdAt.toISOString(),
+        screenshots: screenshotResults,
       }
-    },
-    {
-      body: t.Object({
-        versionId: t.String(),
-        hardwareSlug: t.String(),
-        fpsAvg: t.Number(),
-        fpsOnePercentLow: t.Optional(t.Union([t.Number(), t.Null()])),
-        fpsLow: t.Optional(t.Union([t.Number(), t.Null()])),
-        fpsHigh: t.Optional(t.Union([t.Number(), t.Null()])),
-        protonVersion: t.Optional(t.Union([t.String(), t.Null()])),
-        osVersion: t.Optional(t.Union([t.String(), t.Null()])),
-        upscalerType: t.Optional(
-          t.Union([
-            t.Literal("none"),
-            t.Literal("fsr"),
-            t.Literal("dlss"),
-            t.Literal("xess"),
-            t.Literal("lsfg"),
-            t.Literal("other"),
-          ]),
-        ),
-        upscalerVersion: t.Optional(t.Union([t.String(), t.Null()])),
-        customSystem: t.Optional(t.Boolean()),
-        frameGenMethod: t.Optional(
-          t.Union([
-            t.Literal("none"),
-            t.Literal("fsr_fg"),
-            t.Literal("dlss_fg"),
-            t.Literal("lsfg"),
-            t.Literal("other"),
-          ]),
-        ),
-        loadTimeSsd: t.Optional(t.Union([t.Number(), t.Null()])),
-        loadTimeSd: t.Optional(t.Union([t.Number(), t.Null()])),
-        tdpWatts: t.Optional(t.Union([t.Number(), t.Null()])),
-        youtubeVideoId: t.Optional(t.Union([t.String(), t.Null()])),
-        launchOptions: t.Optional(t.Union([t.String(), t.Null()])),
-        settingsJson: t.Optional(
-          t.Union([
-            t.Array(
-              t.Object({
-                category: t.String(),
-                settings: t.Array(
-                  t.Object({
-                    title: t.String(),
-                    value: t.Union([t.String(), t.Number(), t.Boolean()]),
-                  }),
-                ),
-              }),
-            ),
-            t.Null(),
-          ]),
-        ),
-        userNotes: t.Optional(t.Union([t.String(), t.Null()])),
-        antiCheatRelevant: t.Optional(t.Boolean()),
-        antiCheatName: t.Optional(t.Union([t.String(), t.Null()])),
-        antiCheatStatus: t.Optional(
-          t.Union([
-            t.Literal("none"),
-            t.Literal("supported"),
-            t.Literal("unsupported"),
-            t.Literal("unknown"),
-          ]),
-        ),
-      }),
     },
   )
