@@ -34,8 +34,7 @@ interface ReviewStepProps {
   error: string | null
   screenshotFiles: File[]
   onScreenshotFilesChange: (files: File[]) => void
-  screenshotUploading: boolean
-  screenshotError: string | null
+  submitPhase: "idle" | "uploading" | "saving" | "success" | "error"
 }
 
 function SectionHeader({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
@@ -70,8 +69,7 @@ export function ReviewStep({
   error,
   screenshotFiles,
   onScreenshotFilesChange,
-  screenshotUploading,
-  screenshotError,
+  submitPhase,
 }: ReviewStepProps) {
   const { hardwareName, gameVersionLabel, antiCheat, performance, environment, settings } = data
 
@@ -218,7 +216,7 @@ export function ReviewStep({
           </div>
         ) : (
           <div className="rounded-lg border border-border bg-text/5 p-4 space-y-3">
-            {screenshotUploading && (
+            {(submitPhase === "uploading" || submitPhase === "saving") && (
               <div className="flex items-center gap-2 text-xs text-text/60">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 <span>Uploading...</span>
@@ -252,7 +250,7 @@ export function ReviewStep({
               </div>
             )}
 
-            {(!screenshotFiles || screenshotFiles.length < 2) && !screenshotUploading && (
+            {(!screenshotFiles || screenshotFiles.length < 2) && submitPhase !== "uploading" && submitPhase !== "saving" && (
               <label className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-dashed border-border bg-text/5 hover:bg-text/10 transition-colors cursor-pointer">
                 <ImagePlus className="h-3.5 w-3.5 text-primary" />
                 <span className="text-xs text-text/70">
@@ -280,9 +278,7 @@ export function ReviewStep({
               <p className="text-xs text-text/50">Maximum 2 screenshots reached</p>
             )}
 
-            {screenshotError && (
-              <p className="text-xs text-red-400">{screenshotError}</p>
-            )}
+
           </div>
         )}
       </div>

@@ -44,10 +44,8 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
   const [currentStep, setCurrentStep] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
   const [screenshotFiles, setScreenshotFiles] = useState<File[]>([])
-  const [screenshotUploading, setScreenshotUploading] = useState(false)
-  const [screenshotError, setScreenshotError] = useState<string | null>(null)
+  const [submitPhase, setSubmitPhase] = useState<"idle" | "uploading" | "saving" | "success" | "error">("idle")
 
   // Step 0: Setup — Hardware
   const [hardwareSlug, setHardwareSlug] = useState(editEntry?.hardwareSlug ?? "")
@@ -260,10 +258,10 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
+    setSubmitPhase("uploading")
     setError(null)
 
     try {
-      // Resolve version ID (may create a new version)
       const versionId = await resolveVersionId()
 
       const payload = {
@@ -291,67 +289,46 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
         antiCheatStatus: antiCheat.antiCheatStatus,
       }
 
+      const formData = new FormData()
+      formData.append("payload", JSON.stringify(payload))
+
+      for (const file of screenshotFiles) {
+        formData.append("screenshots", file)
+      }
+
+      setSubmitPhase("saving")
+
       const url = editEntry
         ? `/api/performance/${editEntry.id}/edit`
         : "/api/performance/submit"
       const method = editEntry ? "PATCH" : "POST"
 
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
+      const res = await fetch(url, { method, body: formData })
 
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error || `Failed to ${editEntry ? "update" : "submit"} entry`)
       }
 
-      const data = await res.json()
-
-      // Inline screenshot upload for new entries
-      if (!editEntry && data.id && screenshotFiles.length > 0) {
-        setScreenshotUploading(true)
-        try {
-          const formData = new FormData()
-          screenshotFiles.forEach((file) => formData.append("screenshots", file))
-          const uploadRes = await fetch(`/api/performance/${data.id}/screenshots`, {
-            method: "POST",
-            body: formData,
-          })
-          if (!uploadRes.ok) {
-            console.warn("Screenshot upload failed:", await uploadRes.text())
-          }
-        } catch (err) {
-          console.warn("Screenshot upload error:", err)
-        } finally {
-          setScreenshotUploading(false)
-        }
-      }
-
-      setSuccess(true)
+      setSubmitPhase("success")
       setTimeout(() => {
         router.push(`/game/${gameId}`)
       }, 2000)
     } catch (err) {
+      setSubmitPhase("error")
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  if (success) {
+  if (submitPhase === "success") {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="flex flex-col items-center justify-center py-16 text-center"
       >
-        <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
         <h2 className="text-xl font-bold mb-2">Entry Submitted!</h2>
         <p className="text-sm text-text/60">Redirecting to game page...</p>
       </motion.div>
@@ -429,34 +406,34 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
               error={error}
               screenshotFiles={screenshotFiles}
               onScreenshotFilesChange={setScreenshotFiles}
-              screenshotUploading={screenshotUploading}
-              screenshotError={screenshotError}
+              submitPhase={submitPhase}
             />
           )}
         </motion.div>
       </AnimatePresence>
 
       {/* Navigation Buttons */}
-      {currentStep < 4 && (
-        <div className="flex justify-between">
+      <div className="flex justify-between">
+        {currentStep > 0 && (
           <button
             type="button"
             onClick={handleBack}
-            disabled={currentStep === 0}
             className="px-6 py-2 rounded-lg border border-border text-sm font-medium text-text/70 hover:bg-text/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             Back
           </button>
+        )}
+        {currentStep < 4 && (
           <button
             type="button"
             onClick={handleNext}
             disabled={!canProceed()}
-            className="px-6 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
           >
             Next
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
