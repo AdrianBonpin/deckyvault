@@ -883,7 +883,7 @@ export function GamePageClient({
                     {/* Desktop hero — side-by-side layout */}
                     <div className='hidden md:flex gap-4 sm:gap-6 px-[10svw]'>
                         {/* Cover image */}
-                        <div className='relative shrink-0 aspect-2/3 w-20 sm:w-28 md:w-36 rounded-lg overflow-hidden border border-border bg-text/5 h-max'>
+                        <div className='relative shrink-0 aspect-2/3 w-20 sm:w-32 md:w-52 rounded-lg overflow-hidden border border-border bg-text/5 h-max'>
                             {coverImage && !imgError ? (
                                 <Image
                                     src={coverImage}
