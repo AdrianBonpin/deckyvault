@@ -177,7 +177,24 @@ export function ReviewStep({
               }
             />
           )}
-          <SummaryRow label="YouTube Video" value={environment.youtubeVideoId || "Not set"} />
+          {environment.youtubeVideoId && /^[a-zA-Z0-9_-]{11}$/.test(environment.youtubeVideoId) ? (
+            <div className="mt-2">
+              <span className="text-xs text-text/50">YouTube Video</span>
+              <div className="mt-1 relative" style={{ paddingBottom: "56.25%" }}>
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${environment.youtubeVideoId}`}
+                  className="absolute inset-0 w-full h-full rounded-md"
+                  allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
+                  sandbox="allow-scripts allow-same-origin allow-presentation"
+                  allowFullScreen
+                  loading="lazy"
+                  title="Review: Gameplay Video"
+                />
+              </div>
+            </div>
+          ) : (
+            <SummaryRow label="YouTube Video" value="Not provided" />
+          )}
         </div>
 
         {/* Settings */}
@@ -315,7 +332,11 @@ export function ReviewStep({
         {isSubmitting ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Submitting...
+            {submitPhase === "uploading"
+              ? "Uploading screenshots..."
+              : submitPhase === "saving"
+                ? "Saving entry..."
+                : "Processing..."}
           </>
         ) : (
           <>
