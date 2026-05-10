@@ -407,7 +407,7 @@ function HeroInfo({
                 <Badge
                     icon={SettingsIcon}
                     value={counts.presets}
-                    label='Presets'
+                    label='Entries'
                 />
                 <Badge
                     icon={MessageSquareIcon}
@@ -1176,7 +1176,7 @@ export function GamePageClient({
                     </div>
                 </motion.div>
 
-                {/* Section 4a: Pinned Presets */}
+                {/* Section 4a: Pinned Entries */}
                 {pinnedPresets.length > 0 && (
                     <motion.div
                         initial={{ opacity: 0, y: 12 }}
@@ -1187,7 +1187,7 @@ export function GamePageClient({
                         <div className='max-w-7xl mx-auto flex flex-col gap-4'>
                             <div className='flex items-center justify-between'>
                                 <h2 className='text-lg font-semibold'>
-                                    📌 Pinned Presets
+                                    📌 Pinned Entries
                                 </h2>
                                 <span className='text-xs text-text/50'>
                                     {pinnedPresets.length} pinned
@@ -1416,7 +1416,7 @@ export function GamePageClient({
                     </motion.div>
                 )}
 
-                {/* Section 4b: Community Presets */}
+                {/* Section 4b: Performance Entries */}
                 <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -1426,11 +1426,11 @@ export function GamePageClient({
                     <div className='max-w-7xl mx-auto flex flex-col gap-4'>
                         <div className='flex items-center justify-between'>
                             <h2 className='text-lg font-semibold'>
-                                Community Presets
+                                Performance Entries
                             </h2>
                             <span className='text-xs text-text/50'>
-                                {regularPresets.length} preset
-                                {regularPresets.length !== 1 ? "s" : ""}
+                                {regularPresets.length} entr
+                                {regularPresets.length !== 1 ? "ies" : "y"}
                             </span>
                         </div>
 
@@ -1438,7 +1438,7 @@ export function GamePageClient({
                             <div className='flex flex-col items-center justify-center py-16 gap-3 rounded-xl border border-border bg-text/2'>
                                 <SettingsIcon className='h-10 w-10 text-text/20' />
                                 <p className='text-sm text-text/40'>
-                                    No presets match the selected filters
+                                    No entries match the selected filters
                                 </p>
                             </div>
                         ) : (
