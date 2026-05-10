@@ -20,6 +20,9 @@ import {
     PencilIcon,
 } from "lucide-react"
 import { TiptapRenderer } from "@/components/tiptap-renderer"
+import { ScreenshotLightbox } from "@/components/ui/screenshot-lightbox"
+
+type TabKey = "details" | "media" | "settings" | "notes"
 
 interface Preset {
     id: string
@@ -85,6 +88,37 @@ function formatValue(value: string | number | boolean): string {
     return String(value)
 }
 
+function MetaItem({
+    label,
+    value,
+}: {
+    label: string
+    value: React.ReactNode | string | null
+}) {
+    return (
+        <div className="flex items-center justify-between py-1">
+            <span className="text-xs text-text/50">{label}</span>
+            <span className="text-sm text-text/80 font-medium">{value ?? "—"}</span>
+        </div>
+    )
+}
+
+function hasPerformanceData(p: Preset): boolean {
+    return p.fpsAvg !== null || p.fpsOnePercentLow !== null || p.loadTimeSsd !== null || p.loadTimeSd !== null
+}
+
+function hasHardwarePowerData(p: Preset): boolean {
+    return p.tdpWatts !== null || p.hardwareWattHours !== null
+}
+
+function hasSoftwareData(p: Preset): boolean {
+    return !!(p.protonVersion || p.osVersion || (p.upscalerType && p.upscalerType !== "none") || (p.frameGenMethod && p.frameGenMethod !== "none") || p.launchOptions)
+}
+
+function hasGameInfoData(p: Preset): boolean {
+    return !!(p.versionString || p.buildId || p.gameAntiCheatName)
+}
+
 export function PresetDetailModal({
     preset,
     gameId,
@@ -108,7 +142,9 @@ export function PresetDetailModal({
     const [userVote, setUserVote] = useState<"up" | "down" | null>(null)
     const [localUpvotes, setLocalUpvotes] = useState(preset.upvotes)
     const [localDownvotes, setLocalDownvotes] = useState(preset.downvotes)
-    const [mobileTab, setMobileTab] = useState<"details" | "settings">("settings")
+    const [activeTab, setActiveTab] = useState<TabKey>("media")
+    const [lightboxOpen, setLightboxOpen] = useState(false)
+    const [lightboxIndex, setLightboxIndex] = useState(0)
 
     const isOwner = session?.user?.id === preset.userId
     const isAdmin = session?.user?.role === "admin"
@@ -162,11 +198,7 @@ export function PresetDetailModal({
     }
 
     const handleReportSubmit = () => {
-        onReport(
-            preset.id,
-            reportReason,
-            reportDetails.trim() || undefined,
-        )
+        onReport(preset.id, reportReason, reportDetails.trim() || undefined)
         setShowReportForm(false)
         setReportDetails("")
     }
@@ -182,6 +214,9 @@ export function PresetDetailModal({
             console.error("Failed to toggle pin:", err)
         }
     }
+
+    const visibleTabs: TabKey[] = ["details", "media", "settings"]
+    if (preset.userNotes) visibleTabs.push("notes")
 
     return (
         <AnimatePresence>
@@ -219,7 +254,7 @@ export function PresetDetailModal({
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="flex items-start justify-between p-5 border-b border-border shrink-0">
+                        <div className="flex items-center justify-between p-5 border-b border-border shrink-0">
                             <div className="flex items-center gap-3 min-w-0">
                                 <h2 className="text-base font-semibold text-text truncate">
                                     {preset.hardwareName}
@@ -236,33 +271,26 @@ export function PresetDetailModal({
 
                         {/* Mobile tabs */}
                         <div className="flex md:hidden shrink-0 border-b border-border">
-                            <button
-                                onClick={() => setMobileTab("details")}
-                                className={`flex-1 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
-                                    mobileTab === "details"
-                                        ? "text-primary border-b-2 border-primary"
-                                        : "text-text/50 hover:text-text/70"
-                                }`}
-                            >
-                                Details
-                            </button>
-                            <button
-                                onClick={() => setMobileTab("settings")}
-                                className={`flex-1 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
-                                    mobileTab === "settings"
-                                        ? "text-primary border-b-2 border-primary"
-                                        : "text-text/50 hover:text-text/70"
-                                }`}
-                            >
-                                Settings
-                            </button>
+                            {visibleTabs.map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`flex-1 py-2.5 text-sm font-medium transition-colors capitalize cursor-pointer ${
+                                        activeTab === tab
+                                            ? "text-primary border-b-2 border-primary"
+                                            : "text-text/50 hover:text-text/70"
+                                    }`}
+                                >
+                                    {tab}
+                                </button>
+                            ))}
                         </div>
 
                         {/* Two-column body */}
                         <div className="flex flex-col md:flex-row overflow-hidden flex-1">
-                            {/* Left panel */}
+                            {/* Left panel — Details (always visible on desktop, tab on mobile) */}
                             <div className={`w-full md:w-1/3 md:min-w-60 flex-col gap-3 md:gap-4 p-4 md:p-5 border-b md:border-b-0 md:border-r border-border overflow-y-auto ${
-                                mobileTab === "details" ? "flex" : "hidden md:flex"
+                                activeTab === "details" ? "flex" : "hidden md:flex"
                             }`}>
                                 {/* User info */}
                                 <div className="flex items-center gap-3">
@@ -323,14 +351,9 @@ export function PresetDetailModal({
                                                 </button>
                                             ) : (
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xs text-text/50">
-                                                        Are you sure?
-                                                    </span>
+                                                    <span className="text-xs text-text/50">Are you sure?</span>
                                                     <button
-                                                        onClick={() => {
-                                                            onDelete(preset.id)
-                                                            setShowDeleteConfirm(false)
-                                                        }}
+                                                        onClick={() => { onDelete(preset.id); setShowDeleteConfirm(false) }}
                                                         className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-red-400 border border-red-500/20 hover:bg-red-500/10 transition-colors cursor-pointer"
                                                     >
                                                         Confirm
@@ -345,7 +368,6 @@ export function PresetDetailModal({
                                             )}
                                         </>
                                     )}
-
                                     {(isOwner || isAdmin) && (
                                         <button
                                             onClick={() => router.push(`/game/${gameId}/submit?edit=${preset.id}`)}
@@ -355,7 +377,6 @@ export function PresetDetailModal({
                                             Edit
                                         </button>
                                     )}
-
                                     <button
                                         onClick={handleShare}
                                         className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-primary border border-primary/20 hover:bg-primary/10 transition-colors cursor-pointer"
@@ -363,7 +384,6 @@ export function PresetDetailModal({
                                         <ShareIcon className="h-4 w-4" />
                                         {copied ? "Link copied!" : "Share"}
                                     </button>
-
                                     {session && !hasReported && (
                                         <>
                                             {!showReportForm ? (
@@ -378,31 +398,17 @@ export function PresetDetailModal({
                                                 <div className="flex flex-col gap-2 w-full">
                                                     <select
                                                         value={reportReason}
-                                                        onChange={(e) =>
-                                                            setReportReason(
-                                                                e.target.value as typeof reportReason,
-                                                            )
-                                                        }
+                                                        onChange={(e) => setReportReason(e.target.value as typeof reportReason)}
                                                         className="text-sm bg-background border border-border rounded-md px-2 py-1.5 text-text/80 focus:outline-none focus:border-primary w-full max-w-xs"
                                                     >
-                                                        <option value="inaccurate">
-                                                            Inaccurate data
-                                                        </option>
-                                                        <option value="spam">
-                                                            Spam
-                                                        </option>
-                                                        <option value="inappropriate">
-                                                            Inappropriate
-                                                        </option>
-                                                        <option value="other">
-                                                            Other
-                                                        </option>
+                                                        <option value="inaccurate">Inaccurate data</option>
+                                                        <option value="spam">Spam</option>
+                                                        <option value="inappropriate">Inappropriate</option>
+                                                        <option value="other">Other</option>
                                                     </select>
                                                     <textarea
                                                         value={reportDetails}
-                                                        onChange={(e) =>
-                                                            setReportDetails(e.target.value)
-                                                        }
+                                                        onChange={(e) => setReportDetails(e.target.value)}
                                                         placeholder="Additional details (optional)"
                                                         rows={3}
                                                         className="text-sm bg-background border border-border rounded-md px-2 py-1.5 text-text/80 focus:outline-none focus:border-primary w-full resize-none"
@@ -415,10 +421,7 @@ export function PresetDetailModal({
                                                             Submit Report
                                                         </button>
                                                         <button
-                                                            onClick={() => {
-                                                                setShowReportForm(false)
-                                                                setReportDetails("")
-                                                            }}
+                                                            onClick={() => { setShowReportForm(false); setReportDetails("") }}
                                                             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-text/50 border border-border hover:bg-text/5 transition-colors cursor-pointer"
                                                         >
                                                             Cancel
@@ -428,7 +431,6 @@ export function PresetDetailModal({
                                             )}
                                         </>
                                     )}
-
                                     {hasReported && (
                                         <span className="inline-flex items-center gap-1.5 text-sm text-text/50">
                                             <FlagIcon className="h-4 w-4" />
@@ -469,245 +471,290 @@ export function PresetDetailModal({
                                     </button>
                                 </div>
 
-                                {/* FPS */}
-                                {preset.fpsAvg !== null && (
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-xs text-text/50 uppercase tracking-wider">
-                                            Avg FPS
+                                {/* Performance group */}
+                                {hasPerformanceData(preset) && (
+                                    <div className="rounded-lg border border-border bg-text/3 p-3">
+                                        <span className="text-[10px] text-text/40 uppercase tracking-wider font-medium">
+                                            Performance
                                         </span>
-                                        <div className="text-sm text-text">
-                                            <span className="font-semibold tabular-nums">
-                                                {preset.fpsAvg}
-                                            </span>
-                                            {preset.fpsLow !== null && preset.fpsHigh !== null && (
-                                                <span className="text-text/50 ml-1">
-                                                    ({Math.round(preset.fpsLow)}–{Math.round(preset.fpsHigh)})
-                                                </span>
+                                        <div className="mt-2 flex flex-col gap-0.5">
+                                            {preset.fpsAvg !== null && (
+                                                <MetaItem
+                                                    label="Avg FPS"
+                                                    value={
+                                                        <>
+                                                            <span className="font-semibold tabular-nums">{preset.fpsAvg}</span>
+                                                            {preset.fpsLow !== null && preset.fpsHigh !== null && (
+                                                                <span className="text-text/50 ml-1">
+                                                                    ({Math.round(preset.fpsLow)}–{Math.round(preset.fpsHigh)})
+                                                                </span>
+                                                            )}
+                                                        </>
+                                                    }
+                                                />
+                                            )}
+                                            {preset.fpsOnePercentLow !== null && (
+                                                <MetaItem label="1% Low FPS" value={`${preset.fpsOnePercentLow} fps`} />
+                                            )}
+                                            {preset.loadTimeSsd !== null && (
+                                                <MetaItem label="Load Time (SSD)" value={`${preset.loadTimeSsd}s`} />
+                                            )}
+                                            {preset.loadTimeSd !== null && (
+                                                <MetaItem label="Load Time (SD)" value={`${preset.loadTimeSd}s`} />
                                             )}
                                         </div>
                                     </div>
                                 )}
-                                {preset.fpsOnePercentLow !== null && (
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-[10px] text-text/50 uppercase tracking-wider">1% Low FPS</span>
-                                        <span className="text-sm font-semibold tabular-nums text-text">
-                                            {preset.fpsOnePercentLow} fps
+
+                                {/* Hardware & Power group */}
+                                {hasHardwarePowerData(preset) && (
+                                    <div className="rounded-lg border border-border bg-text/3 p-3">
+                                        <span className="text-[10px] text-text/40 uppercase tracking-wider font-medium">
+                                            Hardware & Power
                                         </span>
+                                        <div className="mt-2 flex flex-col gap-0.5">
+                                            {preset.tdpWatts !== null && (
+                                                <MetaItem label="TDP" value={`${Math.round(preset.tdpWatts)}W`} />
+                                            )}
+                                            {preset.hardwareWattHours !== null && preset.hardwareDeviceType === "handheld" && (
+                                                <MetaItem label="Battery" value={`${Math.round(preset.hardwareWattHours)}Wh`} />
+                                            )}
+                                            {preset.tdpWatts !== null && preset.hardwareWattHours !== null && preset.hardwareDeviceType === "handheld" && (
+                                                <MetaItem label="Est. Battery" value={`~${(preset.hardwareWattHours / preset.tdpWatts).toFixed(1)}h`} />
+                                            )}
+                                        </div>
                                     </div>
                                 )}
 
-                                <div className="h-px bg-border" />
-
-                                {/* Metadata */}
-                                <div className="flex flex-col gap-3">
-                                    {preset.versionString && (
-                                        <MetaItem label="Version" value={`v${preset.versionString}`} />
-                                    )}
-                                    {preset.buildId && (
-                                        <MetaItem label="Build" value={String(preset.buildId)} />
-                                    )}
-                                    {preset.gameAntiCheatName && (
-                                        <MetaItem
-                                            label="Anti-Cheat"
-                                            value={`${preset.gameAntiCheatName} (${preset.gameAntiCheatStatus ?? "unknown"})`}
-                                        />
-                                    )}
-                                    <MetaItem label="Proton" value={preset.protonVersion} />
-                                    <MetaItem label="OS" value={preset.osVersion} />
-                                    {preset.tdpWatts !== null && (
-                                        <MetaItem label="TDP" value={`${Math.round(preset.tdpWatts)}W`} />
-                                    )}
-                                    {preset.hardwareWattHours !== null && preset.hardwareDeviceType === "handheld" && (
-                                        <MetaItem label="Battery" value={`${Math.round(preset.hardwareWattHours)}Wh`} />
-                                    )}
-                                    {preset.tdpWatts !== null && preset.hardwareWattHours !== null && preset.hardwareDeviceType === "handheld" && (
-                                        <MetaItem label="Est. Battery" value={`~${(preset.hardwareWattHours / preset.tdpWatts).toFixed(1)}h`} />
-                                    )}
-                                    <MetaItem
-                                        label="Upscaler"
-                                        value={
-                                            preset.upscalerType && preset.upscalerType !== "none"
-                                                ? `${preset.upscalerType.toUpperCase()}${preset.upscalerVersion ? ` ${preset.upscalerVersion}` : ""}`
-                                                : null
-                                        }
-                                    />
-                                    <MetaItem
-                                        label="Frame Gen"
-                                        value={
-                                            preset.frameGenMethod && preset.frameGenMethod !== "none"
-                                                ? preset.frameGenMethod === "fsr_fg"
-                                                    ? "FSR FG"
-                                                    : preset.frameGenMethod === "dlss_fg"
-                                                      ? "DLSS FG"
-                                                      : preset.frameGenMethod
-                                                : null
-                                        }
-                                    />
-                                    <MetaItem label="Launch Options" value={preset.launchOptions} />
-                                    {preset.loadTimeSsd !== null && (
-                                        <MetaItem label="Load Time (SSD)" value={`${preset.loadTimeSsd}s`} />
-                                    )}
-                                    {preset.loadTimeSd !== null && (
-                                        <MetaItem label="Load Time (SD)" value={`${preset.loadTimeSd}s`} />
-                                    )}
-
-                                    {preset.customSystem && (
-                                        <MetaItem label="Custom System" value="Yes" />
-                                    )}
-                                </div>
-
-                                <div className="h-px bg-border" />
-
-                                {/* Screenshots */}
-                                {preset.screenshots && preset.screenshots.length > 0 && (
-                                  <div className="flex flex-col gap-1">
-                                    <span className="text-[10px] text-text/50 uppercase tracking-wider">Screenshots</span>
-                                    <div className="flex gap-2">
-                                      {preset.screenshots.map((ss) => (
-                                        <a key={ss.id} href={ss.url} target="_blank" rel="noopener noreferrer" className="block">
-                                          <img
-                                            src={ss.url}
-                                            alt="Screenshot"
-                                            className="w-20 h-12 object-cover rounded border border-border hover:border-primary/50 transition-colors"
-                                            loading="lazy"
-                                          />
-                                        </a>
-                                      ))}
+                                {/* Software group */}
+                                {hasSoftwareData(preset) && (
+                                    <div className="rounded-lg border border-border bg-text/3 p-3">
+                                        <span className="text-[10px] text-text/40 uppercase tracking-wider font-medium">
+                                            Software
+                                        </span>
+                                        <div className="mt-2 flex flex-col gap-0.5">
+                                            <MetaItem label="Proton" value={preset.protonVersion} />
+                                            <MetaItem label="OS" value={preset.osVersion} />
+                                            <MetaItem
+                                                label="Upscaler"
+                                                value={
+                                                    preset.upscalerType && preset.upscalerType !== "none"
+                                                        ? `${preset.upscalerType.toUpperCase()}${preset.upscalerVersion ? ` ${preset.upscalerVersion}` : ""}`
+                                                        : null
+                                                }
+                                            />
+                                            <MetaItem
+                                                label="Frame Gen"
+                                                value={
+                                                    preset.frameGenMethod && preset.frameGenMethod !== "none"
+                                                        ? preset.frameGenMethod === "fsr_fg"
+                                                            ? "FSR FG"
+                                                            : preset.frameGenMethod === "dlss_fg"
+                                                              ? "DLSS FG"
+                                                              : preset.frameGenMethod
+                                                        : null
+                                                }
+                                            />
+                                            <MetaItem label="Launch Options" value={preset.launchOptions} />
+                                            {preset.customSystem && <MetaItem label="Custom System" value="Yes" />}
+                                        </div>
                                     </div>
-                                  </div>
+                                )}
+
+                                {/* Game Info group */}
+                                {hasGameInfoData(preset) && (
+                                    <div className="rounded-lg border border-border bg-text/3 p-3">
+                                        <span className="text-[10px] text-text/40 uppercase tracking-wider font-medium">
+                                            Game Info
+                                        </span>
+                                        <div className="mt-2 flex flex-col gap-0.5">
+                                            {preset.versionString && (
+                                                <MetaItem label="Version" value={preset.versionString} />
+                                            )}
+                                            {preset.buildId && (
+                                                <MetaItem label="Build" value={String(preset.buildId)} />
+                                            )}
+                                            {preset.gameAntiCheatName && (
+                                                <MetaItem
+                                                    label="Anti-Cheat"
+                                                    value={`${preset.gameAntiCheatName} (${preset.gameAntiCheatStatus ?? "unknown"})`}
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
                                 )}
                             </div>
 
-                            {/* Right panel */}
-                            <div className={`flex-1 overflow-y-auto p-5 ${
-                                mobileTab === "settings" ? "block" : "hidden md:block"
-                            }`}>
-                                {/* YouTube Video */}
-                                {preset.youtubeVideoId && (
-                                  <div className="mb-4">
-                                    <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-                                      <iframe
-                                        src={`https://www.youtube-nocookie.com/embed/${preset.youtubeVideoId}`}
-                                        className="absolute inset-0 w-full h-full rounded-lg"
-                                        allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
-                                        sandbox="allow-scripts allow-same-origin allow-presentation"
-                                        allowFullScreen
-                                        loading="lazy"
-                                        title="Gameplay Video"
-                                      />
-                                    </div>
-                                  </div>
-                                )}
-
-                                {hasCategories ? (
-                                    <AnimatePresence mode="wait">
-                                        <motion.div
-                                            key={currentCategory?.category ?? "empty"}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ duration: 0.15 }}
-                                            className="flex flex-col gap-4"
+                            {/* Right panel — Tabbed content */}
+                            <div className="flex-1 flex flex-col overflow-hidden">
+                                {/* Desktop tab bar */}
+                                <div className="hidden md:flex shrink-0 border-b border-border">
+                                    {["media", "settings", ...(preset.userNotes ? ["notes" as TabKey] : [])].map((tab) => (
+                                        <button
+                                            key={tab}
+                                            onClick={() => setActiveTab(tab as TabKey)}
+                                            className={`px-4 py-2.5 text-sm font-medium transition-colors capitalize cursor-pointer ${
+                                                activeTab === tab
+                                                    ? "text-primary border-b-2 border-primary"
+                                                    : "text-text/50 hover:text-text/70"
+                                            }`}
                                         >
-                                            {/* Category navigation */}
-                                            <div className="flex items-center justify-between">
-                                                <button
-                                                    onClick={goPrevCategory}
-                                                    className="p-1.5 rounded-md hover:bg-text/5 transition-colors cursor-pointer"
-                                                    aria-label="Previous category"
-                                                >
-                                                    <ChevronLeftIcon className="h-4 w-4 text-text/50" />
-                                                </button>
-                                                <span className="text-sm font-medium text-text/80">
-                                                    {currentCategory?.category}{" "}
-                                                    <span className="text-text/40">
-                                                        ({activeCategoryIndex + 1}/{categories.length})
-                                                    </span>
-                                                </span>
-                                                <button
-                                                    onClick={goNextCategory}
-                                                    className="p-1.5 rounded-md hover:bg-text/5 transition-colors cursor-pointer"
-                                                    aria-label="Next category"
-                                                >
-                                                    <ChevronRightIcon className="h-4 w-4 text-text/50" />
-                                                </button>
-                                            </div>
+                                            {tab}
+                                        </button>
+                                    ))}
+                                </div>
 
-                                            {/* Settings table */}
-                                            <div className="rounded-lg border border-border overflow-hidden">
-                                                <table className="w-full text-sm">
-                                                    <thead className="bg-text/3">
-                                                        <tr>
-                                                            <th className="text-left px-2 py-1.5 md:px-3 md:py-2 text-xs font-medium uppercase tracking-wider text-text/50">
-                                                                Setting
-                                                            </th>
-                                                            <th className="text-right px-2 py-1.5 md:px-3 md:py-2 text-xs font-medium uppercase tracking-wider text-text/50">
-                                                                Value
-                                                            </th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {currentCategory?.settings.map((setting, sIdx) => (
-                                                            <tr
-                                                                key={sIdx}
-                                                                className="border-t border-border"
+                                {/* Tab content */}
+                                <div className="flex-1 overflow-y-auto p-5">
+                                    {/* Media tab */}
+                                    {activeTab === "media" && (
+                                        <div className="flex flex-col gap-4">
+                                            {/* YouTube Video */}
+                                            {preset.youtubeVideoId && (
+                                                <div>
+                                                    <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                                                        <iframe
+                                                            src={`https://www.youtube-nocookie.com/embed/${preset.youtubeVideoId}`}
+                                                            className="absolute inset-0 w-full h-full rounded-lg"
+                                                            allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
+                                                            sandbox="allow-scripts allow-same-origin allow-presentation"
+                                                            allowFullScreen
+                                                            loading="lazy"
+                                                            title="Gameplay Video"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Screenshots */}
+                                            {preset.screenshots && preset.screenshots.length > 0 && (
+                                                <div className="flex flex-col gap-2">
+                                                    <span className="text-xs text-text/50 uppercase tracking-wider">Screenshots</span>
+                                                    <div className="flex gap-2">
+                                                        {preset.screenshots.map((ss, i) => (
+                                                            <button
+                                                                key={ss.id}
+                                                                onClick={() => {
+                                                                    setLightboxIndex(i)
+                                                                    setLightboxOpen(true)
+                                                                }}
+                                                                className="block cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-lg overflow-hidden"
+                                                                aria-label={`View screenshot ${i + 1}`}
                                                             >
-                                                                <td className="px-2 py-1.5 md:px-3 md:py-2 text-text/70">
-                                                                    {setting.title}
-                                                                </td>
-                                                                <td className="px-2 py-1.5 md:px-3 md:py-2 text-right font-medium text-text">
-                                                                    {formatValue(setting.value)}
-                                                                </td>
-                                                            </tr>
+                                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                <img
+                                                                    src={ss.url}
+                                                                    alt={`Screenshot ${i + 1}`}
+                                                                    className="w-24 h-16 object-cover border border-border hover:border-primary/50 transition-colors"
+                                                                    loading="lazy"
+                                                                />
+                                                            </button>
                                                         ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </motion.div>
-                                    </AnimatePresence>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-lg border border-border bg-text/2">
-                                        <p className="text-sm text-text/40">
-                                            No settings data
-                                        </p>
-                                    </div>
-                                )}
+                                                    </div>
+                                                </div>
+                                            )}
 
-                                {/* Notes */}
-                                {preset.userNotes && (
-                                    <div className="mt-4 pt-4 border-t border-border">
-                                        <h3 className="text-sm font-medium text-text/80 mb-2">
-                                            Notes
-                                        </h3>
+                                            {!preset.youtubeVideoId && (!preset.screenshots || preset.screenshots.length === 0) && (
+                                                <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-lg border border-border bg-text/2">
+                                                    <p className="text-sm text-text/40">No media available</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Settings tab */}
+                                    {activeTab === "settings" && (
+                                        <>
+                                            {hasCategories ? (
+                                                <AnimatePresence mode="wait">
+                                                    <motion.div
+                                                        key={currentCategory?.category ?? "empty"}
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0 }}
+                                                        transition={{ duration: 0.15 }}
+                                                        className="flex flex-col gap-4"
+                                                    >
+                                                        {/* Category navigation */}
+                                                        <div className="flex items-center justify-between">
+                                                            <button
+                                                                onClick={goPrevCategory}
+                                                                className="p-1.5 rounded-md hover:bg-text/5 transition-colors cursor-pointer"
+                                                                aria-label="Previous category"
+                                                            >
+                                                                <ChevronLeftIcon className="h-4 w-4 text-text/50" />
+                                                            </button>
+                                                            <span className="text-sm font-medium text-text/80">
+                                                                {currentCategory?.category}{" "}
+                                                                <span className="text-text/40">
+                                                                    ({activeCategoryIndex + 1}/{categories.length})
+                                                                </span>
+                                                            </span>
+                                                            <button
+                                                                onClick={goNextCategory}
+                                                                className="p-1.5 rounded-md hover:bg-text/5 transition-colors cursor-pointer"
+                                                                aria-label="Next category"
+                                                            >
+                                                                <ChevronRightIcon className="h-4 w-4 text-text/50" />
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Settings table */}
+                                                        <div className="rounded-lg border border-border overflow-hidden">
+                                                            <table className="w-full text-sm">
+                                                                <thead className="bg-text/3">
+                                                                    <tr>
+                                                                        <th className="text-left px-2 py-1.5 md:px-3 md:py-2 text-xs font-medium uppercase tracking-wider text-text/50">
+                                                                            Setting
+                                                                        </th>
+                                                                        <th className="text-right px-2 py-1.5 md:px-3 md:py-2 text-xs font-medium uppercase tracking-wider text-text/50">
+                                                                            Value
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {currentCategory?.settings.map((setting, sIdx) => (
+                                                                        <tr key={sIdx} className="border-t border-border">
+                                                                            <td className="px-2 py-1.5 md:px-3 md:py-2 text-text/70">
+                                                                                {setting.title}
+                                                                            </td>
+                                                                            <td className="px-2 py-1.5 md:px-3 md:py-2 text-right font-medium text-text">
+                                                                                {formatValue(setting.value)}
+                                                                            </td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </motion.div>
+                                                </AnimatePresence>
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center py-16 gap-3 rounded-lg border border-border bg-text/2">
+                                                    <p className="text-sm text-text/40">No settings data</p>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+
+                                    {/* Notes tab */}
+                                    {activeTab === "notes" && preset.userNotes && (
                                         <TiptapRenderer content={preset.userNotes} />
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </motion.div>
                 </motion.div>
+
+                {/* Screenshot Lightbox */}
+                {lightboxOpen && preset.screenshots && preset.screenshots.length > 0 && (
+                    <ScreenshotLightbox
+                        screenshots={preset.screenshots}
+                        initialIndex={lightboxIndex}
+                        onClose={() => setLightboxOpen(false)}
+                    />
+                )}
             </>
         </AnimatePresence>
-    )
-}
-
-function MetaItem({
-    label,
-    value,
-    className,
-}: {
-    label: string
-    value: string | null
-    className?: string
-}) {
-    return (
-        <div className={`flex flex-col gap-1 ${className || ""}`}>
-            <span className="text-[10px] text-text/50 uppercase tracking-wider">
-                {label}
-            </span>
-            <span className="text-sm text-text/80 wrap-break-words">
-                {value ?? "—"}
-            </span>
-        </div>
     )
 }
