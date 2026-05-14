@@ -142,7 +142,7 @@ export const app = new Elysia({ prefix: "/api" })
       error: code === "NOT_FOUND" ? "Not found" : "Internal server error",
     }
   })
-  .use(rateLimit(60, 100))
+  .use(rateLimit("default"))
   .use(betterAuth)
   // Health
   .use(healthRoutes)

@@ -50,14 +50,23 @@ function checkRateLimit(
   return { allowed: true, remaining: max - entry.count, resetAt: entry.resetAt }
 }
 
+const CATEGORY_LIMITS: Record<string, { window: number; max: number }> = {
+  default: { window: 60, max: 100 },
+  auth: { window: 60, max: 20 },
+  read: { window: 60, max: 300 },
+  write: { window: 60, max: 10 },
+  strict: { window: 60, max: 5 },
+}
+
 export const rateLimit = (
-  window: number = 60,
-  max: number = 100,
-) =>
-  new Elysia({ name: "rate-limit" }).onRequest(({ request, set }) => {
+  category: string = "default",
+) => {
+  const { window, max } = CATEGORY_LIMITS[category] ?? CATEGORY_LIMITS.default
+
+  return new Elysia({ name: `rate-limit-${category}` }).onRequest(({ request, set }) => {
     const ip = getClientIP(request)
     const path = new URL(request.url).pathname
-    const key = `${ip}:${path}`
+    const key = `${category}:${ip}:${path}`
 
     const result = checkRateLimit(key, window, max)
 
@@ -76,3 +85,4 @@ export const rateLimit = (
     set.headers["X-RateLimit-Remaining"] = String(result.remaining)
     set.headers["X-RateLimit-Reset"] = String(Math.ceil(result.resetAt / 1000))
   })
+}
