@@ -1,6 +1,6 @@
 "use client"
 
-import { GitBranch } from "lucide-react"
+import { GitBranch, DatabaseIcon, RefreshCwIcon } from "lucide-react"
 import { HardwareStep } from "./hardware-step"
 import { AntiCheatStep, type AntiCheatData } from "./anti-cheat-step"
 
@@ -9,6 +9,11 @@ export interface GameVersionInfo {
   versionString: string | null
   buildId: string | null
   isLatest: boolean
+}
+
+export interface SteamDBVersion {
+  versionString: string | null
+  buildId: string | null
 }
 
 interface SetupStepProps {
@@ -30,6 +35,9 @@ interface SetupStepProps {
     antiCheatName: string | null
     antiCheatStatus: "none" | "supported" | "unsupported" | "unknown"
   }[]
+  steamdbVersion: SteamDBVersion | null
+  steamdbLoading: boolean
+  onRefreshSteamDB: () => void
 }
 
 export function SetupStep({
@@ -48,8 +56,12 @@ export function SetupStep({
   antiCheat,
   onAntiCheatChange,
   platformSupport,
+  steamdbVersion,
+  steamdbLoading,
+  onRefreshSteamDB,
 }: SetupStepProps) {
   const isNewVersion = selectedVersionId === "__new__"
+  const isSteamDBVersion = selectedVersionId === "__steamdb__"
 
   return (
     <div className="space-y-8">
@@ -80,6 +92,20 @@ export function SetupStep({
               onChange={(e) => onVersionChange(e.target.value)}
               className="w-full appearance-none px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors cursor-pointer"
             >
+              {/* SteamDB suggestion — appears at top when available */}
+              {steamdbVersion && (steamdbVersion.versionString || steamdbVersion.buildId) && (
+                <option value="__steamdb__" className="bg-primary/10 text-primary">
+                  ⬇ Latest from SteamDB: {steamdbVersion.versionString || `Build ${steamdbVersion.buildId}`} — recommended
+                </option>
+              )}
+              {steamdbLoading && (
+                <option disabled className="text-text/40">
+                  Fetching latest version from SteamDB...
+                </option>
+              )}
+              <option disabled className="text-text/30 text-xs">
+                ── Existing versions ──
+              </option>
               {gameVersions.map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.versionString
@@ -94,6 +120,17 @@ export function SetupStep({
                 ＋ New version...
               </option>
             </select>
+
+            {/* Refresh button for SteamDB */}
+            <button
+              type="button"
+              onClick={onRefreshSteamDB}
+              disabled={steamdbLoading}
+              className="flex items-center gap-1 text-xs text-text/40 hover:text-primary transition-colors cursor-pointer mt-1 disabled:opacity-30"
+            >
+              <RefreshCwIcon className={`h-3 w-3 ${steamdbLoading ? "animate-spin" : ""}`} />
+              Refresh from SteamDB
+            </button>
           </div>
 
           {isNewVersion && (
@@ -111,6 +148,28 @@ export function SetupStep({
               />
               <p className="text-xs text-text/40">
                 Enter the game version you tested. This will create a new version entry.
+              </p>
+            </div>
+          )}
+
+          {isSteamDBVersion && steamdbVersion && (
+            <div className="space-y-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
+              <div className="flex items-center gap-2">
+                <DatabaseIcon className="h-4 w-4 text-primary" />
+                <p className="text-xs font-medium text-primary">SteamDB Suggestion</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-text/40">Version</p>
+                  <p className="text-sm text-text">{steamdbVersion.versionString || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-text/40">Build ID</p>
+                  <p className="text-sm text-text font-mono">{steamdbVersion.buildId || "—"}</p>
+                </div>
+              </div>
+              <p className="text-xs text-text/40">
+                This version will be created when you submit your benchmark.
               </p>
             </div>
           )}

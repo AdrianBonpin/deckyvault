@@ -129,6 +129,13 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
   // Step 4: Notes
   const [userNotes, setUserNotes] = useState(editEntry?.userNotes ?? "")
 
+  // SteamDB version suggestion
+  const [steamdbVersion, setSteamdbVersion] = useState<{
+    versionString: string | null
+    buildId: string | null
+  } | null>(null)
+  const [steamdbLoading, setSteamdbLoading] = useState(false)
+
   // Fetch hardware name when slug changes
   const handleHardwareChange = useCallback(async (slug: string) => {
     setHardwareSlug(slug)
@@ -183,10 +190,39 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
     if (selectedVersionId === "__new__") {
       return newVersionString || "New version"
     }
+    if (selectedVersionId === "__steamdb__") {
+      return steamdbVersion
+        ? steamdbVersion.versionString || `Build ${steamdbVersion.buildId}`
+        : "SteamDB version"
+    }
     const v = gameVersions.find((v) => v.id === selectedVersionId)
     if (!v) return "Unknown"
     return v.versionString || (v.buildId ? `Build ${v.buildId}` : "Unknown version")
-  }, [selectedVersionId, newVersionString, gameVersions])
+  }, [selectedVersionId, newVersionString, gameVersions, steamdbVersion])
+
+  const fetchSteamDBVersion = useCallback(async () => {
+    setSteamdbLoading(true)
+    try {
+      const res = await fetch(`/api/games/${gameId}/steamdb-version`)
+      if (!res.ok) return
+      const data = await res.json()
+      if (data.versionString || data.buildId) {
+        setSteamdbVersion({
+          versionString: data.versionString,
+          buildId: data.buildId,
+        })
+      }
+    } catch {
+      // Silently fail — SteamDB is best-effort
+    } finally {
+      setSteamdbLoading(false)
+    }
+  }, [gameId])
+
+  // Fetch SteamDB version on mount
+  useEffect(() => {
+    fetchSteamDBVersion()
+  }, [fetchSteamDBVersion])
 
   const canProceed = () => {
     switch (currentStep) {
@@ -194,6 +230,8 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
         if (hardwareSlug === "") return false
         // If new version selected, require version string
         if (selectedVersionId === "__new__" && !newVersionString.trim()) return false
+        // SteamDB option is always valid (data comes from external source)
+        if (selectedVersionId === "__steamdb__" && !steamdbVersion) return false
         return true
       case 1: // Performance
         return performance.fpsAvg !== undefined && performance.fpsAvg > 0
@@ -228,8 +266,27 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
 
   // Resolve the final version ID — create a new version if needed
   const resolveVersionId = async (): Promise<string> => {
-    if (selectedVersionId !== "__new__") {
+    if (selectedVersionId !== "__new__" && selectedVersionId !== "__steamdb__") {
       return selectedVersionId
+    }
+
+    if (selectedVersionId === "__steamdb__" && steamdbVersion) {
+      // Create version from SteamDB data
+      const res = await fetch(`/api/games/${gameId}/versions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          versionString: steamdbVersion.versionString,
+          buildId: steamdbVersion.buildId,
+          isLatest: true,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to create version from SteamDB")
+      }
+      const data = await res.json() as { id: string }
+      return data.id
     }
 
     // Create a new version via API
@@ -375,6 +432,9 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
               antiCheat={antiCheat}
               onAntiCheatChange={setAntiCheat}
               platformSupport={platformSupport}
+              steamdbVersion={steamdbVersion}
+              steamdbLoading={steamdbLoading}
+              onRefreshSteamDB={fetchSteamDBVersion}
             />
           )}
           {currentStep === 1 && (
