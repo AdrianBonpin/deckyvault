@@ -1,22 +1,227 @@
 "use client"
 
 import { AnimatePresence, motion } from "motion/react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Gamepad2Icon, SearchIcon } from "lucide-react"
+import Image from "next/image"
+import { Gamepad2Icon, SearchIcon, TrendingUpIcon, SparklesIcon, GaugeIcon, FlagIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
+
+interface GameCard {
+  id: string
+  title: string
+  capsule_image: string | null
+  header_image: string | null
+  playability_status?: string | null
+  activity_score?: number
+  benchmark_count?: number
+  comment_count?: number
+  upvote_count?: number
+  avg_fps?: number
+  report_count?: number
+  release_date?: string | null
+  created_at?: string | null
+}
+
+interface SectionData {
+  trending: GameCard[]
+  bestNewReleases: GameCard[]
+  mostTested: GameCard[]
+  mostReported: GameCard[]
+}
+
+function SkeletonSections() {
+  return (
+    <>
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="space-y-3">
+          <div className="h-5 w-48 bg-text/5 rounded animate-pulse" />
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {[1, 2, 3, 4].map((j) => (
+              <div
+                key={j}
+                className="shrink-0 w-36 sm:w-44 rounded-xl bg-text/3 border border-border animate-pulse"
+              >
+                <div className="aspect-[2/3] bg-text/5 rounded-t-xl" />
+                <div className="p-3 space-y-2">
+                  <div className="h-3 bg-text/5 rounded w-3/4" />
+                  <div className="h-2 bg-text/5 rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </>
+  )
+}
+
+function PlayabilityDot({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    great: "bg-green-500",
+    playable: "bg-blue-500",
+    needs_tweaks: "bg-yellow-500",
+    unplayable: "bg-red-500",
+  }
+  const labels: Record<string, string> = {
+    great: "Plays Great",
+    playable: "Playable",
+    needs_tweaks: "Needs Tweaks",
+    unplayable: "Unplayable",
+  }
+  return (
+    <span
+      className={`inline-block w-2.5 h-2.5 rounded-full ${colors[status] || "bg-text/20"}`}
+      title={labels[status] || status}
+    />
+  )
+}
+
+function GameSection({
+  title,
+  icon: Icon,
+  games,
+  statKey,
+  statLabel,
+  statFormatter,
+  accentColor = "text-text/50",
+  muted = false,
+}: {
+  title: string
+  icon: React.ElementType
+  games: GameCard[]
+  statKey: string
+  statLabel: string
+  statFormatter?: (v: unknown) => string
+  accentColor?: string
+  muted?: boolean
+}) {
+  const router = useRouter()
+
+  const formatStat = (v: unknown): string => {
+    if (statFormatter) return statFormatter(v)
+    if (typeof v === "number") return `${Math.round(v)} ${statLabel}`
+    return `${v} ${statLabel}`
+  }
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.4 }}
+      className={muted ? "opacity-70" : ""}
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <div className="border-l-2 border-primary pl-3">
+          <div className="flex items-center gap-2">
+            <Icon className={`h-4 w-4 ${accentColor}`} />
+            <h2 className="text-sm font-semibold text-text/80">{title}</h2>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin">
+        {games.map((game, idx) => (
+          <motion.div
+            key={game.id}
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.3, delay: idx * 0.05 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            className="group shrink-0 w-36 sm:w-44 rounded-xl bg-text/3 border border-border hover:border-text/30 hover:bg-text/[0.06] transition-colors cursor-pointer overflow-hidden"
+            onClick={() => router.push(`/game/${game.id}?sync=1`)}
+          >
+            <div className="relative aspect-[2/3] bg-text/10 overflow-hidden">
+              {game.capsule_image ? (
+                <Image
+                  src={game.capsule_image}
+                  alt={game.title}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  sizes="(max-width: 640px) 144px, 176px"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Gamepad2Icon className="h-8 w-8 text-text/15" />
+                </div>
+              )}
+              {game.playability_status && game.playability_status !== "unknown" && (
+                <div className="absolute top-1.5 right-1.5">
+                  <PlayabilityDot status={game.playability_status} />
+                </div>
+              )}
+            </div>
+
+            <div className="p-2.5 space-y-1.5">
+              <h3 className="text-xs font-semibold text-text line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+                {game.title}
+              </h3>
+              <p className={`text-[10px] ${accentColor} font-medium`}>
+                {formatStat((game as unknown as Record<string, unknown>)[statKey])}
+              </p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </motion.section>
+  )
+}
 
 export default function Landing() {
     const router = useRouter()
     const words = ["benchmarks", "settings", "reviews"]
 
     const [currentWord, setCurrentWord] = useState(0)
-
-    setTimeout(() => {
-        setCurrentWord((currentWord + 1) % words.length)
-    }, 2000)
-
     const [searchQuery, setSearchQuery] = useState("")
+
+    // Landing section state
+    const [sections, setSections] = useState<SectionData>({
+      trending: [],
+      bestNewReleases: [],
+      mostTested: [],
+      mostReported: [],
+    })
+    const [sectionsLoading, setSectionsLoading] = useState(true)
+
+    // Animated words cycle — use useEffect with proper cleanup
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setCurrentWord((prev) => (prev + 1) % words.length)
+      }, 2000)
+      return () => clearInterval(interval)
+    }, [words.length])
+
+    // Fetch all 4 sections in parallel on mount
+    useEffect(() => {
+      let cancelled = false
+      async function fetchSections() {
+        try {
+          const [trending, bestNew, mostTested, mostReported] = await Promise.all([
+            fetch("/api/dashboard/trending").then(r => r.ok ? r.json() : []),
+            fetch("/api/dashboard/best-new-releases").then(r => r.ok ? r.json() : []),
+            fetch("/api/dashboard/most-tested").then(r => r.ok ? r.json() : []),
+            fetch("/api/dashboard/most-reported").then(r => r.ok ? r.json() : []),
+          ])
+          if (!cancelled) {
+            setSections({
+              trending: Array.isArray(trending) ? trending : [],
+              bestNewReleases: Array.isArray(bestNew) ? bestNew : [],
+              mostTested: Array.isArray(mostTested) ? mostTested : [],
+              mostReported: Array.isArray(mostReported) ? mostReported : [],
+            })
+          }
+        } catch {
+          // Silently fail — sections are best-effort
+        } finally {
+          if (!cancelled) setSectionsLoading(false)
+        }
+      }
+      fetchSections()
+      return () => { cancelled = true }
+    }, [])
 
     const handleSearchSubmit = () => {
         if (searchQuery.trim()) {
@@ -32,9 +237,11 @@ export default function Landing() {
     }
 
     return (
+      <>
+        {/* ── Hero Section ── */}
         <section
             id='hero'
-            className='w-full h-[calc(100vh-3.6rem)] flex flex-col items-center justify-center relative p-4'
+            className='w-full min-h-[calc(100svh-10svh)] flex flex-col items-center justify-center relative p-4'
         >
             <motion.h1
                 initial={{ opacity: 0 }}
@@ -132,24 +339,78 @@ export default function Landing() {
                 </Link>
                 <span className="opacity-60">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
             </motion.small>
-            <script
-                type='application/ld+json'
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify({
-                        "@context": "https://schema.org",
-                        "@type": "WebSite",
-                        name: "DeckyVault",
-                        url: "https://deckyvault.xyz",
-                        description:
-                            "Steam Deck benchmarks, settings, and performance guides",
-                        potentialAction: {
-                            "@type": "SearchAction",
-                            target: "https://deckyvault.xyz/search?q={search_term_string}",
-                            "query-input": "required name=search_term_string",
-                        },
-                    }),
-                }}
-            />
         </section>
+
+        {/* ── Landing Sections ── */}
+        <div className="w-full max-w-7xl mx-auto px-4 pb-12 space-y-10">
+          {sectionsLoading ? (
+            <SkeletonSections />
+          ) : (
+            <>
+              {sections.trending.length > 0 && (
+                <GameSection
+                  title="Trending This Week"
+                  icon={TrendingUpIcon}
+                  games={sections.trending}
+                  statKey="benchmark_count"
+                  statLabel="benchmarks this week"
+                  accentColor="text-orange-400"
+                />
+              )}
+              {sections.bestNewReleases.length > 0 && (
+                <GameSection
+                  title="Best Performing New Releases"
+                  icon={SparklesIcon}
+                  games={sections.bestNewReleases}
+                  statKey="avg_fps"
+                  statLabel="avg FPS"
+                  statFormatter={(v) => `${Math.round(Number(v))} FPS`}
+                  accentColor="text-green-400"
+                />
+              )}
+              {sections.mostTested.length > 0 && (
+                <GameSection
+                  title="Most Tested Games"
+                  icon={GaugeIcon}
+                  games={sections.mostTested}
+                  statKey="benchmark_count"
+                  statLabel="benchmarks"
+                  accentColor="text-blue-400"
+                />
+              )}
+              {sections.mostReported.length > 0 && (
+                <GameSection
+                  title="Most Reported Games"
+                  icon={FlagIcon}
+                  games={sections.mostReported}
+                  statKey="report_count"
+                  statLabel="open reports"
+                  accentColor="text-red-400"
+                  muted
+                />
+              )}
+            </>
+          )}
+        </div>
+
+        <script
+            type='application/ld+json'
+            dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                    "@context": "https://schema.org",
+                    "@type": "WebSite",
+                    name: "DeckyVault",
+                    url: "https://deckyvault.xyz",
+                    description:
+                        "Steam Deck benchmarks, settings, and performance guides",
+                    potentialAction: {
+                        "@type": "SearchAction",
+                        target: "https://deckyvault.xyz/search?q={search_term_string}",
+                        "query-input": "required name=search_term_string",
+                    },
+                }),
+            }}
+        />
+      </>
     )
 }

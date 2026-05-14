@@ -36,3 +36,22 @@
     outline-offset: 2px;
     border-radius: 4px;
 }
+
+/* Thin scrollbar for horizontal scroll sections */
+.scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-text) 15%, transparent) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+    height: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-text) 15%, transparent);
+    border-radius: 2px;
+}
