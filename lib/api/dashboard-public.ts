@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm"
 
 const SEVEN_DAYS_AGO = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
 
-export const dashboardPublicRoutes = new Elysia({ prefix: "/dashboard" })
+export const dashboardPublicRoutes = new Elysia({ prefix: "/dashboard", detail: { tags: ["Dashboard"] } })
 
   // ── Trending Games (7-day activity) ────────────────────────────────
   .get(

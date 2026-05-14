@@ -4,7 +4,7 @@ import { reports } from "@/lib/db/schema"
 import { eq, and } from "drizzle-orm"
 import { requireRole } from "@/lib/auth/guard"
 
-export const reportRoutes = new Elysia({ prefix: "/performance" }).post(
+export const reportRoutes = new Elysia({ prefix: "/performance", detail: { tags: ["Reports"] } }).post(
   "/:id/report",
   async ({ params, body, request, set }) => {
     const guard = await requireRole(request.headers, [

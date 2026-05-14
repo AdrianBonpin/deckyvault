@@ -24,7 +24,7 @@ interface SteamSearchResponse {
   total: number
 }
 
-export const searchUnifiedRoutes = new Elysia({ prefix: "/search" }).get(
+export const searchUnifiedRoutes = new Elysia({ prefix: "/search", detail: { tags: ["Search"] } }).get(
   "/unified",
   async ({ query, set }) => {
     if (!query.q || query.q.length < 2) {

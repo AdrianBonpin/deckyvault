@@ -8,7 +8,7 @@ import {
 } from "@/lib/db/schema"
 import { eq, and, inArray, sql } from "drizzle-orm"
 
-export const gameStatsRoutes = new Elysia({ prefix: "/games" }).get(
+export const gameStatsRoutes = new Elysia({ prefix: "/games", detail: { tags: ["Games"] } }).get(
   "/:gameId/stats",
   async ({ params, set }) => {
     const { gameId } = params

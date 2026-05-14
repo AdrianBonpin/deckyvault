@@ -47,7 +47,7 @@ interface SteamReviewResponse {
   reviews: SteamReview[]
 }
 
-export const steamReviewRoutes = new Elysia({ prefix: "/steam-reviews" })
+export const steamReviewRoutes = new Elysia({ prefix: "/steam-reviews", detail: { tags: ["Steam"] } })
 
   // Get embedded Steam reviews for a game
   .get(

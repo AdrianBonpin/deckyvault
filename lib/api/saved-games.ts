@@ -4,7 +4,7 @@ import { db } from "@/lib/db/index"
 import { savedGames, games } from "@/lib/db/schema"
 import { eq, and, sql } from "drizzle-orm"
 
-export const savedGamesRoutes = new Elysia({ prefix: "/user/me/saved-games" })
+export const savedGamesRoutes = new Elysia({ prefix: "/user/me/saved-games", detail: { tags: ["Games"] } })
   .post(
     "/",
     async ({ request, body, set }) => {

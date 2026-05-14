@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_APP_VERSION: version,
   },
   // Elysia is Bun-native and must not be bundled by Next.js
-  serverExternalPackages: ["elysia", "@elysiajs/eden"],
+  serverExternalPackages: ["elysia", "@elysiajs/eden", "@elysia/openapi", "@elysia/cron"],
   images: {
     remotePatterns: [
       {

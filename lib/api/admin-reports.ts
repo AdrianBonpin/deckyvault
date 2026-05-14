@@ -10,7 +10,7 @@ import {
 import { eq, desc, sql, and, inArray } from "drizzle-orm"
 import { requireContributorOrAdmin } from "@/lib/auth/guard"
 
-export const adminReportRoutes = new Elysia({ prefix: "/admin" })
+export const adminReportRoutes = new Elysia({ prefix: "/admin", detail: { tags: ["Admin"] } })
   .get(
     "/reports",
     async ({ query, request, set }) => {

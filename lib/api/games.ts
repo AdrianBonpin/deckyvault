@@ -10,6 +10,7 @@ import { requireRole } from "@/lib/auth/guard"
 export const gamesRoutes = createCrudRoutes(games, {
   prefix: "/games",
   name: "Game",
+  tags: ["Games"],
   auth: { read: "public", write: "contributor", delete: "admin" },
   search: { fields: ["title", "developer", "publisher"] },
   filter: { fields: ["source", "onlineMultiplayerStatus", "syncStatus"] },
@@ -17,7 +18,10 @@ export const gamesRoutes = createCrudRoutes(games, {
 })
 
 // ── Game Versions (nested under /games/:gameId/versions) ──────────
-export const gameVersionsRoutes = new Elysia({ prefix: "/games/:gameId/versions" })
+export const gameVersionsRoutes = new Elysia({
+  prefix: "/games/:gameId/versions",
+  detail: { tags: ["Games"] },
+})
   // LIST versions for a game
   .get(
     "/",
@@ -192,7 +196,10 @@ export const gameVersionsRoutes = new Elysia({ prefix: "/games/:gameId/versions"
 const MAX_BULK_SYNC = 1000
 
 
-export const gameSyncRoutes = new Elysia({ prefix: "/games" })
+export const gameSyncRoutes = new Elysia({
+  prefix: "/games",
+  detail: { tags: ["Admin"] },
+})
   // Bulk sync with streaming progress (defined before /:gameId/sync to avoid route conflict)
   .post(
     "/sync/bulk",

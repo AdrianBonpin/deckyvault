@@ -15,6 +15,7 @@ const MAX_UPLOAD_SIZE = 10 * 1024 * 1024 // 10 MB
 export const performanceRoutes = createCrudRoutes(performanceEntries, {
   prefix: "/performance",
   name: "Performance Entry",
+  tags: ["Performance"],
   auth: { read: "public", write: "user", delete: "admin" },
   softDelete: true,
   search: { fields: ["userNotes"] },
@@ -24,6 +25,7 @@ export const performanceRoutes = createCrudRoutes(performanceEntries, {
 // ── Verify endpoint (admin/mod) ───────────────────────────────────
 export const performanceVerifyRoutes = new Elysia({
   prefix: "/performance",
+  detail: { tags: ["Performance"] },
 })
   .post(
     "/:id/verify",

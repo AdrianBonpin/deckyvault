@@ -1,6 +1,9 @@
 import { Elysia } from "elysia"
+import { openapi } from "@elysia/openapi"
+import { cron, Patterns } from "@elysia/cron"
 import { auth } from "@/lib/auth"
 import { rateLimit } from "@/lib/auth/rate-limit"
+import { taskRegistry } from "./cron"
 import {
   healthRoutes,
   userRoutes,
@@ -59,6 +62,76 @@ const betterAuth = new Elysia({ name: "better-auth" })
   })
 
 export const app = new Elysia({ prefix: "/api" })
+  .use(
+    openapi({
+      path: "/openapi",
+      documentation: {
+        info: {
+          title: "DeckyVault API",
+          version: "2026.0.100",
+          description:
+            "API for DeckyVault — Steam Deck game compatibility, performance reports, and community features.",
+        },
+        tags: [
+          { name: "Health", description: "Health check endpoints" },
+          { name: "Auth", description: "Authentication endpoints" },
+          { name: "Users", description: "User management" },
+          { name: "Games", description: "Games listing and details" },
+          { name: "Hardware", description: "Hardware submission and stats" },
+          { name: "Performance", description: "Performance reports and verification" },
+          { name: "Comments", description: "Game comments" },
+          { name: "Reports", description: "User reports" },
+          { name: "Admin", description: "Admin-only endpoints" },
+          { name: "Steam", description: "Steam proxy endpoints" },
+          { name: "Search", description: "Search endpoints" },
+          { name: "Contact", description: "Contact form" },
+          { name: "Dashboard", description: "Dashboard data" },
+          { name: "Cron", description: "Scheduled job triggers" },
+        ],
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: "http",
+              scheme: "bearer",
+              bearerFormat: "JWT",
+            },
+          },
+        },
+      },
+    }),
+  )
+  .use(
+    cron({
+      name: "orphan_detection",
+      pattern: Patterns.EVERY_DAY_AT_2AM,
+      async run() {
+        const task = taskRegistry.get("orphan_detection")
+        if (!task) return
+        try {
+          const result = await task()
+          console.log("[cron] orphan_detection:", result.status, result.details)
+        } catch (err) {
+          console.error("[cron] orphan_detection failed:", err)
+        }
+      },
+    }),
+  )
+  .use(
+    cron({
+      name: "storage_cleanup",
+      pattern: Patterns.EVERY_DAY_AT_3AM,
+      async run() {
+        const task = taskRegistry.get("storage_cleanup")
+        if (!task) return
+        try {
+          const result = await task()
+          console.log("[cron] storage_cleanup:", result.status, result.details)
+        } catch (err) {
+          console.error("[cron] storage_cleanup failed:", err)
+        }
+      },
+    }),
+  )
   .onError(({ code, error, set, request }) => {
     console.error(
       `[API Error] ${code} ${request.url}`,

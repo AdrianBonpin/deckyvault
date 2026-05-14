@@ -3,7 +3,7 @@ import { db } from "@/lib/db/index"
 import { games, gameVersions, performanceEntries, hardware } from "@/lib/db/schema"
 import { eq, and, inArray } from "drizzle-orm"
 
-export const compareRoutes = new Elysia({ prefix: "/compare" })
+export const compareRoutes = new Elysia({ prefix: "/compare", detail: { tags: ["Games"] } })
   .get(
     "/games",
     async ({ query, set }) => {

@@ -15,7 +15,7 @@ interface CronTaskResult {
 // ── Task Registry ───────────────────────────────────────────────────
 type CronTask = () => Promise<CronTaskResult>
 
-const taskRegistry = new Map<string, CronTask>()
+export const taskRegistry = new Map<string, CronTask>()
 
 export function registerCronTask(name: string, task: CronTask): void {
   taskRegistry.set(name, task)
@@ -111,7 +111,7 @@ registerCronTask("orphan_detection", async () => {
 })
 
 // ── Cron Route ──────────────────────────────────────────────────────
-export const cronRoutes = new Elysia({ prefix: "/cron" }).post(
+export const cronRoutes = new Elysia({ prefix: "/cron", detail: { tags: ["Cron"] } }).post(
   "/daily",
   async ({ query, set }) => {
     const cronSecret = process.env.CRON_SECRET

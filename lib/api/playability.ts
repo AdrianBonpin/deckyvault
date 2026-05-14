@@ -141,7 +141,7 @@ export async function recalculatePlayability(gameId: string): Promise<{
   return { gamePlayability: worstStatus, deviceResults: results };
 }
 
-export const playabilityRoutes = new Elysia({ prefix: "/playability" })
+export const playabilityRoutes = new Elysia({ prefix: "/playability", detail: { tags: ["Games"] } })
   // Manual trigger for recalculation (admin/contributor)
   .post("/calculate/:gameId", async ({ params, request, set }) => {
     const guard = await requireContributorOrAdmin(request.headers);

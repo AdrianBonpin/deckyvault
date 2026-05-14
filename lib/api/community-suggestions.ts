@@ -58,6 +58,7 @@ const allowedFields = [
 
 export const communitySuggestionRoutes = new Elysia({
   prefix: "/community-suggestions",
+  detail: { tags: ["Games"] },
 })
 
   // Admin list with pagination and filtering

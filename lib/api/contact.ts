@@ -58,7 +58,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const VALID_CATEGORIES = ["bug", "game_data", "user_report", "feature", "feedback", "database"]
 
-export const contactRoutes = new Elysia({ prefix: "/contact" }).post(
+export const contactRoutes = new Elysia({ prefix: "/contact", detail: { tags: ["Contact"] } }).post(
   "/",
   async ({ body, request, set }) => {
     const payload = body as {

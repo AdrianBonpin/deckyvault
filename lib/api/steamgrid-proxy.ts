@@ -2,7 +2,7 @@ import { Elysia, t } from "elysia"
 
 const STEAMGRIDDB_BASE = "https://www.steamgriddb.com/api/v2"
 
-export const steamgridProxyRoutes = new Elysia({ prefix: "/steamgrid" })
+export const steamgridProxyRoutes = new Elysia({ prefix: "/steamgrid", detail: { tags: ["Steam"] } })
   .get(
     "/search",
     async ({ query, set }) => {

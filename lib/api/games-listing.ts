@@ -13,7 +13,7 @@ import { fuzzySearchTerm } from "@/lib/db/search"
 const MAX_OFFSET = 10000
 const PAGE_SIZE = 24
 
-export const gamesListingRoutes = new Elysia({ prefix: "/games/listing" }).get(
+export const gamesListingRoutes = new Elysia({ prefix: "/games/listing", detail: { tags: ["Games"] } }).get(
   "/",
   async ({ query }) => {
     const offset = Math.min(Number(query.offset) || 0, MAX_OFFSET)

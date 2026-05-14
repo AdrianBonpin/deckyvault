@@ -4,7 +4,7 @@ import { games, gameVersions, gamePlatformSupport } from "@/lib/db/schema"
 import { ilike, eq } from "drizzle-orm"
 import { requireRole } from "@/lib/auth/guard"
 
-export const gamesManualRoutes = new Elysia({ prefix: "/games" })
+export const gamesManualRoutes = new Elysia({ prefix: "/games", detail: { tags: ["Games"] } })
   .post(
     "/manual",
     async ({ request, body, set }) => {

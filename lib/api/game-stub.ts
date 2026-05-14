@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia"
 import { ensureSteamGame } from "@/lib/steam/sync"
 
-export const gameStubRoutes = new Elysia({ prefix: "/games" }).post(
+export const gameStubRoutes = new Elysia({ prefix: "/games", detail: { tags: ["Games"] } }).post(
   "/stub",
   async ({ body, set }) => {
     const result = await ensureSteamGame(body.steamAppId)

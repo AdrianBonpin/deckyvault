@@ -5,7 +5,7 @@ import { user, performanceEntries, games, gameVersions, hardware, account, passk
 import { eq, sql, and, desc } from "drizzle-orm"
 import { hashPassword } from "better-auth/crypto"
 
-export const userRoutes = new Elysia({ prefix: "/user" })
+export const userRoutes = new Elysia({ prefix: "/user", detail: { tags: ["Users"] } })
   .get(
     "/profile/:id",
     async ({ params, set }) => {

@@ -8,7 +8,7 @@ import {
 } from "@/lib/db/schema"
 import { eq, and, sql, desc } from "drizzle-orm"
 
-export const hardwareStatsRoutes = new Elysia({ prefix: "/hardware" })
+export const hardwareStatsRoutes = new Elysia({ prefix: "/hardware", detail: { tags: ["Hardware"] } })
   // ── All devices with aggregated stats ──────────────────────
   .get(
     "/stats",

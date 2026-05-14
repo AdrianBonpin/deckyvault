@@ -60,6 +60,7 @@ export function createCrudRoutes<T extends AnyPgTable>(
     primaryKey?: string
     paramName?: string
     softDelete?: boolean
+    tags?: string[]
   },
 ) {
   const {
@@ -71,6 +72,7 @@ export function createCrudRoutes<T extends AnyPgTable>(
     primaryKey = "id",
     paramName = primaryKey,
     softDelete = false,
+    tags,
   } = config
 
   const columns = getTableColumns(table) as Record<string, PgColumn>
@@ -80,7 +82,10 @@ export function createCrudRoutes<T extends AnyPgTable>(
     throw new Error(`Primary key column "${primaryKey}" not found on table`)
   }
 
-  const routes = new Elysia({ prefix })
+  const routes = new Elysia({
+    prefix,
+    ...(tags ? { detail: { tags } } : {}),
+  })
 
   // ── LIST ──────────────────────────────────────────────────────────
   routes.get(
@@ -157,6 +162,10 @@ export function createCrudRoutes<T extends AnyPgTable>(
         // Dynamic filter fields are too varied for static TypeBox,
         // so we allow any string keys with filter_ prefix
       }),
+      detail: {
+        summary: `List ${name}s`,
+        description: `Returns a paginated list of ${name}s with optional search and filtering.`,
+      },
     },
   )
 
@@ -183,6 +192,10 @@ export function createCrudRoutes<T extends AnyPgTable>(
       params: t.Object({
         [paramName]: t.String(),
       }),
+      detail: {
+        summary: `Get ${name} by ID`,
+        description: `Returns a single ${name} by its unique identifier.`,
+      },
     },
   )
 
@@ -211,6 +224,10 @@ export function createCrudRoutes<T extends AnyPgTable>(
     },
     {
       body: t.Record(t.String(), t.Any()),
+      detail: {
+        summary: `Create ${name}`,
+        description: `Creates a new ${name}. Requires authentication.`,
+      },
     },
   )
 
@@ -256,6 +273,10 @@ export function createCrudRoutes<T extends AnyPgTable>(
         [paramName]: t.String(),
       }),
       body: t.Record(t.String(), t.Any()),
+      detail: {
+        summary: `Update ${name}`,
+        description: `Updates an existing ${name} by ID. Requires authentication.`,
+      },
     },
   )
 
@@ -303,6 +324,10 @@ export function createCrudRoutes<T extends AnyPgTable>(
       params: t.Object({
         [paramName]: t.String(),
       }),
+      detail: {
+        summary: `Delete ${name}`,
+        description: `Deletes a ${name} by ID. Requires admin or contributor role.`,
+      },
     },
   )
 

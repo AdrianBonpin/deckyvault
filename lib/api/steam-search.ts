@@ -12,7 +12,7 @@ interface SteamSearchItem {
   }
 }
 
-export const steamSearchRoutes = new Elysia({ prefix: "/search" })
+export const steamSearchRoutes = new Elysia({ prefix: "/search", detail: { tags: ["Search"] } })
   .get(
     "/steam",
     async ({ query, set }) => {

@@ -14,7 +14,7 @@ import {
   requireAdmin,
 } from "@/lib/auth/guard"
 
-export const adminPerformanceRoutes = new Elysia({ prefix: "/admin" })
+export const adminPerformanceRoutes = new Elysia({ prefix: "/admin", detail: { tags: ["Admin"] } })
   .get(
     "/performance",
     async ({ query, request, set }) => {

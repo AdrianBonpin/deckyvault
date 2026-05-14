@@ -6,6 +6,7 @@ import { requireRole } from "@/lib/auth/guard"
 
 export const commentsRoutes = new Elysia({
   prefix: "/games/:gameId/comments",
+  detail: { tags: ["Comments"] },
 })
   // LIST top-level comments for a game (paginated)
   .get(

@@ -5,7 +5,7 @@ import { eq, sql, and, ilike, desc } from "drizzle-orm"
 import { requireAdmin } from "@/lib/auth/guard"
 import { deleteObject, isR2Configured } from "@/lib/storage"
 
-export const adminStorageRoutes = new Elysia({ prefix: "/admin/storage" })
+export const adminStorageRoutes = new Elysia({ prefix: "/admin/storage", detail: { tags: ["Admin"] } })
 
   // ── GET /stats ──────────────────────────────────────────────────
   .get(

@@ -18,7 +18,7 @@ import { processScreenshot, isAllowedMimeType, validateMagicBytes } from "@/lib/
 const MAX_SCREENSHOTS_PER_ENTRY = 2
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024 // 10 MB
 
-export const performanceSubmitRoutes = new Elysia({ prefix: "/performance" })
+export const performanceSubmitRoutes = new Elysia({ prefix: "/performance", detail: { tags: ["Performance"] } })
   .get(
     "/autocomplete",
     async ({ query }) => {

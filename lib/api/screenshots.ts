@@ -9,7 +9,7 @@ import { processScreenshot, isAllowedMimeType } from "@/lib/image-processing"
 const MAX_SCREENSHOTS_PER_ENTRY = 2
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024 // 10 MB raw
 
-export const screenshotRoutes = new Elysia({ prefix: "/performance" })
+export const screenshotRoutes = new Elysia({ prefix: "/performance", detail: { tags: ["Performance"] } })
 
   // ── Upload screenshots ─────────────────────────────────────────
   .post(

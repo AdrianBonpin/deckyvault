@@ -11,7 +11,7 @@ import {
   requireAdmin,
 } from "@/lib/auth/guard"
 
-export const adminCommentRoutes = new Elysia({ prefix: "/admin" })
+export const adminCommentRoutes = new Elysia({ prefix: "/admin", detail: { tags: ["Admin"] } })
   .get(
     "/comments",
     async ({ query, request, set }) => {

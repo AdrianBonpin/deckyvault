@@ -29,7 +29,7 @@ function validateMagicBytes(buffer: Buffer, declaredMime: string): boolean {
   return expected.every((byte, i) => buffer[i] === byte)
 }
 
-export const profilePhotoRoutes = new Elysia({ prefix: "/user" })
+export const profilePhotoRoutes = new Elysia({ prefix: "/user", detail: { tags: ["Users"] } })
 
   // ── Upload Profile Photo ──────────────────────────────────────────
   .post(
