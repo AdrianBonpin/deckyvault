@@ -184,13 +184,32 @@ export const commentsRoutes = new Elysia({
         }
       }
 
+      // ── Sanitize: strip <script> tags and javascript: URLs from content ──
+      const sanitizeValue = (val: unknown): unknown => {
+        if (typeof val === "string") {
+          return val
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+            .replace(/javascript\s*:/gi, "blocked:")
+        }
+        if (Array.isArray(val)) return val.map(sanitizeValue)
+        if (val !== null && typeof val === "object") {
+          const cleaned: Record<string, unknown> = {}
+          for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+            cleaned[k] = sanitizeValue(v)
+          }
+          return cleaned
+        }
+        return val
+      }
+      const sanitizedContent = sanitizeValue(body.content) as Record<string, unknown>
+
       const [created] = await db
         .insert(gameComments)
         .values({
           gameId: params.gameId,
           userId: guard.user.id,
           parentId: body.parentId ?? null,
-          content: body.content,
+          content: sanitizedContent,
         })
         .returning()
 
