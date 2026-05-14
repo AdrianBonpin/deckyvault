@@ -99,13 +99,41 @@ export const dashboardPublicRoutes = new Elysia({ prefix: "/dashboard", detail: 
           g.capsule_image,
           g.header_image,
           g.playability_status,
-          COUNT(pe.id) AS benchmark_count
+          COUNT(pe.id) AS benchmark_count,
+          AVG(pe.fps_avg) AS avg_fps
         FROM games g
         JOIN game_versions gv ON gv.game_id = g.id
         JOIN performance_entries pe ON pe.version_id = gv.id
         WHERE pe.is_removed = false
         GROUP BY g.id, g.title, g.capsule_image, g.header_image, g.playability_status
         ORDER BY benchmark_count DESC
+        LIMIT 10
+      `)
+
+      return results.rows
+    },
+  )
+
+  // ── Recently Added Benchmarks ──────────────────────────────────────
+  .get(
+    "/recent-benchmarks",
+    async () => {
+      const results = await db.execute(sql`
+        SELECT
+          g.id,
+          g.title,
+          g.capsule_image,
+          g.header_image,
+          g.playability_status,
+          COUNT(pe.id) AS benchmark_count,
+          AVG(pe.fps_avg) AS avg_fps,
+          MAX(pe.created_at) AS latest_benchmark_at
+        FROM games g
+        JOIN game_versions gv ON gv.game_id = g.id
+        JOIN performance_entries pe ON pe.version_id = gv.id
+        WHERE pe.is_removed = false
+        GROUP BY g.id, g.title, g.capsule_image, g.header_image, g.playability_status
+        ORDER BY MAX(pe.created_at) DESC
         LIMIT 10
       `)
 
