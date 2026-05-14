@@ -8,6 +8,8 @@
 
 **Tech Stack:** Next.js 16, React 19, Elysia (Bun-compatible API), Drizzle ORM, PostgreSQL, Tailwind CSS v4, motion (framer-motion fork), Vitest
 
+> **CURRENT PROGRESS:** All phases complete. Post-launch: Added 'Recently Added Benchmarks' section, reordered landing page sections, added PlayabilityBadge and performance tags to cards.
+
 ---
 
 ## Phase 1: API Security & Rate Limiting (Stream C)
@@ -18,7 +20,7 @@
 - Modify: `lib/auth/rate-limit.ts`
 - Modify: `lib/api/app.ts`
 
-- [ ] **Step 1: Extend rateLimit to support named categories**
+- [x] **Step 1: Extend rateLimit to support named categories**
 
 Rewrite `lib/auth/rate-limit.ts` to accept a `category` string parameter that partitions the store:
 
@@ -112,7 +114,7 @@ export const rateLimit = (category: string = "default") => {
 }
 ```
 
-- [ ] **Step 2: Apply tiered rate limits in app.ts**
+- [x] **Step 2: Apply tiered rate limits in app.ts**
 
 Edit `lib/api/app.ts` — replace the single `.use(rateLimit(60, 100))` with category-specific limits applied before each route group:
 
@@ -226,7 +228,7 @@ Replace the old single `.use(rateLimit(60, 100))` with individual rate limiters 
 
 **WARNING:** The `betterAuth` middleware must be present in each group that needs auth guards. This is a gotcha — because `group()` scopes middleware, the `betterAuth` from one group doesn't leak to others. Routes in the "read" group using public data don't need it, but "write" and "auth" groups do.
 
-- [ ] **Step 3: Run the existing test suite to verify nothing broke**
+- [x] **Step 3: Run the existing test suite to verify nothing broke**
 
 ```bash
 cd /Users/adrianbonpin/Documents/Code/personal/deckyvault
@@ -235,7 +237,7 @@ bun run test
 
 Expected: All existing tests pass.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add lib/auth/rate-limit.ts lib/api/app.ts
@@ -250,7 +252,7 @@ git commit -m "feat(security): tiered rate limiting with 5 categories (auth/read
 - Modify: `lib/api/comments.ts`
 - Modify: `lib/api/performance-submit.ts`
 
-- [ ] **Step 1: Add duplicate comment detection and content length cap**
+- [x] **Step 1: Add duplicate comment detection and content length cap**
 
 Edit `lib/api/comments.ts` — in the `.post("/")` handler, after the `requireRole` guard but before the parent comment check, add:
 
@@ -317,7 +319,7 @@ import { sql } from "drizzle-orm"
 
 (Note: `sql` is likely already imported — verify. The existing imports include `and, desc, sql, isNull` from `drizzle-orm`.)
 
-- [ ] **Step 2: Add input sanitization on comment content**
+- [x] **Step 2: Add input sanitization on comment content**
 
 Still in the `.post("/")` handler, right before the `db.insert`, add a sanitization step:
 
@@ -344,7 +346,7 @@ Still in the `.post("/")` handler, right before the `db.insert`, add a sanitizat
 
 Then change the `.values()` call to use `content: sanitizedContent` instead of `content: body.content`.
 
-- [ ] **Step 3: Add submission validation hardening**
+- [x] **Step 3: Add submission validation hardening**
 
 Edit `lib/api/performance-submit.ts` — in the `.post("/submit")` handler, after the existing field extraction but before the `versionId/!hardwareSlug/!fpsAvg` validation, add:
 
@@ -425,14 +427,14 @@ Edit `lib/api/performance-submit.ts` — in the `.post("/submit")` handler, afte
       }
 ```
 
-- [ ] **Step 4: Ensure the sql import exists in performance-submit.ts**
+- [x] **Step 4: Ensure the sql import exists in performance-submit.ts**
 
 Check the imports at the top of `lib/api/performance-submit.ts`. The `sql` import from `drizzle-orm` should already be present (it's used in the existing code). If missing, add it:
 ```ts
 import { eq, and, sql } from "drizzle-orm"
 ```
 
-- [ ] **Step 5: Run test suite**
+- [x] **Step 5: Run test suite**
 
 ```bash
 cd /Users/adrianbonpin/Documents/Code/personal/deckyvault
@@ -441,7 +443,7 @@ bun run test
 
 Expected: All existing tests pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add lib/api/comments.ts lib/api/performance-submit.ts
@@ -458,7 +460,7 @@ git commit -m "feat(security): comment anti-spam (duplicate detection, length ca
 - Create: `lib/steamdb/cache.ts`
 - Create: `lib/steamdb/scrape.ts`
 
-- [ ] **Step 1: Create the in-memory cache module**
+- [x] **Step 1: Create the in-memory cache module**
 
 Create `lib/steamdb/cache.ts`:
 
@@ -516,7 +518,7 @@ export function setExtendedCooldown(steamAppId: number): void {
 }
 ```
 
-- [ ] **Step 2: Create the SteamDB HTML scraper**
+- [x] **Step 2: Create the SteamDB HTML scraper**
 
 Create `lib/steamdb/scrape.ts`:
 
@@ -632,7 +634,7 @@ function parseSteamDBHtml(html: string): ScrapeResult {
 }
 ```
 
-- [ ] **Step 3: Write unit tests for the HTML parser**
+- [x] **Step 3: Write unit tests for the HTML parser**
 
 Create `lib/steamdb/__tests__/scrape.test.ts`:
 
@@ -693,7 +695,7 @@ describe("SteamDB HTML Parser", () => {
 export const _parseSteamDBHtml = parseSteamDBHtml
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 ```bash
 cd /Users/adrianbonpin/Documents/Code/personal/deckyvault
@@ -701,7 +703,7 @@ mkdir -p lib/steamdb/__tests__
 bun run test lib/steamdb/__tests__/scrape.test.ts
 ```
 
-Expected: 3 tests pass.
+Expected: 5 tests pass.
 
 - [ ] **Step 5: Commit**
 
@@ -719,7 +721,7 @@ git commit -m "feat(steamdb): scraper + cache for SteamDB version auto-fetch"
 - Modify: `lib/api/index.ts`
 - Modify: `lib/api/app.ts`
 
-- [ ] **Step 1: Create the API endpoint**
+- [x] **Step 1: Create the API endpoint**
 
 Create `lib/api/steamdb-version.ts`:
 
@@ -776,7 +778,7 @@ export const steamdbVersionRoutes = new Elysia({
 )
 ```
 
-- [ ] **Step 2: Export the route from index.ts**
+- [x] **Step 2: Export the route from index.ts**
 
 Edit `lib/api/index.ts` — add the export:
 
@@ -785,7 +787,7 @@ Edit `lib/api/index.ts` — add the export:
 export { steamdbVersionRoutes } from "./steamdb-version"
 ```
 
-- [ ] **Step 3: Register the route in app.ts**
+- [x] **Step 3: Register the route in app.ts**
 
 Edit `lib/api/app.ts` — add the import and route registration. The endpoint is read-only, so it belongs in the "read" group:
 
@@ -810,7 +812,7 @@ Then add `.use(steamdbVersionRoutes)` in the read group (alongside `gamesRoutes`
   )
 ```
 
-- [ ] **Step 4: Verify the endpoint responds**
+- [x] **Step 4: Verify the endpoint responds**
 
 ```bash
 cd /Users/adrianbonpin/Documents/Code/personal/deckyvault
@@ -823,7 +825,7 @@ curl -s http://localhost:3000/api/games/<real-game-id>/steamdb-version | jq
 
 Expected: JSON response with `versionString`, `buildId` fields, or `{ unavailable: true }`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/api/steamdb-version.ts lib/api/index.ts lib/api/app.ts
@@ -838,7 +840,7 @@ git commit -m "feat(steamdb): API endpoint GET /api/games/:gameId/steamdb-versio
 - Modify: `components/wizard/steps/setup-step.tsx`
 - Modify: `components/wizard/game-entry-wizard.tsx`
 
-- [ ] **Step 1: Add SteamDB version fetch to the Setup Step**
+- [x] **Step 1: Add SteamDB version fetch to the Setup Step**
 
 Edit `components/wizard/steps/setup-step.tsx` — add a new prop and fetch logic for the SteamDB suggestion.
 
@@ -949,7 +951,7 @@ When `isSteamDBVersion` is true, show the SteamDB data as read-only fields inste
           )}
 ```
 
-- [ ] **Step 2: Add SteamDB state and fetch logic to the Wizard**
+- [x] **Step 2: Add SteamDB state and fetch logic to the Wizard**
 
 Edit `components/wizard/game-entry-wizard.tsx` — add state for SteamDB data and a fetch function:
 
@@ -1051,7 +1053,7 @@ This requires adding version-creation logic. Let's handle it in the Review step'
   }
 ```
 
-- [ ] **Step 3: Verify the wizard renders the SteamDB option**
+- [x] **Step 3: Verify the wizard renders the SteamDB option**
 
 ```bash
 cd /Users/adrianbonpin/Documents/Code/personal/deckyvault
@@ -1063,7 +1065,7 @@ sleep 5
 
 Expected: The version selector shows SteamDB option when data is available, falls back gracefully when not.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add components/wizard/steps/setup-step.tsx components/wizard/game-entry-wizard.tsx
@@ -1079,7 +1081,7 @@ git commit -m "feat(steamdb): integrate version auto-fetch into submit wizard ve
 **Files:**
 - Modify: `app/page.tsx`
 
-- [ ] **Step 1: Add data fetching and section state to the landing page**
+- [x] **Step 1: Add data fetching and section state to the landing page**
 
 Rewrite `app/page.tsx` — keep the existing hero section, add data sections below. The file is a "use client" component. Add imports and state:
 
@@ -1239,7 +1241,7 @@ export default function Landing() {
 }
 ```
 
-- [ ] **Step 2: Add the GameSection and SkeletonSections components**
+- [x] **Step 2: Add the GameSection and SkeletonSections components**
 
 Add these components in the same file, below the `Landing` function:
 
@@ -1388,7 +1390,7 @@ function PlayabilityDot({ status }: { status: string }) {
 }
 ```
 
-- [ ] **Step 3: Adjust the hero height**
+- [x] **Step 3: Adjust the hero height**
 
 In the existing hero `<section>` tag, change:
 ```tsx
@@ -1401,7 +1403,7 @@ className='w-full min-h-[calc(100svh-10svh)] flex flex-col items-center justify-
 
 Note: `svh` (small viewport height) is used instead of `vh` for mobile browsers that have dynamic toolbars. The `min-h-` ensures the hero is at least this tall but can grow if content overflows. The old `3.6rem` navbar offset is removed because the hero is inside the body flex column (navbar is already accounted for).
 
-- [ ] **Step 4: Add scrollbar styling to globals.css**
+- [x] **Step 4: Add scrollbar styling to globals.css**
 
 Edit `app/globals.css` — add thin scrollbar styling for the horizontal scroll sections:
 
@@ -1426,7 +1428,7 @@ Edit `app/globals.css` — add thin scrollbar styling for the horizontal scroll 
 }
 ```
 
-- [ ] **Step 5: Build and visually verify**
+- [x] **Step 5: Build and visually verify**
 
 ```bash
 cd /Users/adrianbonpin/Documents/Code/personal/deckyvault
@@ -1442,7 +1444,7 @@ Then start the dev server and visit the landing page to verify:
 - Horizontal scrolling works on the card rows
 - The "peek" effect works (bottom of first row visible without scrolling)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/page.tsx app/globals.css
@@ -1462,7 +1464,7 @@ git commit -m "feat(landing): trending, new releases, most tested/reported secti
 - Create: `content/updates/2026-05-14-v2026.0.101.md`
 - Modify: `lib/api/app.ts` (OpenAPI version)
 
-- [ ] **Step 1: Bump version in package.json**
+- [x] **Step 1: Bump version in package.json**
 
 Edit `package.json` — change:
 ```json
@@ -1473,7 +1475,7 @@ to:
 "version": "2026.0.101",
 ```
 
-- [ ] **Step 2: Bump OpenAPI version in app.ts**
+- [x] **Step 2: Bump OpenAPI version in app.ts**
 
 Edit `lib/api/app.ts` — find the OpenAPI info block and change:
 ```ts
@@ -1493,7 +1495,7 @@ to:
 version: "2026.0.101",
 ```
 
-- [ ] **Step 3: Update CHANGELOG.md**
+- [x] **Step 3: Update CHANGELOG.md**
 
 Edit `CHANGELOG.md` — prepend a new entry after the header line:
 
@@ -1518,7 +1520,7 @@ Edit `CHANGELOG.md` — prepend a new entry after the header line:
 - Per-route rate limiting categories for granular abuse prevention
 ```
 
-- [ ] **Step 4: Create update news markdown**
+- [x] **Step 4: Create update news markdown**
 
 Create `content/updates/2026-05-14-v2026.0.101.md`:
 
@@ -1557,7 +1559,7 @@ We've tightened up the API with several layers of protection:
 - **Content sanitization** — comment content is cleaned server-side before storage
 ```
 
-- [ ] **Step 5: Verify all version references are consistent**
+- [x] **Step 5: Verify all version references are consistent**
 
 ```bash
 cd /Users/adrianbonpin/Documents/Code/personal/deckyvault
@@ -1566,7 +1568,7 @@ grep -r "2026.0.100\|2026.0.101" package.json lib/api/app.ts CHANGELOG.md conten
 
 Expected: Only `2026.0.101` appears (no stale `2026.0.100` references remaining).
 
-- [ ] **Step 6: Run full test suite**
+- [x] **Step 6: Run full test suite**
 
 ```bash
 bun run test
@@ -1574,7 +1576,7 @@ bun run test
 
 Expected: All tests pass.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add package.json lib/api/app.ts CHANGELOG.md content/updates/2026-05-14-v2026.0.101.md
