@@ -2,6 +2,25 @@
 
 All notable changes to DeckyVault will be documented in this file.
 
+## [2026.0.101] - 2026-05-14
+
+### Added
+- SteamDB version auto-fetch — latest game version/build surfaced in submit wizard version selector
+- Landing page: Trending This Week, Best Performing New Releases, Most Tested, and Most Reported sections
+- Tiered API rate limiting with 5 categories (auth, read, write, strict, default)
+- Comment anti-spam: duplicate detection, 50KB content cap, 30/hr per-user limit
+- Submission cooldown: 60-second minimum between benchmark entries per user
+- Submission validation hardening: FPS bounds (1-500), TDP bounds, settings size caps, userNotes length cap
+
+### Changed
+- Landing hero height adjusted to `calc(100svh - 10svh)` for content "peek" effect
+- Rate limiter now uses named categories instead of a single global bucket
+
+### Security
+- Hardened validation on performance entry submission (fps bounds, settings size caps)
+- Server-side sanitization of comment content before storage
+- Per-route rate limiting categories for granular abuse prevention
+
 ## [2026.0.100] - 2026-05-10
 
 ### Added
