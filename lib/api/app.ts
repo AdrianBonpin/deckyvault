@@ -142,66 +142,66 @@ export const app = new Elysia({ prefix: "/api" })
       error: code === "NOT_FOUND" ? "Not found" : "Internal server error",
     }
   })
-  .use(rateLimit("default"))
-  .use(betterAuth)
-  // Health
-  .use(healthRoutes)
-  // Users
-  .use(userRoutes)
-  // Profile photos
-  .use(profilePhotoRoutes)
-  // Games + Versions
-  .use(gamesRoutes)
-  .use(gameVersionsRoutes)
-  .use(gameSyncRoutes)
-  .use(gamesListingRoutes)
-  // Hardware
-  .use(hardwareRoutes)
-  .use(hardwareStatsRoutes)
-  // Performance
-  .use(performanceRoutes)
-  .use(performanceVerifyRoutes)
-  .use(performanceSubmitRoutes)
-  .use(screenshotRoutes)
-  .use(reportRoutes)
-  .use(adminReportRoutes)
-  .use(adminPerformanceRoutes)
-  .use(adminCommentRoutes)
-  .use(adminStorageRoutes)
-  // Comments
-  .use(commentsRoutes)
-  // Steam search proxy
-  .use(steamSearchRoutes)
-  // Unified search
-  .use(searchUnifiedRoutes)
-  // Game stub creation
-  .use(gameStubRoutes)
-  // SteamGridDB proxy
-  .use(steamgridProxyRoutes)
-  // Game stats aggregation
-  .use(gameStatsRoutes)
-  // Manual game creation
-  .use(gamesManualRoutes)
-  // Saved games
-  .use(savedGamesRoutes)
-  // Contact form
-  .use(contactRoutes)
-  // Compare
-  .use(compareRoutes)
-  // Playability
-  .use(playabilityRoutes)
-  // Steam reviews
-  .use(steamReviewRoutes)
-  // Community suggestions
-  .use(communitySuggestionRoutes)
-  // Saved filters
-  .use(savedFilterRoutes)
-  // Cron
+  // ── Auth routes (auth rate limit + betterAuth) ──────────────
+  .group("", (app) =>
+    app
+      .use(rateLimit("auth"))
+      .use(betterAuth)
+      .use(userRoutes)
+      .use(profilePhotoRoutes)
+  )
+  // ── Read-heavy public routes (read rate limit) ───────────────
+  .group("", (app) =>
+    app
+      .use(rateLimit("read"))
+      .use(healthRoutes)
+      .use(gamesRoutes)
+      .use(gameVersionsRoutes)
+      .use(gameSyncRoutes)
+      .use(gamesListingRoutes)
+      .use(hardwareRoutes)
+      .use(hardwareStatsRoutes)
+      .use(performanceRoutes)
+      .use(gameStatsRoutes)
+      .use(dashboardRoutes)
+      .use(dashboardPublicRoutes)
+      .use(playabilityRoutes)
+      .use(steamReviewRoutes)
+      .use(compareRoutes)
+      .use(savedGamesRoutes)
+      .use(savedFilterRoutes)
+      .use(steamSearchRoutes)
+      .use(searchUnifiedRoutes)
+      .use(gameStubRoutes)
+      .use(steamgridProxyRoutes)
+      .use(gamesManualRoutes)
+      .use(screenshotRoutes)
+  )
+  // ── Write routes (write rate limit + betterAuth) ─────────────
+  .group("", (app) =>
+    app
+      .use(rateLimit("write"))
+      .use(betterAuth)
+      .use(performanceVerifyRoutes)
+      .use(performanceSubmitRoutes)
+      .use(commentsRoutes)
+      .use(reportRoutes)
+      .use(adminReportRoutes)
+      .use(adminPerformanceRoutes)
+      .use(adminCommentRoutes)
+      .use(adminStorageRoutes)
+  )
+  // ── Strict rate limit (public forms, no auth) ───────────────
+  .group("", (app) =>
+    app
+      .use(rateLimit("strict"))
+      .use(contactRoutes)
+      .use(communitySuggestionRoutes)
+  )
+  // ── Cron (no rate limit) ─────────────────────────────────────
   .use(cronRoutes)
-  // Dashboard
-  .use(dashboardRoutes)
-  .use(dashboardPublicRoutes)
-  // Root
+  // ── Root (default rate limit) ────────────────────────────────
+  .use(rateLimit("default"))
   .get("/", () => ({
     name: "DeckyVault API",
     version: "2026.0.9",
