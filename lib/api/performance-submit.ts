@@ -145,6 +145,75 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance", deta
         return { error: "Missing required fields: versionId, hardwareSlug, fpsAvg" }
       }
 
+      // ── Submission cooldown: 60 seconds between entries per user ──
+      const sixtySecondsAgo = new Date(Date.now() - 60 * 1000)
+      const [lastEntry] = await db
+        .select({ createdAt: performanceEntries.createdAt })
+        .from(performanceEntries)
+        .where(
+          and(
+            eq(performanceEntries.userId, guard.user.id),
+            sql`${performanceEntries.createdAt} >= ${sixtySecondsAgo}`,
+          ),
+        )
+        .orderBy(sql`${performanceEntries.createdAt} DESC`)
+        .limit(1)
+
+      if (lastEntry) {
+        const retryAfter = Math.ceil(
+          (lastEntry.createdAt.getTime() + 60_000 - Date.now()) / 1000
+        )
+        set.status = 429
+        return {
+          error: "Please wait before submitting another benchmark",
+          retryAfter: Math.max(1, retryAfter),
+        }
+      }
+
+      // ── Validation: fpsAvg bounds ───────────────────────────────
+      if (typeof fpsAvg !== "number" || fpsAvg < 1 || fpsAvg > 500) {
+        set.status = 400
+        return { error: "fpsAvg must be between 1 and 500" }
+      }
+
+      // ── Validation: optional FPS bounds ─────────────────────────
+      if (fpsLow !== null && (fpsLow < 0 || fpsLow > 500)) {
+        set.status = 400
+        return { error: "fpsLow must be between 0 and 500" }
+      }
+      if (fpsHigh !== null && (fpsHigh < 0 || fpsHigh > 500)) {
+        set.status = 400
+        return { error: "fpsHigh must be between 0 and 500" }
+      }
+      if (fpsOnePercentLow !== null && (fpsOnePercentLow < 0 || fpsOnePercentLow > 500)) {
+        set.status = 400
+        return { error: "fpsOnePercentLow must be between 0 and 500" }
+      }
+
+      // ── Validation: settingsJson size limits ────────────────────
+      if (settingsJson) {
+        if (!Array.isArray(settingsJson)) {
+          set.status = 400
+          return { error: "settingsJson must be an array" }
+        }
+        if (settingsJson.length > 20) {
+          set.status = 400
+          return { error: "Maximum 20 settings categories allowed" }
+        }
+        for (const cat of settingsJson) {
+          if (cat.settings && Array.isArray(cat.settings) && cat.settings.length > 50) {
+            set.status = 400
+            return { error: `Maximum 50 settings per category (exceeded in "${cat.category}")` }
+          }
+        }
+      }
+
+      // ── Validation: userNotes length ────────────────────────────
+      if (userNotes && typeof userNotes === "string" && userNotes.length > 5000) {
+        set.status = 400
+        return { error: "userNotes must be 5000 characters or less" }
+      }
+
       // Verify the game version exists
       const [version] = await db
         .select({ id: gameVersions.id, gameId: gameVersions.gameId })
