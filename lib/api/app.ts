@@ -25,6 +25,7 @@ import {
 } from "@/lib/api"
 import { adminStorageRoutes } from "@/lib/api/admin-storage"
 import { steamSearchRoutes } from "@/lib/api/steam-search"
+import { steamdbVersionRoutes } from "@/lib/api/steamdb-version"
 import { searchUnifiedRoutes } from "@/lib/api/search-unified"
 import { gameStubRoutes } from "@/lib/api/game-stub"
 import { gameStatsRoutes } from "@/lib/api/game-stats"
@@ -174,6 +175,7 @@ export const app = new Elysia({ prefix: "/api" })
       .use(searchUnifiedRoutes)
       .use(gameStubRoutes)
       .use(steamgridProxyRoutes)
+      .use(steamdbVersionRoutes)
       .use(gamesManualRoutes)
       .use(screenshotRoutes)
   )
