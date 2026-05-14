@@ -6,13 +6,15 @@ All notable changes to DeckyVault will be documented in this file.
 
 ### Added
 - SteamDB version auto-fetch — latest game version/build surfaced in submit wizard version selector
-- Landing page: Trending This Week, Best Performing New Releases, Most Tested, and Most Reported sections
+- Landing page: Recently Added Benchmarks, Trending This Week, and Most Tested sections with PlayabilityBadge and performance tags on game cards
 - Tiered API rate limiting with 5 categories (auth, read, write, strict, default)
 - Comment anti-spam: duplicate detection, 50KB content cap, 30/hr per-user limit
 - Submission cooldown: 60-second minimum between benchmark entries per user
 - Submission validation hardening: FPS bounds (1-500), TDP bounds, settings size caps, userNotes length cap
 
 ### Changed
+- Landing page sections reordered: Recently Added Benchmarks → Trending This Week → Most Tested Games
+- Landing page cards now show PlayabilityBadge (with text label) and performance tags (Raw Performer / Poor Performance / avg FPS)
 - Landing hero height adjusted to `calc(100svh - 10svh)` for content "peek" effect
 - Rate limiter now uses named categories instead of a single global bucket
 
