@@ -29,6 +29,7 @@ import { steamdbVersionRoutes } from "@/lib/api/steamdb-version"
 import { searchUnifiedRoutes } from "@/lib/api/search-unified"
 import { gameStubRoutes } from "@/lib/api/game-stub"
 import { gameStatsRoutes } from "@/lib/api/game-stats"
+import { gamesPerformanceRoutes } from "@/lib/api/games-performance"
 import { gamesManualRoutes } from "@/lib/api/games-manual"
 import { compareRoutes } from "@/lib/api/compare"
 import { playabilityRoutes } from "@/lib/api/playability"
@@ -66,6 +67,7 @@ export const app = new Elysia({ prefix: "/api" })
   .use(
     openapi({
       path: "/openapi",
+      embedSpec: true,
       documentation: {
         info: {
           title: "DeckyVault API",
@@ -164,6 +166,7 @@ export const app = new Elysia({ prefix: "/api" })
       .use(hardwareStatsRoutes)
       .use(performanceRoutes)
       .use(gameStatsRoutes)
+      .use(gamesPerformanceRoutes)
       .use(dashboardRoutes)
       .use(dashboardPublicRoutes)
       .use(playabilityRoutes)
