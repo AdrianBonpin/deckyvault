@@ -35,6 +35,15 @@ interface SectionData {
     recentBenchmarks: GameCard[]
     trending: GameCard[]
     mostTested: GameCard[]
+    onSale: SaleGameCard[]
+}
+
+interface SaleGameCard extends GameCard {
+    price_current?: number
+    price_initial?: number
+    price_currency?: string
+    steam_review_score?: number
+    best_fps?: number
 }
 
 function SkeletonSections() {
@@ -196,6 +205,138 @@ function GameSection({
     )
 }
 
+function SaleSection({
+    games,
+}: {
+    games: SaleGameCard[]
+}) {
+    const router = useRouter()
+
+    return (
+        <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.4 }}
+        >
+            <div className='flex items-center gap-2 mb-4'>
+                <div className='border-l-2 border-green-500 pl-3'>
+                    <div className='flex items-center gap-2'>
+                        <span className="text-green-400 text-sm">💰</span>
+                        <h2 className='text-sm font-semibold text-text/80'>
+                            On Sale & Performing Well
+                        </h2>
+                    </div>
+                </div>
+            </div>
+
+            <div className='flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin'>
+                {games.map((game, idx) => {
+                    const discountPct = game.price_initial && game.price_current
+                        ? Math.round((1 - game.price_current / game.price_initial) * 100)
+                        : 0
+
+                    return (
+                        <motion.div
+                            key={game.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.3, delay: idx * 0.05 }}
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.98 }}
+                            className='group shrink-0 w-36 sm:w-44 rounded-xl bg-text/3 border border-border hover:border-text/30 hover:bg-text/6 transition-colors cursor-pointer overflow-hidden'
+                            onClick={() => router.push(`/game/${game.id}?sync=1`)}
+                        >
+                            <div className='relative aspect-2/3 bg-text/10 overflow-hidden'>
+                                {game.capsule_image ? (
+                                    <Image
+                                        src={game.capsule_image}
+                                        alt={game.title}
+                                        fill
+                                        className='object-cover group-hover:scale-105 transition-transform duration-300'
+                                        sizes='(max-width: 640px) 144px, 176px'
+                                    />
+                                ) : (
+                                    <div className='w-full h-full flex items-center justify-center'>
+                                        <Gamepad2Icon className='h-8 w-8 text-text/15' />
+                                    </div>
+                                )}
+                                {/* Discount badge */}
+                                {discountPct > 0 && (
+                                    <div className='absolute top-2 right-2 px-1.5 py-0.5 rounded bg-green-500 text-white text-[10px] font-bold'>
+                                        -{discountPct}%
+                                    </div>
+                                )}
+                                {game.playability_status &&
+                                    game.playability_status !== "unknown" && (
+                                        <div className='absolute bottom-1.5 left-1.5 right-1.5'>
+                                            <PlayabilityBadge
+                                                status={game.playability_status as "great" | "playable" | "needs_tweaks" | "unplayable" | "unknown" | null}
+                                                compact
+                                                showLabel
+                                                className='text-[10px] px-1.5 py-0.5 w-full justify-center'
+                                            />
+                                        </div>
+                                    )}
+                            </div>
+
+                            <div className='p-2.5 space-y-1.5'>
+                                <h3 className='text-xs font-semibold text-text line-clamp-2 leading-tight group-hover:text-primary transition-colors'>
+                                    {game.title}
+                                </h3>
+
+                                {/* Pricing */}
+                                <div className='flex items-center gap-1.5'>
+                                    {game.price_current !== undefined && (
+                                        <span className='text-xs font-bold text-green-400'>
+                                            {game.price_currency === "USD" ? "$" : ""}{(game.price_current / 100).toFixed(2)}
+                                        </span>
+                                    )}
+                                    {game.price_initial !== undefined && game.price_initial > (game.price_current ?? 0) && (
+                                        <span className='text-[10px] text-text/30 line-through'>
+                                            {(game.price_initial / 100).toFixed(2)}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* Performance badges */}
+                                {game.best_fps !== undefined && game.best_fps !== null && (
+                                    <div className='flex flex-wrap gap-1'>
+                                        {game.best_fps >= 60 ? (
+                                            <span className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-semibold'>
+                                                ⚡ RAW PERFORMER
+                                            </span>
+                                        ) : game.best_fps < 30 ? (
+                                            <span className='inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-semibold'>
+                                                ⚠ POOR PERFORMANCE
+                                            </span>
+                                        ) : null}
+                                        <span className='inline-flex items-center gap-0.5 text-[9px] text-text/50 font-medium'>
+                                            {Math.round(game.best_fps)}fps
+                                        </span>
+                                    </div>
+                                )}
+
+                                {game.steam_review_score !== undefined && game.steam_review_score !== null && (
+                                    <p className='text-[10px] text-blue-400 font-medium'>
+                                        {game.steam_review_score}% positive
+                                    </p>
+                                )}
+                            </div>
+                        </motion.div>
+                    )
+                })}
+            </div>
+
+            {/* Disclaimer */}
+            <p className='text-[10px] text-text/20 mt-1 text-right'>
+                Prices may vary. Data refreshes weekly.
+            </p>
+        </motion.section>
+    )
+}
+
 export default function Landing() {
     const router = useRouter()
     const words = ["benchmarks", "settings", "reviews"]
@@ -208,6 +349,7 @@ export default function Landing() {
         recentBenchmarks: [],
         trending: [],
         mostTested: [],
+        onSale: [],
     })
     const [sectionsLoading, setSectionsLoading] = useState(true)
 
@@ -224,7 +366,7 @@ export default function Landing() {
         let cancelled = false
         async function fetchSections() {
             try {
-                const [recentBenchmarks, trending, mostTested] =
+                const [recentBenchmarks, trending, mostTested, onSale] =
                     await Promise.all([
                         fetch("/api/dashboard/recent-benchmarks").then((r) =>
                             r.ok ? r.json() : [],
@@ -235,12 +377,16 @@ export default function Landing() {
                         fetch("/api/dashboard/most-tested").then((r) =>
                             r.ok ? r.json() : [],
                         ),
+                        fetch("/api/dashboard/on-sale").then((r) =>
+                            r.ok ? r.json() : [],
+                        ),
                     ])
                 if (!cancelled) {
                     setSections({
                         recentBenchmarks: Array.isArray(recentBenchmarks) ? recentBenchmarks : [],
                         trending: Array.isArray(trending) ? trending : [],
                         mostTested: Array.isArray(mostTested) ? mostTested : [],
+                        onSale: Array.isArray(onSale) ? onSale : [],
                     })
                 }
             } catch {
@@ -410,6 +556,9 @@ export default function Landing() {
                                 statLabel='benchmarks'
                                 accentColor='text-blue-400'
                             />
+                        )}
+                        {sections.onSale.length > 0 && (
+                            <SaleSection games={sections.onSale} />
                         )}
                     </>
                 )}
