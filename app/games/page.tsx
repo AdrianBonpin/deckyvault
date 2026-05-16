@@ -143,6 +143,10 @@ export default async function GamesPage() {
       })
       .from(performanceEntries)
       .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+      .innerJoin(hardware, and(
+        eq(performanceEntries.hardwareSlug, hardware.slug),
+        eq(hardware.deviceType, "handheld"),
+      ))
       .where(
         and(
           inArray(gameVersions.gameId, gameIds),
