@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation"
 import { db } from "@/lib/db/index"
-import { games, gameVersions, performanceEntries, gamePlatformSupport } from "@/lib/db/schema"
+import { games, gameVersions, performanceEntries, gamePlatformSupport, entryScreenshots } from "@/lib/db/schema"
 import { eq, sql } from "drizzle-orm"
 import { GameEntryWizard, type GameVersionInfo } from "@/components/wizard/game-entry-wizard"
+import { getR2PublicUrl } from "@/lib/storage/r2-client"
 
 // This page needs live data — skip static generation at build time
 export const dynamic = "force-dynamic"
@@ -77,14 +78,39 @@ export default async function SubmitBenchmarkPage({
   }
 
   // If editing, fetch the existing performance entry
-  let editEntry = null
+  let editEntry: any = null
   if (edit) {
     const [entry] = await db
       .select()
       .from(performanceEntries)
       .where(eq(performanceEntries.id, edit))
       .limit(1)
-    editEntry = entry ?? null
+
+    if (entry) {
+      const publicUrl = getR2PublicUrl()
+      const screenshots = await db
+        .select({
+          id: entryScreenshots.id,
+          storageKey: entryScreenshots.storageKey,
+          orderIndex: entryScreenshots.orderIndex,
+          width: entryScreenshots.width,
+          height: entryScreenshots.height,
+        })
+        .from(entryScreenshots)
+        .where(eq(entryScreenshots.entryId, entry.id))
+        .orderBy(entryScreenshots.orderIndex)
+
+      editEntry = {
+        ...entry,
+        screenshots: screenshots.map((ss) => ({
+          id: ss.id,
+          url: `${publicUrl}/${ss.storageKey}`,
+          width: ss.width,
+          height: ss.height,
+          orderIndex: ss.orderIndex,
+        })),
+      }
+    }
   }
 
   // Determine default version: when editing, use the entry's version;

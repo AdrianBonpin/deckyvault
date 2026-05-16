@@ -124,7 +124,7 @@ function ScreenshotCard({
             dragListener={false}
             dragControls={dragControls}
             as='div'
-            className='group relative rounded-xl border border-border bg-text/3 overflow-hidden shadow-sm hover:shadow-md hover:border-primary/30 transition-all'
+            className='group relative rounded-xl border border-border bg-text/3 overflow-hidden shadow-sm hover:shadow-md hover:border-primary/30 transition-shadow transition-colors transition-[border-color]'
             whileDrag={{
                 scale: 1.02,
                 boxShadow: "0 12px 40px rgba(0,0,0,0.3)",

@@ -138,7 +138,7 @@ function SettingRow({
             data-setting-row
             data-category={category}
             data-title={setting.title}
-            className="group grid grid-cols-[28px_36px_1fr_1fr_56px] gap-2 items-center rounded-lg border border-border bg-text/3 px-2 py-2 shadow-sm hover:shadow-md hover:bg-text/5 transition-all"
+            className="group grid grid-cols-[28px_36px_1fr_1fr_56px] gap-2 items-center rounded-lg border border-border bg-text/3 px-2 py-2 shadow-sm hover:shadow-md hover:bg-text/5 transition-shadow transition-colors"
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -8 }}
