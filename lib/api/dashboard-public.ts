@@ -170,3 +170,40 @@ export const dashboardPublicRoutes = new Elysia({ prefix: "/dashboard", detail: 
     },
     { detail: { description: "Games with the most open reports against their performance entries." } },
   )
+
+  // ── On Sale & Performing Well ────────────────────────────────────
+  .get(
+    "/on-sale",
+    async () => {
+      const results = await db.execute(sql`
+        SELECT
+          g.id,
+          g.title,
+          g.capsule_image,
+          g.header_image,
+          g.price_current,
+          g.price_initial,
+          g.price_currency,
+          g.playability_status,
+          g.steam_review_score,
+          AVG(pe.fps_avg) AS avg_fps,
+          MAX(pe.fps_avg) AS best_fps,
+          COUNT(pe.id) AS benchmark_count
+        FROM games g
+        JOIN game_versions gv ON gv.game_id = g.id
+        JOIN performance_entries pe ON pe.version_id = gv.id
+        WHERE g.source = 'steam'
+          AND g.price_current > 0
+          AND g.price_initial > 0
+          AND g.price_current < g.price_initial
+          AND pe.is_removed = false
+          AND g.last_sync >= NOW() - INTERVAL '7 days'
+        GROUP BY g.id
+        HAVING COUNT(pe.id) >= 3
+        ORDER BY avg_fps DESC
+        LIMIT 10
+      `)
+
+      return results.rows
+    },
+  )
