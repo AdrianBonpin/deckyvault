@@ -25,7 +25,6 @@ const STATIC_ENTRIES: Array<{
 }> = [
   { urlPath: "", changeFrequency: "weekly", priority: 1 },
   { urlPath: "/games", changeFrequency: "daily", priority: 0.8 },
-  { urlPath: "/dashboard", changeFrequency: "daily", priority: 0.7 },
   { urlPath: "/devices", changeFrequency: "monthly", priority: 0.6 },
   { urlPath: "/updates", changeFrequency: "weekly", priority: 0.5 },
   { urlPath: "/contact", changeFrequency: "yearly", priority: 0.3 },
