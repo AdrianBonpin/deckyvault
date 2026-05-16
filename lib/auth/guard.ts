@@ -53,3 +53,9 @@ export async function requireContributorOrAdmin(
 ): Promise<GuardResult> {
   return requireRole(headers, ["contributor", "admin"])
 }
+
+export async function requireModeratorOrAdmin(
+  headers: Headers,
+): Promise<GuardResult> {
+  return requireRole(headers, ["moderator", "admin"])
+}

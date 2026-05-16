@@ -1,10 +1,36 @@
 import { betterAuth } from 'better-auth'
 import { admin, emailOTP, lastLoginMethod } from 'better-auth/plugins'
 import { passkey } from '@better-auth/passkey'
+import { expo } from '@better-auth/expo'
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { db } from '@/lib/db/index'
-import { ac, admin as adminRole, contributor, user } from '@/lib/auth/permissions'
+import { ac, admin as adminRole, moderator, contributor, user } from '@/lib/auth/permissions'
 import { sendOTP, OTP_EXPIRY_SECONDS } from '@/lib/auth/email'
+
+// ── Origin setup ───────────────────────────────────────
+// Web + mobile passkey origins
+const webOrigin = process.env.BETTER_AUTH_URL ?? 'https://localhost:3000'
+const appScheme = 'deckyvault://'
+
+// Build trusted origins: web URL + app scheme + optional expo dev
+const trustedOrigins = [
+    webOrigin,
+    appScheme,
+]
+
+// Add Expo dev URLs in development
+if (process.env.NODE_ENV !== 'production') {
+    trustedOrigins.push('exp://*')
+    trustedOrigins.push('exp://192.168.*.*:*')
+}
+
+// Passkey origins: web URL + optional Android APK key hash
+const passkeyOrigins = [
+    webOrigin,
+    ...(process.env.ANDROID_APK_KEY_HASH
+        ? [`android:apk-key-hash:${process.env.ANDROID_APK_KEY_HASH}`]
+        : []),
+]
 
 export const auth = betterAuth({
     experimental: { joins: true },
@@ -23,7 +49,10 @@ export const auth = betterAuth({
         passkey({
             rpID: process.env.RP_ID ?? 'localhost',
             rpName: 'DeckyVault',
-            origin: process.env.BETTER_AUTH_URL ?? 'https://localhost:3000',
+            origin: passkeyOrigins,
+            advanced: {
+                webAuthnChallengeCookie: 'better-auth-passkey',
+            },
         }),
         lastLoginMethod({
             storeInDatabase: true,
@@ -32,12 +61,14 @@ export const auth = betterAuth({
             ac,
             roles: {
                 admin: adminRole,
+                moderator,
                 contributor,
                 user,
             },
             defaultRole: 'user',
             adminRoles: ['admin'],
         }),
+        expo(),
     ],
     socialProviders: {
         google: {
@@ -49,7 +80,7 @@ export const auth = betterAuth({
             clientSecret: process.env.DISCORD_CLIENT_SECRET || "",
         },
     },
-    trustedOrigins: [process.env.NEXT_PUBLIC_SITE_URL || "https://localhost:3000"],
+    trustedOrigins,
     rateLimit: {
         enabled: true,
         window: 60,
