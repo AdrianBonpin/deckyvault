@@ -5,6 +5,7 @@ import {
   gameVersions,
   performanceEntries,
   gameComments,
+  hardware,
 } from "@/lib/db/schema"
 import { ilike, or, sql, eq, inArray, and, gte, desc } from "drizzle-orm"
 import { fuzzySearchTerm } from "@/lib/db/search"
@@ -308,6 +309,10 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search", detail: { tag
           gameVersions,
           eq(performanceEntries.versionId, gameVersions.id),
         )
+        .innerJoin(hardware, and(
+          eq(performanceEntries.hardwareSlug, hardware.slug),
+          eq(hardware.deviceType, "handheld"),
+        ))
         .where(
           and(
             inArray(gameVersions.gameId, finalIds),

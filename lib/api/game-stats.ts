@@ -112,16 +112,19 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games", detail: { tags: ["
       .where(eq(gameVersions.gameId, gameId))
     const versionCount = versionRow?.count ?? 0
 
-    // ── 3. Raw Performer check ────────────────────────────────────
-    const isRawPerformer = entries.some(
+    // ── 3. Raw Performer check (handheld devices only) ─────────────
+    const handheldEntries = entries.filter((e) =>
+      e.hardwareSlug.startsWith("steamdeck"),
+    )
+    const isRawPerformer = handheldEntries.some(
       (e) =>
         (e.fpsAvg ?? 0) >= 60 &&
         e.upscalerType === "none" &&
         e.frameGenMethod === "none",
     )
 
-    // ── 3b. Poor Performance check ─────────────────────────────────
-    const isPoorPerformance = entries.some((e) => (e.fpsAvg ?? 0) < 30)
+    // ── 3b. Poor Performance check (handheld devices only) ─────────
+    const isPoorPerformance = handheldEntries.some((e) => (e.fpsAvg ?? 0) < 30)
 
     // ── 4. Boxplot per device ─────────────────────────────────────
     const boxplotMap = new Map<

@@ -378,6 +378,10 @@ export const gamesListingRoutes = new Elysia({ prefix: "/games/listing", detail:
         })
         .from(performanceEntries)
         .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+        .innerJoin(hardware, and(
+          eq(performanceEntries.hardwareSlug, hardware.slug),
+          eq(hardware.deviceType, "handheld"),
+        ))
         .where(
           and(
             inArray(gameVersions.gameId, gameIds),
