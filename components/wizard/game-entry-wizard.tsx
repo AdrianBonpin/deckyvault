@@ -9,7 +9,7 @@ import { type AntiCheatData } from "@/components/wizard/steps/anti-cheat-step"
 import { PerformanceStep, type PerformanceData } from "@/components/wizard/steps/performance-step"
 import { SettingsStep } from "@/components/wizard/steps/settings-step"
 import { EnvironmentStep, type EnvironmentData } from "@/components/wizard/steps/environment-step"
-import { ReviewStep } from "@/components/wizard/steps/review-step"
+import { ReviewStep, type ExistingScreenshot } from "@/components/wizard/steps/review-step"
 import type { SettingCategory } from "@/components/wizard/settings-editor"
 import { performanceEntries } from "@/lib/db/schema"
 
@@ -46,6 +46,8 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
   const [error, setError] = useState<string | null>(null)
   const [screenshotFiles, setScreenshotFiles] = useState<File[]>([])
   const [submitPhase, setSubmitPhase] = useState<"idle" | "uploading" | "saving" | "success" | "error">("idle")
+  const [existingScreenshots, setExistingScreenshots] = useState<ExistingScreenshot[]>([])
+  const [removedScreenshotIds, setRemovedScreenshotIds] = useState<string[]>([])
 
   // Step 0: Setup — Hardware
   const [hardwareSlug, setHardwareSlug] = useState(editEntry?.hardwareSlug ?? "")
@@ -200,6 +202,11 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
     return v.versionString || (v.buildId ? `Build ${v.buildId}` : "Unknown version")
   }, [selectedVersionId, newVersionString, gameVersions, steamdbVersion])
 
+  const handleRemoveExistingScreenshot = useCallback((id: string) => {
+    setExistingScreenshots((prev) => prev.filter((ss) => ss.id !== id))
+    setRemovedScreenshotIds((prev) => [...prev, id])
+  }, [])
+
   const fetchSteamDBVersion = useCallback(async () => {
     setSteamdbLoading(true)
     try {
@@ -218,6 +225,22 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
       setSteamdbLoading(false)
     }
   }, [gameId])
+
+  // Initialize existing screenshots when editing
+  useEffect(() => {
+    if (editEntry && (editEntry as any).screenshots && Array.isArray((editEntry as any).screenshots)) {
+      setExistingScreenshots(
+        (editEntry as any).screenshots.map((ss: any) => ({
+          type: "existing" as const,
+          id: ss.id,
+          url: ss.url,
+          width: ss.width,
+          height: ss.height,
+          orderIndex: ss.orderIndex,
+        }))
+      )
+    }
+  }, [editEntry])
 
   // Fetch SteamDB version on mount
   useEffect(() => {
@@ -339,6 +362,7 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
         frameGenMethod: environment.frameGenMethod ?? "none",
         launchOptions: environment.launchOptions || null,
         customSystem: environment.customSystem ?? false,
+        removedScreenshotIds: removedScreenshotIds.length > 0 ? removedScreenshotIds : undefined,
         settingsJson: settingsJson.length > 0 ? settingsJson : null,
         userNotes: userNotes || null,
         antiCheatRelevant: antiCheat.antiCheatRelevant,
@@ -467,6 +491,8 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
               screenshotFiles={screenshotFiles}
               onScreenshotFilesChange={setScreenshotFiles}
               submitPhase={submitPhase}
+              existingScreenshots={existingScreenshots}
+              onRemoveExistingScreenshot={handleRemoveExistingScreenshot}
             />
           )}
         </motion.div>

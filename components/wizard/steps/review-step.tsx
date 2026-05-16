@@ -23,6 +23,15 @@ import type { PerformanceData } from "./performance-step"
 import type { EnvironmentData } from "./environment-step"
 import { UPSCALER_TYPE_OPTIONS, FRAME_GEN_OPTIONS } from "./environment-step"
 
+export interface ExistingScreenshot {
+  type: "existing"
+  id: string
+  url: string
+  width: number
+  height: number
+  orderIndex: number
+}
+
 export interface ReviewData {
     hardwareSlug: string
     hardwareName: string
@@ -49,6 +58,8 @@ interface ReviewStepProps {
     screenshotFiles: File[]
     onScreenshotFilesChange: (files: File[]) => void
     submitPhase: "idle" | "uploading" | "saving" | "success" | "error"
+    existingScreenshots?: ExistingScreenshot[]
+    onRemoveExistingScreenshot?: (id: string) => void
 }
 
 function SectionHeader({
@@ -185,6 +196,8 @@ export function ReviewStep({
     screenshotFiles,
     onScreenshotFilesChange,
     submitPhase,
+    existingScreenshots,
+    onRemoveExistingScreenshot,
 }: ReviewStepProps) {
     const {
         hardwareName,
@@ -528,6 +541,41 @@ export function ReviewStep({
                     </div>
                 ) : (
                     <div className='space-y-3'>
+                        {/* Existing screenshots (from edit mode) */}
+                        {existingScreenshots && existingScreenshots.length > 0 && (
+                            <div className="space-y-2">
+                                <p className="text-[10px] text-text/30 uppercase tracking-wider">Existing screenshots</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {existingScreenshots.map((ss) => (
+                                        <div
+                                            key={ss.id}
+                                            className="group relative rounded-xl border border-border bg-text/3 overflow-hidden"
+                                        >
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={ss.url}
+                                                alt={`Screenshot ${ss.orderIndex + 1}`}
+                                                className="w-full aspect-video object-cover"
+                                                draggable={false}
+                                            />
+                                            <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <button
+                                                type="button"
+                                                onClick={() => onRemoveExistingScreenshot?.(ss.id)}
+                                                className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/50 text-white/80 hover:text-white hover:bg-red-500/80 backdrop-blur-sm transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                                                title="Remove screenshot"
+                                            >
+                                                <X className="h-3.5 w-3.5" />
+                                            </button>
+                                            <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[10px] font-medium text-white/90 opacity-0 group-hover:opacity-100">
+                                                Existing · #{ss.orderIndex + 1}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Screenshot grid with drag-to-reorder */}
                         {screenshotFiles && screenshotFiles.length > 0 && (
                             <Reorder.Group
