@@ -35,6 +35,10 @@ export function UsersClient() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({})
+const [banTarget, setBanTarget] = useState<AdminUser | null>(null)
+const [banReason, setBanReason] = useState("")
+const [banExpiryDays, setBanExpiryDays] = useState("")
+const [banFilter, setBanFilter] = useState<"all" | "banned" | "active">("all")
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -49,14 +53,17 @@ export function UsersClient() {
   }, [])
 
   const filteredUsers = useMemo(() => {
+    let result = users
     const term = search.trim().toLowerCase()
-    if (!term) return users
-    return users.filter(
-      (u) =>
-        u.name?.toLowerCase().includes(term) ||
-        u.email?.toLowerCase().includes(term)
-    )
-  }, [users, search])
+    if (term) {
+      result = result.filter(
+        (u) => u.name?.toLowerCase().includes(term) || u.email?.toLowerCase().includes(term)
+      )
+    }
+    if (banFilter === "banned") result = result.filter((u) => u.banned)
+    if (banFilter === "active") result = result.filter((u) => !u.banned)
+    return result
+  }, [users, search, banFilter])
 
   const handleRoleChange = async (userId: string, newRole: Role) => {
     setActionLoading((prev) => ({ ...prev, [userId]: true }))
@@ -70,15 +77,25 @@ export function UsersClient() {
     }
   }
 
-  const handleBan = async (userId: string) => {
-    setActionLoading((prev) => ({ ...prev, [userId]: true }))
+  const handleBan = async () => {
+    if (!banTarget) return
+    setActionLoading((prev) => ({ ...prev, [banTarget.id]: true }))
     try {
-      await authClient.admin.banUser({ userId })
+      await authClient.admin.banUser({
+        userId: banTarget.id,
+        banReason: banReason.trim() || undefined,
+        banExpires: banExpiryDays
+          ? new Date(Date.now() + Number(banExpiryDays) * 24 * 60 * 60 * 1000)
+          : undefined,
+      } as any)
       setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, banned: true } : u))
+        prev.map((u) => (u.id === banTarget.id ? { ...u, banned: true } : u))
       )
+      setBanTarget(null)
+      setBanReason("")
+      setBanExpiryDays("")
     } finally {
-      setActionLoading((prev) => ({ ...prev, [userId]: false }))
+      setActionLoading((prev) => ({ ...prev, [banTarget.id]: false }))
     }
   }
 
@@ -115,6 +132,21 @@ export function UsersClient() {
           placeholder="Search by name or email..."
           className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-text/5 border border-border text-sm text-text placeholder:text-text/40 focus:outline-none focus:border-primary/60 transition-colors"
         />
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="flex gap-2">
+        {(["all", "active", "banned"] as const).map((f) => (
+          <button
+            key={f}
+            onClick={() => setBanFilter(f)}
+            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+              banFilter === f ? "bg-primary/10 text-primary" : "text-text/50 hover:text-text/70"
+            }`}
+          >
+            {f === "all" ? "All" : f === "active" ? "Active" : "Banned"}
+          </button>
+        ))}
       </div>
 
       {/* Users List */}
@@ -190,7 +222,7 @@ export function UsersClient() {
                 </button>
               ) : (
                 <button
-                  onClick={() => handleBan(user.id)}
+                  onClick={() => setBanTarget(user)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
                 >
                   <BanIcon className="h-3.5 w-3.5" />
@@ -199,6 +231,44 @@ export function UsersClient() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Ban Modal */}
+      {banTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setBanTarget(null)}>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-semibold">Ban {banTarget.name || banTarget.email}</h3>
+            <div className="space-y-2">
+              <label className="text-xs text-text/60">Reason</label>
+              <textarea
+                value={banReason}
+                onChange={(e) => setBanReason(e.target.value)}
+                placeholder="Reason for ban..."
+                rows={3}
+                className="w-full px-3 py-2 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary resize-y"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs text-text/60">Expiry (days, leave empty for permanent)</label>
+              <input
+                type="number"
+                value={banExpiryDays}
+                onChange={(e) => setBanExpiryDays(e.target.value)}
+                placeholder="e.g. 7"
+                min={1}
+                className="w-full px-3 py-2 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setBanTarget(null)} className="px-4 py-2 rounded-lg border border-border text-text/70 text-sm hover:bg-text/5 transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleBan} disabled={actionLoading[banTarget.id]} className="px-4 py-2 rounded-lg bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-colors disabled:opacity-50">
+                Ban User
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
