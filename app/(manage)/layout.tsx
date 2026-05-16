@@ -1,5 +1,8 @@
 import { ManageSidebar } from "@/components/manage/manage-sidebar"
+import { auth } from "@/lib/auth"
 import type { Metadata } from "next"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
 
 export const metadata: Metadata = {
     title: {
@@ -14,6 +17,14 @@ export default async function ManageLayout({
 }: {
     children: React.ReactNode
 }) {
+    const session = await auth.api.getSession({
+        headers: await headers(),
+    })
+
+    const role = session?.user?.role ?? "user"
+    if (role !== "moderator" && role !== "admin") {
+        redirect("/")
+    }
     return (
         <section className='w-full flex flex-col gap-8 py-16'>
             <div className='px-4 md:px-8 lg:px-12'>
