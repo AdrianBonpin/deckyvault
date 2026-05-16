@@ -60,7 +60,7 @@ export function DashboardClient({
   mostReported,
 }: DashboardClientProps) {
   return (
-    <main className="w-full max-w-6xl mx-auto px-4 py-6 flex flex-col gap-8">
+    <main className="w-full px-4 md:px-8 lg:px-12 py-6 flex flex-col gap-8">
       <header>
         <h1 className="text-2xl md:text-3xl font-bold text-text">
           Community Dashboard
