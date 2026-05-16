@@ -290,10 +290,12 @@ export function ReviewStep({
         return opt?.label ?? environment.frameGenMethod
     })()
 
+    const totalScreenshots = (existingScreenshots?.length ?? 0) + (screenshotFiles?.length ?? 0)
     const canUploadMore =
-        (!screenshotFiles || screenshotFiles.length < 2) &&
+        totalScreenshots < 2 &&
         submitPhase !== "uploading" &&
         submitPhase !== "saving"
+    const showExistingRemove = totalScreenshots >= 2
 
     return (
         <div className='space-y-6'>
@@ -559,14 +561,16 @@ export function ReviewStep({
                                                 draggable={false}
                                             />
                                             <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            <button
-                                                type="button"
-                                                onClick={() => onRemoveExistingScreenshot?.(ss.id)}
-                                                className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/50 text-white/80 hover:text-white hover:bg-red-500/80 backdrop-blur-sm transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
-                                                title="Remove screenshot"
-                                            >
-                                                <X className="h-3.5 w-3.5" />
-                                            </button>
+                                            {showExistingRemove && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onRemoveExistingScreenshot?.(ss.id)}
+                                                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/50 text-white/80 hover:text-white hover:bg-red-500/80 backdrop-blur-sm transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                                                    title="Remove screenshot"
+                                                >
+                                                    <X className="h-3.5 w-3.5" />
+                                                </button>
+                                            )}
                                             <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/50 backdrop-blur-sm text-[10px] font-medium text-white/90 opacity-0 group-hover:opacity-100">
                                                 Existing · #{ss.orderIndex + 1}
                                             </div>
