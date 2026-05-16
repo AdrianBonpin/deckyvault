@@ -176,6 +176,13 @@
       "when": 1778359948438,
       "tag": "0024_violet_psynapse",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1778921901471,
+      "tag": "0025_flowery_molten_man",
+      "breakpoints": true
     }
   ]
 }
