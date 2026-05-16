@@ -135,10 +135,10 @@ function ScreenshotCard({
 
                 {/* Drag handle (top-left) */}
                 <div
-                    className='absolute top-2 left-2 p-1.5 rounded-lg bg-black/50 text-white/80 hover:text-white hover:bg-black/70 backdrop-blur-sm cursor-grab active:cursor-grabbing transition-colors opacity-0 group-hover:opacity-100'
-                    onPointerDown={(e) => dragControls.start(e)}
+                    className='absolute top-2 left-2 p-2 rounded-lg bg-black/50 text-white/80 hover:text-white hover:bg-black/70 backdrop-blur-sm cursor-grab active:cursor-grabbing transition-colors opacity-0 group-hover:opacity-100 select-none touch-none'
+                    onPointerDown={(e) => { e.preventDefault(); dragControls.start(e) }}
                 >
-                    <GripVertical className='h-3.5 w-3.5' />
+                    <GripVertical className='h-4 w-4' />
                 </div>
 
                 {/* Remove button (top-right) */}

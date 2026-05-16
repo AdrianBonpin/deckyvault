@@ -151,8 +151,8 @@ function SettingRow({
         >
             {/* Drag Handle */}
             <div
-                className="cursor-grab active:cursor-grabbing p-0.5 rounded text-text/20 hover:text-text/50 hover:bg-text/5 transition-colors flex items-center justify-center"
-                onPointerDown={(e) => dragControls.start(e)}
+                className="cursor-grab active:cursor-grabbing p-0.5 rounded text-text/20 hover:text-text/50 hover:bg-text/5 transition-colors flex items-center justify-center select-none touch-none"
+                onPointerDown={(e) => { e.preventDefault(); dragControls.start(e) }}
             >
                 <GripVertical className="h-4 w-4" />
             </div>
@@ -807,8 +807,8 @@ function CategoryCard({
             <div className="flex items-center gap-2 px-3 py-3 bg-text/3">
                 {/* Category Drag Handle */}
                 <div
-                    className="cursor-grab active:cursor-grabbing p-1 rounded text-text/30 hover:text-text/60 hover:bg-text/5 transition-colors shrink-0"
-                    onPointerDown={(e) => dragControls.start(e)}
+                    className="cursor-grab active:cursor-grabbing p-1 rounded text-text/30 hover:text-text/60 hover:bg-text/5 transition-colors shrink-0 select-none touch-none"
+                    onPointerDown={(e) => { e.preventDefault(); dragControls.start(e) }}
                 >
                     <GripVertical className="h-4 w-4" />
                 </div>
