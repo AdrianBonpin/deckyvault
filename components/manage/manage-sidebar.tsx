@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useSession } from "@/lib/auth-client"
 import {
     UsersIcon,
     CpuIcon,
@@ -17,7 +18,7 @@ import {
 type NavItem =
     | { type: "section"; label: string }
     | { type: "divider" }
-    | { type: "link"; href: string; label: string; icon: React.ElementType }
+    | { type: "link"; href: string; label: string; icon: React.ElementType; adminOnly?: boolean }
 
 const navItems: NavItem[] = [
     { type: "section", label: "Overview" },
@@ -29,7 +30,7 @@ const navItems: NavItem[] = [
     },
     { type: "divider" },
     { type: "section", label: "Management" },
-    { type: "link", href: "/manage/users", label: "Users", icon: UsersIcon },
+    { type: "link", href: "/manage/users", label: "Users", icon: UsersIcon, adminOnly: true },
     {
         type: "link",
         href: "/manage/hardware",
@@ -41,6 +42,7 @@ const navItems: NavItem[] = [
         href: "/manage/storage",
         label: "Storage",
         icon: HardDriveIcon,
+        adminOnly: true,
     },
     { type: "link", href: "/manage/games", label: "Games", icon: Gamepad2Icon },
     { type: "divider" },
@@ -68,6 +70,9 @@ const navItems: NavItem[] = [
 
 export function ManageSidebar() {
     const pathname = usePathname()
+    const { data: session } = useSession()
+    const role = session?.user?.role ?? "user"
+    const isAdmin = role === "admin"
 
     return (
         <nav className='md:w-56 shrink-0'>
@@ -78,6 +83,9 @@ export function ManageSidebar() {
 
             <div className='flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0 md:border-r md:border-border md:pr-3'>
                 {navItems.map((item, index) => {
+                    // Hide admin-only items for non-admins
+                    if (item.type === "link" && item.adminOnly && !isAdmin) return null
+
                     if (item.type === "section") {
                         return (
                             <div
