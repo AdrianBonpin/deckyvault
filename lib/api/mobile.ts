@@ -694,3 +694,220 @@ export const mobileRoutes = new Elysia({
       },
     },
   )
+  // ── Benchmark Detail (structured sections) ────────────────────
+  .get(
+    "/benchmark/:entryId",
+    async ({ params, set }) => {
+      const { entryId } = params
+
+      const [entry] = await db
+        .select({
+          id: performanceEntries.id,
+          fpsAvg: performanceEntries.fpsAvg,
+          fpsLow: performanceEntries.fpsLow,
+          fpsHigh: performanceEntries.fpsHigh,
+          fpsOnePercentLow: performanceEntries.fpsOnePercentLow,
+          hardwareSlug: performanceEntries.hardwareSlug,
+          tdpWatts: performanceEntries.tdpWatts,
+          upscalerType: performanceEntries.upscalerType,
+          upscalerVersion: performanceEntries.upscalerVersion,
+          frameGenMethod: performanceEntries.frameGenMethod,
+          protonVersion: performanceEntries.protonVersion,
+          osVersion: performanceEntries.osVersion,
+          launchOptions: performanceEntries.launchOptions,
+          loadTimeSsd: performanceEntries.loadTimeSsd,
+          loadTimeSd: performanceEntries.loadTimeSd,
+          youtubeVideoId: performanceEntries.youtubeVideoId,
+          userNotes: performanceEntries.userNotes,
+          customSystem: performanceEntries.customSystem,
+          userId: performanceEntries.userId,
+          verifiedAt: performanceEntries.verifiedAt,
+          isPinned: performanceEntries.isPinned,
+          createdAt: performanceEntries.createdAt,
+          upvotes: performanceEntries.upvotes,
+          downvotes: performanceEntries.downvotes,
+          settingsJson: performanceEntries.settingsJson,
+          hardwareName: hardware.name,
+          hardwareDeviceType: hardware.deviceType,
+          hardwareWattHours: hardware.wattHours,
+          hardwareTdpMax: hardware.tdpMax,
+          gameId: gameVersions.gameId,
+          gameTitle: games.title,
+          gameCapsuleImage: games.capsuleImage,
+          versionString: gameVersions.versionString,
+          buildId: gameVersions.buildId,
+          userName: user.name,
+          userImage: user.image,
+          gameAntiCheatName: gamePlatformSupport.antiCheatName,
+          gameAntiCheatStatus: gamePlatformSupport.antiCheatStatus,
+        })
+        .from(performanceEntries)
+        .innerJoin(hardware, eq(performanceEntries.hardwareSlug, hardware.slug))
+        .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
+        .innerJoin(games, eq(gameVersions.gameId, games.id))
+        .innerJoin(user, eq(performanceEntries.userId, user.id))
+        .innerJoin(
+          gamePlatformSupport,
+          and(
+            eq(gamePlatformSupport.gameId, gameVersions.gameId),
+            eq(gamePlatformSupport.hardwareSlug, performanceEntries.hardwareSlug),
+          ),
+        )
+        .where(and(eq(performanceEntries.id, entryId), eq(performanceEntries.isRemoved, false)))
+        .limit(1)
+
+      if (!entry) {
+        set.status = 404
+        return { error: "Benchmark entry not found" }
+      }
+
+      const publicUrl = getR2PublicUrl()
+      const screenshotRows = await db
+        .select({ id: entryScreenshots.id, storageKey: entryScreenshots.storageKey, orderIndex: entryScreenshots.orderIndex, width: entryScreenshots.width, height: entryScreenshots.height })
+        .from(entryScreenshots)
+        .where(eq(entryScreenshots.entryId, entryId))
+        .orderBy(entryScreenshots.orderIndex)
+
+      const screenshots = screenshotRows.map((ss) => ({
+        id: ss.id,
+        url: `${publicUrl}/${ss.storageKey}`,
+        width: ss.width,
+        height: ss.height,
+        orderIndex: ss.orderIndex,
+      }))
+
+      // Compute battery estimates
+      const wh = entry.hardwareWattHours ? Number(entry.hardwareWattHours) : null
+      const tdpMax = entry.hardwareTdpMax ? Number(entry.hardwareTdpMax) : null
+      const isHandheld = entry.hardwareDeviceType === "handheld"
+      const estimatedBatteryHours = (isHandheld && wh && entry.tdpWatts) ? wh / Number(entry.tdpWatts) : null
+      const estimatedBatteryMin = estimatedBatteryHours ? Math.round(estimatedBatteryHours * 60) : null
+      const estimatedAtMaxTdpMin = (isHandheld && wh && tdpMax) ? Math.round((wh / tdpMax) * 60) : null
+
+      return {
+        benchmark: {
+          id: entry.id,
+          gameId: entry.gameId,
+          gameTitle: entry.gameTitle,
+          gameCapsuleImage: entry.gameCapsuleImage,
+          hardwareSlug: entry.hardwareSlug,
+          hardwareName: entry.hardwareName,
+          hardwareDeviceType: entry.hardwareDeviceType,
+          createdAt: entry.createdAt.toISOString(),
+          userName: entry.userName,
+          userImage: entry.userImage,
+          verifiedAt: entry.verifiedAt ? entry.verifiedAt.toISOString() : null,
+          isPinned: entry.isPinned,
+          upvotes: entry.upvotes,
+          downvotes: entry.downvotes,
+        },
+        performance: {
+          fpsAvg: entry.fpsAvg,
+          fpsLow: entry.fpsLow,
+          fpsHigh: entry.fpsHigh,
+          fpsOnePercentLow: entry.fpsOnePercentLow ?? null,
+          loadTimeSsd: entry.loadTimeSsd ?? null,
+          loadTimeSd: entry.loadTimeSd ?? null,
+        },
+        hardwarePower: {
+          tdpWatts: entry.tdpWatts ? Number(entry.tdpWatts) : null,
+          hardwareWattHours: wh,
+          estimatedBatteryHours,
+          estimatedBatteryMin,
+          estimatedAtMaxTdpMin,
+        },
+        software: {
+          protonVersion: entry.protonVersion ?? null,
+          osVersion: entry.osVersion ?? null,
+          upscalerType: entry.upscalerType ?? null,
+          upscalerVersion: entry.upscalerVersion ?? null,
+          frameGenMethod: entry.frameGenMethod ?? null,
+          launchOptions: entry.launchOptions ?? null,
+          customSystem: entry.customSystem ?? false,
+        },
+        gameInfo: {
+          versionString: entry.versionString ?? null,
+          buildId: entry.buildId ?? null,
+          gameAntiCheatName: entry.gameAntiCheatName ?? null,
+          gameAntiCheatStatus: entry.gameAntiCheatStatus ?? null,
+        },
+        settingsJson: entry.settingsJson as any,
+        screenshots,
+        youtubeVideoId: entry.youtubeVideoId ?? null,
+        userNotes: entry.userNotes ?? null,
+      }
+    },
+    {
+      params: t.Object({ entryId: t.String() }),
+      detail: {
+        description: "Full benchmark entry detail with structured sections for mobile display — Performance, Hardware & Power, Software, and Game Info.",
+      },
+    },
+  )
+  // ── Dashboard (consolidated home screen) ───────────────────────
+  .get(
+    "/dashboard",
+    async () => {
+      const { sql: dsql } = await import("drizzle-orm")
+
+      const SEVEN_DAYS_AGO = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+      const recentBenchmarks = await db.execute(dsql`
+        SELECT g.id, g.title, g.capsule_image, g.header_image, g.playability_status,
+          COUNT(pe.id) AS benchmark_count, AVG(pe.fps_avg) AS avg_fps, MAX(pe.created_at) AS latest_benchmark_at
+        FROM games g
+        JOIN game_versions gv ON gv.game_id = g.id
+        JOIN performance_entries pe ON pe.version_id = gv.id
+        WHERE pe.is_removed = false
+        GROUP BY g.id, g.title, g.capsule_image, g.header_image, g.playability_status
+        ORDER BY MAX(pe.created_at) DESC
+        LIMIT 10
+      `)
+
+      const trending = await db.execute(dsql`
+        WITH recent_benchmarks AS (
+          SELECT gv.game_id, COUNT(*) AS cnt FROM performance_entries pe
+          JOIN game_versions gv ON pe.version_id = gv.id
+          WHERE pe.is_removed = false AND pe.created_at >= ${SEVEN_DAYS_AGO}
+          GROUP BY gv.game_id
+        ),
+        recent_comments AS (
+          SELECT gc.game_id, COUNT(*) AS cnt FROM game_comments gc
+          WHERE gc.is_removed = false AND gc.created_at >= ${SEVEN_DAYS_AGO}
+          GROUP BY gc.game_id
+        )
+        SELECT g.id, g.title, g.capsule_image, g.header_image, g.playability_status,
+          COALESCE(rb.cnt, 0) AS benchmark_count, COALESCE(rc.cnt, 0) AS comment_count,
+          (COALESCE(rb.cnt, 0) * 3 + COALESCE(rc.cnt, 0) * 2) AS activity_score
+        FROM games g
+        LEFT JOIN recent_benchmarks rb ON rb.game_id = g.id
+        LEFT JOIN recent_comments rc ON rc.game_id = g.id
+        WHERE (rb.cnt IS NOT NULL OR rc.cnt IS NOT NULL)
+        ORDER BY activity_score DESC
+        LIMIT 10
+      `)
+
+      const mostTested = await db.execute(dsql`
+        SELECT g.id, g.title, g.capsule_image, g.header_image, g.playability_status,
+          COUNT(pe.id) AS benchmark_count, AVG(pe.fps_avg) AS avg_fps
+        FROM games g
+        JOIN game_versions gv ON gv.game_id = g.id
+        JOIN performance_entries pe ON pe.version_id = gv.id
+        WHERE pe.is_removed = false
+        GROUP BY g.id, g.title, g.capsule_image, g.header_image, g.playability_status
+        ORDER BY benchmark_count DESC
+        LIMIT 10
+      `)
+
+      return {
+        recentBenchmarks: recentBenchmarks.rows,
+        trending: trending.rows,
+        mostTested: mostTested.rows,
+      }
+    },
+    {
+      detail: {
+        description: "Consolidated home screen data — recent benchmarks, trending, and most tested in one call.",
+      },
+    },
+  )
