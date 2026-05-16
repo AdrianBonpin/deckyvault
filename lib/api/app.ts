@@ -43,6 +43,7 @@ import { savedFilterRoutes } from "@/lib/api/saved-filters"
 import { cronRoutes } from "@/lib/api/cron"
 import { profilePhotoRoutes } from "@/lib/api/profile-photo"
 import { screenshotRoutes } from "@/lib/api/screenshots"
+import { mobileRoutes } from "@/lib/api/mobile"
 
 const betterAuth = new Elysia({ name: "better-auth" })
   .mount(auth.handler)
@@ -87,6 +88,7 @@ export const app = new Elysia({ prefix: "/api" })
           { name: "Admin", description: "Admin-only endpoints" },
           { name: "Steam", description: "Steam proxy endpoints" },
           { name: "Search", description: "Search endpoints" },
+          { name: "Mobile", description: "Mobile-optimized consolidated endpoints" },
           { name: "Contact", description: "Contact form" },
           { name: "Dashboard", description: "Dashboard data" },
           { name: "Cron", description: "Scheduled job triggers" },
@@ -181,6 +183,7 @@ export const app = new Elysia({ prefix: "/api" })
       .use(steamdbVersionRoutes)
       .use(gamesManualRoutes)
       .use(screenshotRoutes)
+      .use(mobileRoutes)
   )
   // ── Write routes (write rate limit + betterAuth) ─────────────
   .group("", (app) =>
