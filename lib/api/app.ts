@@ -26,7 +26,8 @@ import {
 import { adminStorageRoutes } from "@/lib/api/admin-storage"
 import { adminAnalyticsRoutes } from "@/lib/api/admin-analytics"
 import { steamSearchRoutes } from "@/lib/api/steam-search"
-import { steamdbVersionRoutes } from "@/lib/api/steamdb-version"
+import { steamdbVersionRoutes, clientVersionRoutes } from "@/lib/api/steamdb-version"
+import { versionTestRoutes, standaloneVersionTestRoutes } from "@/lib/api/version-test"
 import { searchUnifiedRoutes } from "@/lib/api/search-unified"
 import { gameStubRoutes } from "@/lib/api/game-stub"
 import { gameStatsRoutes } from "@/lib/api/game-stats"
@@ -182,6 +183,8 @@ export const app = new Elysia({ prefix: "/api" })
       .use(gameStubRoutes)
       .use(steamgridProxyRoutes)
       .use(steamdbVersionRoutes)
+      .use(versionTestRoutes)
+      .use(standaloneVersionTestRoutes)
       .use(gamesManualRoutes)
       .use(screenshotRoutes)
       .use(mobileRoutes)
@@ -191,6 +194,7 @@ export const app = new Elysia({ prefix: "/api" })
     app
       .use(rateLimit("write"))
       .use(betterAuth)
+      .use(clientVersionRoutes)
       .use(performanceVerifyRoutes)
       .use(performanceSubmitRoutes)
       .use(commentsRoutes)

@@ -14,6 +14,7 @@ export interface GameVersionInfo {
 export interface SteamDBVersion {
   versionString: string | null
   buildId: string | null
+  source?: string
 }
 
 interface SetupStepProps {
@@ -37,6 +38,7 @@ interface SetupStepProps {
   }[]
   steamdbVersion: SteamDBVersion | null
   steamdbLoading: boolean
+  steamdbError: string | null
   onRefreshSteamDB: () => void
 }
 
@@ -58,10 +60,12 @@ export function SetupStep({
   platformSupport,
   steamdbVersion,
   steamdbLoading,
+  steamdbError,
   onRefreshSteamDB,
 }: SetupStepProps) {
   const isNewVersion = selectedVersionId === "__new__"
   const isSteamDBVersion = selectedVersionId === "__steamdb__"
+  const autoFetchEnabled = process.env.NEXT_PUBLIC_VERSION_AUTO_FETCH === "true"
 
   return (
     <div className="space-y-8">
@@ -92,13 +96,13 @@ export function SetupStep({
               onChange={(e) => onVersionChange(e.target.value)}
               className="w-full appearance-none px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors cursor-pointer"
             >
-              {/* SteamDB suggestion — appears at top when available */}
-              {steamdbVersion && (steamdbVersion.versionString || steamdbVersion.buildId) && (
+              {/* Auto-detected version suggestion — only when feature is enabled */}
+              {autoFetchEnabled && steamdbVersion && (steamdbVersion.versionString || steamdbVersion.buildId) && (
                 <option value="__steamdb__" className="bg-primary/10 text-primary">
-                  ⬇ Latest from SteamDB: {steamdbVersion.versionString || `Build ${steamdbVersion.buildId}`} — recommended
+                  ⬇ Latest ({steamdbVersion.source ?? "auto-detected"}): {steamdbVersion.versionString || `Build ${steamdbVersion.buildId}`} — recommended
                 </option>
               )}
-              {steamdbLoading && (
+              {autoFetchEnabled && steamdbLoading && (
                 <option disabled className="text-text/40">
                   Fetching latest version from SteamDB...
                 </option>
@@ -121,7 +125,8 @@ export function SetupStep({
               </option>
             </select>
 
-            {/* Refresh button for SteamDB */}
+            {/* Refresh button for auto-detection (only shown when feature enabled) */}
+            {autoFetchEnabled && (
             <button
               type="button"
               onClick={onRefreshSteamDB}
@@ -129,8 +134,12 @@ export function SetupStep({
               className="flex items-center gap-1 text-xs text-text/40 hover:text-primary transition-colors cursor-pointer mt-1 disabled:opacity-30"
             >
               <RefreshCwIcon className={`h-3 w-3 ${steamdbLoading ? "animate-spin" : ""}`} />
-              Refresh from SteamDB
+              Refresh auto-detected version
             </button>
+            )}
+            {steamdbError && (
+              <p className="text-xs text-red-400 mt-1">{steamdbError}</p>
+            )}
           </div>
 
           {isNewVersion && (
@@ -152,11 +161,13 @@ export function SetupStep({
             </div>
           )}
 
-          {isSteamDBVersion && steamdbVersion && (
+          {autoFetchEnabled && isSteamDBVersion && steamdbVersion && (
             <div className="space-y-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
               <div className="flex items-center gap-2">
                 <DatabaseIcon className="h-4 w-4 text-primary" />
-                <p className="text-xs font-medium text-primary">SteamDB Suggestion</p>
+                <p className="text-xs font-medium text-primary">
+                  Auto-Detected Version ({steamdbVersion.source ?? "unknown source"})
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

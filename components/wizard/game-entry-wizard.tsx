@@ -131,12 +131,14 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
   // Step 4: Notes
   const [userNotes, setUserNotes] = useState(editEntry?.userNotes ?? "")
 
-  // SteamDB version suggestion
+  // Auto-detected version suggestion (multi-strategy)
   const [steamdbVersion, setSteamdbVersion] = useState<{
     versionString: string | null
     buildId: string | null
+    source?: string
   } | null>(null)
   const [steamdbLoading, setSteamdbLoading] = useState(false)
+  const [steamdbError, setSteamdbError] = useState<string | null>(null)
 
   // Fetch hardware name when slug changes
   const handleHardwareChange = useCallback(async (slug: string) => {
@@ -209,20 +211,104 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
 
   const fetchSteamDBVersion = useCallback(async () => {
     setSteamdbLoading(true)
+    setSteamdbError(null)
     try {
+      // Step 1: Try server-side strategies first
       const res = await fetch(`/api/games/${gameId}/steamdb-version`)
       if (!res.ok) return
       const data = await res.json()
+
+      // If server found something, use it
       if (data.versionString || data.buildId) {
         setSteamdbVersion({
           versionString: data.versionString,
           buildId: data.buildId,
+          source: data.source,
         })
       }
+
+      // Step 2: If server suggests client-side fetch, run client strategies in browser
+      if (data.needsClientFetch && data.clientStrategies?.length > 0) {
+        await runClientStrategies(data.clientStrategies)
+      }
     } catch {
-      // Silently fail — SteamDB is best-effort
+      // Silently fail — version detection is best-effort
     } finally {
       setSteamdbLoading(false)
+    }
+  }, [gameId])
+
+  // Run client-side strategies (uses browser IP to avoid server rate limits)
+  const runClientStrategies = useCallback(async (strategyNames: string[]) => {
+    // Dynamic import of client-side fetchers
+    const { fetchStorePage } = await import("@/lib/version-fetchers/store-page")
+    const { fetchCommunityHub } = await import("@/lib/version-fetchers/community-hub")
+    const { fetchStoreApi } = await import("@/lib/version-fetchers/store-api")
+
+    const strategyMap: Record<string, (appId: number) => Promise<{ versionString: string | null; buildId: string | null; source: string; success: boolean }>> = {
+      "Store Page Scrape": fetchStorePage,
+      "Community Hub Scrape": fetchCommunityHub,
+      "Store API Heuristic": fetchStoreApi,
+    }
+
+    // We need the steamAppId — get it from a lightweight endpoint or from props
+    const gameRes = await fetch(`/api/games/${gameId}`)
+    if (!gameRes.ok) return
+    const gameData = await gameRes.json()
+    const steamAppId = gameData.steamAppId
+    if (!steamAppId) return
+
+    // Run all requested client strategies in parallel
+    const clientResults = await Promise.all(
+      strategyNames.map(async (name) => {
+        const fn = strategyMap[name]
+        if (!fn) return null
+        try {
+          const result = await fn(steamAppId)
+          return result
+        } catch {
+          return null
+        }
+      }),
+    )
+
+    const validResults = clientResults.filter(Boolean) as Array<{
+      versionString: string | null
+      buildId: string | null
+      source: string
+      success: boolean
+    }>
+
+    // Merge with server result — send to server for final merge
+    if (validResults.length > 0) {
+      try {
+        const mergeRes = await fetch(`/api/games/${gameId}/fetch-version-client`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clientResults: validResults }),
+        })
+        if (mergeRes.ok) {
+          const merged = await mergeRes.json()
+          if (merged.versionString || merged.buildId) {
+            setSteamdbVersion({
+              versionString: merged.versionString,
+              buildId: merged.buildId,
+              source: merged.source,
+            })
+          }
+        }
+      } catch {
+        // If merge fails, use best client result directly
+        const bestClient = validResults.find((r) => r.versionString) ??
+          validResults.find((r) => r.buildId)
+        if (bestClient && (bestClient.versionString || bestClient.buildId)) {
+          setSteamdbVersion({
+            versionString: bestClient.versionString,
+            buildId: bestClient.buildId,
+            source: bestClient.source,
+          })
+        }
+      }
     }
   }, [gameId])
 
@@ -242,9 +328,11 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
     }
   }, [editEntry])
 
-  // Fetch SteamDB version on mount
+  // Fetch auto-detected version on mount (disabled by default — set NEXT_PUBLIC_VERSION_AUTO_FETCH=true to enable)
   useEffect(() => {
-    fetchSteamDBVersion()
+    if (process.env.NEXT_PUBLIC_VERSION_AUTO_FETCH === "true") {
+      fetchSteamDBVersion()
+    }
   }, [fetchSteamDBVersion])
 
   const canProceed = () => {
@@ -458,6 +546,7 @@ export function GameEntryWizard({ gameId, gameVersions, defaultVersionId, editEn
               platformSupport={platformSupport}
               steamdbVersion={steamdbVersion}
               steamdbLoading={steamdbLoading}
+              steamdbError={steamdbError}
               onRefreshSteamDB={fetchSteamDBVersion}
             />
           )}
