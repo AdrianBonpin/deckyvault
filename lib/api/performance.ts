@@ -402,6 +402,38 @@ export const performanceVerifyRoutes = new Elysia({
         .where(eq(performanceEntries.id, params.id))
         .returning()
 
+      // ── Remove screenshots marked for deletion ────────────────────────
+      const removedIds: string[] = Array.isArray(payload.removedScreenshotIds)
+        ? payload.removedScreenshotIds
+        : []
+
+      if (removedIds.length > 0) {
+        // Fetch storage keys before deleting rows
+        const toRemove = await db
+          .select({ id: entryScreenshots.id, storageKey: entryScreenshots.storageKey })
+          .from(entryScreenshots)
+          .where(
+            and(
+              eq(entryScreenshots.entryId, params.id),
+              sql`${entryScreenshots.id} = ANY(${removedIds})`,
+            ),
+          )
+
+        for (const ss of toRemove) {
+          try { await deleteObject(ss.storageKey) } catch { /* best-effort */ }
+          try {
+            await db.delete(storageObjects).where(eq(storageObjects.key, ss.storageKey))
+          } catch { /* best-effort */ }
+        }
+
+        // Delete the screenshot rows
+        if (toRemove.length > 0) {
+          await db.delete(entryScreenshots).where(
+            sql`${entryScreenshots.id} = ANY(${toRemove.map((s) => s.id)})`,
+          )
+        }
+      }
+
       // ── Atomic screenshot replacement ─────────────────────────────────
       if (screenshotFiles.length > 0) {
         // a. Upload all new screenshots to R2 FIRST (before deleting old ones)
