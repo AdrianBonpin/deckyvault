@@ -27,14 +27,20 @@ export const contributor = ac.newRole({
   hardware: ["update"],
 })
 
+export const moderator = ac.newRole({
+  ...contributor.statements,
+  performance: ["submit", "verify", "delete"],
+  game: ["create", "update", "review"],
+})
+
 export const admin = ac.newRole({
   ...adminAc.statements,
-  ...contributor.statements,
+  ...moderator.statements,
   game: ["create", "update", "delete", "review"],
   performance: ["submit", "verify", "delete"],
   hardware: ["create", "update"],
   profile: ["view", "edit"],
 })
 
-export const ROLES = ["user", "contributor", "admin"] as const
+export const ROLES = ["user", "contributor", "moderator", "admin"] as const
 export type RoleName = (typeof ROLES)[number]
