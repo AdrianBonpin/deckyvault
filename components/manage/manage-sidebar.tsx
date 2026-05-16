@@ -28,6 +28,12 @@ const navItems: NavItem[] = [
         label: "Dashboard",
         icon: LayoutDashboardIcon,
     },
+    {
+        type: "link",
+        href: "/manage/analytics",
+        label: "Analytics",
+        icon: BarChart3Icon,
+    },
     { type: "divider" },
     { type: "section", label: "Management" },
     { type: "link", href: "/manage/users", label: "Users", icon: UsersIcon, adminOnly: true },
