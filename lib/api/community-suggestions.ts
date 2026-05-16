@@ -2,7 +2,7 @@ import { Elysia, t } from "elysia"
 import { db } from "@/lib/db/index"
 import { communitySuggestions, games, user, suggestionStatusEnum } from "@/lib/db/schema"
 import { eq, and, desc, sql, ilike } from "drizzle-orm"
-import { requireAuth, requireContributorOrAdmin } from "@/lib/auth/guard"
+import { requireAuth, requireModeratorOrAdmin } from "@/lib/auth/guard"
 
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL
 
@@ -65,7 +65,7 @@ export const communitySuggestionRoutes = new Elysia({
   .get(
     "/admin",
     async ({ query, request, set }) => {
-      const guard = await requireContributorOrAdmin(request.headers)
+      const guard = await requireModeratorOrAdmin(request.headers)
       if (!guard.ok) {
         set.status = guard.status
         return { error: guard.error }
@@ -247,7 +247,7 @@ export const communitySuggestionRoutes = new Elysia({
   .get(
     "/pending",
     async ({ request, set }) => {
-      const guard = await requireContributorOrAdmin(request.headers)
+      const guard = await requireModeratorOrAdmin(request.headers)
       if (!guard.ok) {
         set.status = guard.status
         return { error: guard.error }
@@ -280,7 +280,7 @@ export const communitySuggestionRoutes = new Elysia({
   .patch(
     "/:suggestionId/review",
     async ({ params, body, request, set }) => {
-      const guard = await requireContributorOrAdmin(request.headers)
+      const guard = await requireModeratorOrAdmin(request.headers)
       if (!guard.ok) {
         set.status = guard.status
         return { error: guard.error }

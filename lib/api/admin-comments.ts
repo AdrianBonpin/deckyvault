@@ -6,16 +6,13 @@ import {
   user,
 } from "@/lib/db/schema"
 import { eq, desc, sql, and, ilike } from "drizzle-orm"
-import {
-  requireContributorOrAdmin,
-  requireAdmin,
-} from "@/lib/auth/guard"
+import { requireModeratorOrAdmin } from "@/lib/auth/guard"
 
 export const adminCommentRoutes = new Elysia({ prefix: "/admin", detail: { tags: ["Admin"] } })
   .get(
     "/comments",
     async ({ query, request, set }) => {
-      const guard = await requireContributorOrAdmin(request.headers)
+      const guard = await requireModeratorOrAdmin(request.headers)
       if (!guard.ok) {
         set.status = guard.status
         return { error: guard.error }
@@ -95,7 +92,7 @@ export const adminCommentRoutes = new Elysia({ prefix: "/admin", detail: { tags:
   .patch(
     "/comments/:id/remove",
     async ({ params, request, set }) => {
-      const guard = await requireAdmin(request.headers)
+      const guard = await requireModeratorOrAdmin(request.headers)
       if (!guard.ok) {
         set.status = guard.status
         return { error: guard.error }
@@ -130,7 +127,7 @@ export const adminCommentRoutes = new Elysia({ prefix: "/admin", detail: { tags:
   .patch(
     "/comments/:id/restore",
     async ({ params, request, set }) => {
-      const guard = await requireAdmin(request.headers)
+      const guard = await requireModeratorOrAdmin(request.headers)
       if (!guard.ok) {
         set.status = guard.status
         return { error: guard.error }

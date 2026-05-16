@@ -8,13 +8,13 @@ import {
   user,
 } from "@/lib/db/schema"
 import { eq, desc, sql, and, inArray } from "drizzle-orm"
-import { requireContributorOrAdmin } from "@/lib/auth/guard"
+import { requireModeratorOrAdmin } from "@/lib/auth/guard"
 
 export const adminReportRoutes = new Elysia({ prefix: "/admin", detail: { tags: ["Admin"] } })
   .get(
     "/reports",
     async ({ query, request, set }) => {
-      const guard = await requireContributorOrAdmin(request.headers)
+      const guard = await requireModeratorOrAdmin(request.headers)
       if (!guard.ok) {
         set.status = guard.status
         return { error: guard.error }
@@ -144,7 +144,7 @@ export const adminReportRoutes = new Elysia({ prefix: "/admin", detail: { tags: 
   .patch(
     "/reports/:id/status",
     async ({ params, body, request, set }) => {
-      const guard = await requireContributorOrAdmin(request.headers)
+      const guard = await requireModeratorOrAdmin(request.headers)
       if (!guard.ok) {
         set.status = guard.status
         return { error: guard.error }

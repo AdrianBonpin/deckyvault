@@ -12,6 +12,7 @@ import { fuzzySearchTerm } from "@/lib/db/search"
 import {
   requireContributorOrAdmin,
   requireAdmin,
+  requireModeratorOrAdmin,
 } from "@/lib/auth/guard"
 
 export const adminPerformanceRoutes = new Elysia({ prefix: "/admin", detail: { tags: ["Admin"] } })
@@ -188,7 +189,7 @@ export const adminPerformanceRoutes = new Elysia({ prefix: "/admin", detail: { t
   .patch(
     "/performance/:id/remove",
     async ({ params, body, request, set }) => {
-      const guard = await requireAdmin(request.headers)
+      const guard = await requireModeratorOrAdmin(request.headers)
       if (!guard.ok) {
         set.status = guard.status
         return { error: guard.error }
@@ -229,7 +230,7 @@ export const adminPerformanceRoutes = new Elysia({ prefix: "/admin", detail: { t
   .delete(
     "/performance/:id/hard-delete",
     async ({ params, request, set }) => {
-      const guard = await requireAdmin(request.headers)
+      const guard = await requireModeratorOrAdmin(request.headers)
       if (!guard.ok) {
         set.status = guard.status
         return { error: guard.error }
@@ -259,7 +260,7 @@ export const adminPerformanceRoutes = new Elysia({ prefix: "/admin", detail: { t
   .patch(
     "/performance/:id/restore",
     async ({ params, request, set }) => {
-      const guard = await requireAdmin(request.headers)
+      const guard = await requireModeratorOrAdmin(request.headers)
       if (!guard.ok) {
         set.status = guard.status
         return { error: guard.error }
