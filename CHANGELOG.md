@@ -2,6 +2,32 @@
 
 All notable changes to DeckyVault will be documented in this file.
 
+## [2026.1.0] - 2026-05-16
+
+### Added
+- **Moderator role** with content moderation permissions (verify entries, handle reports, review suggestions, manage comments) — sits between contributor and admin
+- **Moderation analytics tab** with ECharts time-series: benchmark submissions, user registrations, device distribution, and genre popularity over 90 days
+- **Ban reason and expiry UI** in user management — modal with optional reason and duration, plus active/banned filter tabs
+- **Steam Sale section** on landing page showing discounted games with ≥3 benchmarks, sorted by performance — includes discount badges, pricing, and review scores
+- Database performance indexes: `perf_removed_created_idx`, `perf_upvotes_idx`, `reports_status_idx`, `suggestions_status_idx`, `games_sync_status_idx`, `perf_game_lookup_idx`
+- In-memory 5-minute cache for manage dashboard stats endpoint
+- Auto-pin unit tests covering threshold edge cases
+
+### Changed
+- **Performance tags (Raw Performer/Poor Performance/best FPS) now scoped to handheld devices** (Steam Deck OLED/LCD) by default — console (Steam Machine) data no longer influences the badges shown on game cards, listings, and search results
+- **Public dashboard** now uses full-width layout matching game details page styling (no `max-w` constraint)
+- Moderator role added between contributor and admin; manage sidebar adapts to show role-appropriate navigation (hides Users, Storage for moderators)
+- Manage panel now requires moderator or admin role for access (previously contributor+)
+- Content moderation endpoints (reports, suggestions, comments, benchmark removal) gated to moderator+
+
+### Fixed
+- **Submit wizard drag-and-drop** no longer triggers text selection or touch-scroll interference on settings and screenshot reorder handles
+- **Editing entries with screenshots** now shows existing screenshots in the Review step with remove capability; supports hybrid existing + new screenshot management
+
+### Security
+- Manage panel access restricted to moderator+ (up from contributor+)
+- Destructive benchmark operations (remove, hard-delete, restore) now require moderator+ (up from admin-only — wider moderation capability with proper role separation)
+
 ## [2026.0.101] - 2026-05-14
 
 ### Added
