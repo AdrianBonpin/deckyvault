@@ -1,5 +1,6 @@
 import {
   boolean,
+  index,
   pgTable,
   text,
   timestamp,
@@ -21,5 +22,8 @@ export const gameVersions = pgTable(
     isLatest: boolean("is_latest").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [unique("game_build_unique").on(table.gameId, table.buildId)]
+  (table) => [
+    unique("game_build_unique").on(table.gameId, table.buildId),
+    index("perf_game_lookup_idx").on(table.gameId),
+  ]
 )

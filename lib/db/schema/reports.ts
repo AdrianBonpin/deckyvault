@@ -1,4 +1,5 @@
 import {
+  index,
   text,
   pgEnum,
   pgTable,
@@ -37,4 +38,5 @@ export const reports = pgTable("reports", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   uniqueIndex("reports_entry_reporter_unique").on(table.entryId, table.reporterId),
+  index("reports_status_idx").on(table.status),
 ])

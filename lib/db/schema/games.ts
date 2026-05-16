@@ -97,5 +97,8 @@ export const games = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => [index("games_source_idx").on(table.source)],
+  (table) => [
+    index("games_source_idx").on(table.source),
+    index("games_sync_status_idx").on(table.syncStatus, table.steamAppId),
+  ],
 )

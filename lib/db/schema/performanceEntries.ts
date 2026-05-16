@@ -112,5 +112,7 @@ export const performanceEntries = pgTable(
     index("perf_hardware_upscaler_idx").on(table.hardwareSlug, table.upscalerType),
     index("perf_version_idx").on(table.versionId),
     index("perf_user_idx").on(table.userId),
+    index("perf_removed_created_idx").on(table.isRemoved, table.createdAt.desc()),
+    index("perf_upvotes_idx").on(table.upvotes.desc()),
   ],
 )

@@ -1,4 +1,5 @@
 import {
+  index,
   pgEnum,
   pgTable,
   text,
@@ -48,5 +49,6 @@ export const communitySuggestions = pgTable(
       table.fieldName,
       table.userId,
     ),
+    index("suggestions_status_idx").on(table.status),
   ],
 )
