@@ -24,6 +24,7 @@ import {
   adminCommentRoutes,
 } from "@/lib/api"
 import { adminStorageRoutes } from "@/lib/api/admin-storage"
+import { adminAnalyticsRoutes } from "@/lib/api/admin-analytics"
 import { steamSearchRoutes } from "@/lib/api/steam-search"
 import { steamdbVersionRoutes } from "@/lib/api/steamdb-version"
 import { searchUnifiedRoutes } from "@/lib/api/search-unified"
@@ -198,6 +199,7 @@ export const app = new Elysia({ prefix: "/api" })
       .use(adminPerformanceRoutes)
       .use(adminCommentRoutes)
       .use(adminStorageRoutes)
+      .use(adminAnalyticsRoutes)
   )
   // ── Strict rate limit (public forms, no auth) ───────────────
   .group("", (app) =>
