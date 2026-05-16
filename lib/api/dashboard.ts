@@ -10,6 +10,51 @@ import {
 import { eq, count, sql, gte, and, desc } from "drizzle-orm";
 import { requireContributorOrAdmin } from "@/lib/auth/guard";
 
+// In-memory cache for dashboard stats (TTL 300s)
+interface DashboardStatsResult {
+  overview: {
+    totalGames: number;
+    totalBenchmarks: number;
+    totalUsers: number;
+    pendingReports: number;
+    pendingSuggestions: number;
+  };
+  recent: {
+    benchmarksLast30Days: number;
+    gamesLast30Days: number;
+  };
+  topContributors: Array<{
+    userId: string | null;
+    name: string;
+    count: number;
+  }>;
+  syncHealth: Record<string, number>;
+  gamesBySource: Record<string, number>;
+  playabilityDistribution: Record<string, number>;
+}
+
+interface CacheEntry<T> {
+  data: T;
+  expiresAt: number;
+}
+const statsCache = new Map<string, CacheEntry<unknown>>();
+const STATS_CACHE_TTL = 300_000; // 5 minutes
+
+function getCached<T>(key: string): T | null {
+  const entry = statsCache.get(key) as CacheEntry<T> | undefined;
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    statsCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCached<T>(key: string, data: T): void {
+  statsCache.set(key, { data, expiresAt: Date.now() + STATS_CACHE_TTL });
+}
+
+
 export const dashboardRoutes = new Elysia({ prefix: "/dashboard", detail: { tags: ["Dashboard"] } }).get(
   "/stats",
   async ({ request, set }) => {
@@ -18,6 +63,10 @@ export const dashboardRoutes = new Elysia({ prefix: "/dashboard", detail: { tags
       set.status = guard.status;
       return { error: guard.error };
     }
+
+    // Check cache
+    const cached = getCached<DashboardStatsResult>("dashboard_stats");
+    if (cached) return cached;
 
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -120,7 +169,7 @@ export const dashboardRoutes = new Elysia({ prefix: "/dashboard", detail: { tags
         .groupBy(games.playabilityStatus),
     ]);
 
-    return {
+    const result = {
       overview: {
         totalGames: totalGames[0]?.count ?? 0,
         totalBenchmarks: totalBenchmarks[0]?.count ?? 0,
@@ -159,5 +208,8 @@ export const dashboardRoutes = new Elysia({ prefix: "/dashboard", detail: { tags
         {} as Record<string, number>,
       ),
     };
+
+    setCached("dashboard_stats", result);
+    return result;
   },
 );
