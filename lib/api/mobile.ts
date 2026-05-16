@@ -534,3 +534,163 @@ export const mobileRoutes = new Elysia({
     params: t.Object({ gameId: t.String() }),
   },
 )
+  // ── Mobile Search (DB-synced games only, no Steam results) ──────
+  .get(
+    "/search",
+    async ({ query, set }) => {
+      if (!query.q || query.q.length < 2) {
+        set.status = 400
+        return { error: "Query must be at least 2 characters" }
+      }
+
+      const { ilike, or, sql: dsql, eq: deq, and: dand, desc: ddesc, inArray, gte } = await import("drizzle-orm")
+      const { fuzzySearchTerm } = await import("@/lib/db/search")
+
+      const titleTerm = fuzzySearchTerm(query.q)
+      const term = `%${query.q}%`
+
+      // Build filter conditions
+      const baseFilterConditions = [
+        or(
+          ilike(games.title, titleTerm),
+          ilike(games.developer, term),
+          ilike(games.publisher, term),
+        ),
+      ]
+
+      if (query.playabilityStatus) {
+        baseFilterConditions.push(dsql`${games.playabilityStatus} = ${query.playabilityStatus}`)
+      }
+
+      // Search local database only
+      const localGames = await db
+        .select({
+          id: games.id,
+          steamAppId: games.steamAppId,
+          title: games.title,
+          capsuleImage: games.capsuleImage,
+          headerImage: games.headerImage,
+          playabilityStatus: games.playabilityStatus,
+          steamReviewScore: games.steamReviewScore,
+        })
+        .from(games)
+        .where(dand(...baseFilterConditions))
+        .limit(40)
+
+      if (localGames.length === 0) {
+        return { results: [], total: 0 }
+      }
+
+      const gameIds = localGames.map((g) => g.id)
+
+      // Fetch benchmark counts
+      const benchmarkCounts = await db
+        .select({ gameId: gameVersions.gameId, count: sql<number>`count(*)::int` })
+        .from(performanceEntries)
+        .innerJoin(gameVersions, deq(performanceEntries.versionId, gameVersions.id))
+        .where(dand(inArray(gameVersions.gameId, gameIds), deq(performanceEntries.isRemoved, false)))
+        .groupBy(gameVersions.gameId)
+
+      const bmMap = new Map<string, number>()
+      for (const r of benchmarkCounts) bmMap.set(r.gameId, r.count)
+
+      // Fetch comment counts
+      const commentCounts = await db
+        .select({ gameId: gameComments.gameId, count: sql<number>`count(*)::int` })
+        .from(gameComments)
+        .where(inArray(gameComments.gameId, gameIds))
+        .groupBy(gameComments.gameId)
+
+      const cmMap = new Map<string, number>()
+      for (const r of commentCounts) cmMap.set(r.gameId, r.count)
+
+      // Platform support (for playability status per game)
+      const platformRows = await db
+        .select({ gameId: gamePlatformSupport.gameId, hardwareSlug: gamePlatformSupport.hardwareSlug, protonStatus: gamePlatformSupport.protonStatus })
+        .from(gamePlatformSupport)
+        .where(inArray(gamePlatformSupport.gameId, gameIds))
+
+      const platformMap = new Map<string, string>()
+      for (const r of platformRows) {
+        const existing = platformMap.get(r.gameId)
+        if (!existing || (!existing.startsWith("steamdeck") && r.hardwareSlug.startsWith("steamdeck"))) {
+          platformMap.set(r.gameId, r.protonStatus)
+        }
+      }
+
+      // Performance stats (raw performer, poor performance, best FPS)
+      const perfStats = await db
+        .select({
+          gameId: gameVersions.gameId,
+          bestFps: sql<number>`MAX(${performanceEntries.fpsAvg})::real`,
+          isRawPerformer: sql<boolean>`BOOL_OR(${performanceEntries.fpsAvg} >= 60 AND ${performanceEntries.upscalerType} = 'none' AND ${performanceEntries.frameGenMethod} = 'none')`,
+          isPoorPerformance: sql<boolean>`BOOL_OR(${performanceEntries.fpsAvg} < 30)`,
+        })
+        .from(performanceEntries)
+        .innerJoin(gameVersions, deq(performanceEntries.versionId, gameVersions.id))
+        .where(dand(inArray(gameVersions.gameId, gameIds), deq(performanceEntries.isRemoved, false)))
+        .groupBy(gameVersions.gameId)
+
+      const perfMap = new Map<string, { bestFps: number | null; isRawPerformer: boolean; isPoorPerformance: boolean }>()
+      for (const r of perfStats) {
+        perfMap.set(r.gameId, { bestFps: r.bestFps, isRawPerformer: r.isRawPerformer, isPoorPerformance: r.isPoorPerformance })
+      }
+
+      // Battery estimates (handheld only)
+      const batteryStats = await db
+        .select({
+          gameId: gameVersions.gameId,
+          estimatedBatteryMin: sql<number>`ROUND((${hardware.wattHours}::real / ${performanceEntries.tdpWatts}) * 60)::int`,
+        })
+        .from(performanceEntries)
+        .innerJoin(gameVersions, deq(performanceEntries.versionId, gameVersions.id))
+        .innerJoin(hardware, deq(performanceEntries.hardwareSlug, hardware.slug))
+        .where(
+          dand(
+            inArray(gameVersions.gameId, gameIds),
+            deq(performanceEntries.isRemoved, false),
+            deq(hardware.deviceType, "handheld"),
+            dsql`${performanceEntries.tdpWatts} IS NOT NULL AND ${performanceEntries.tdpWatts} > 0`,
+            dsql`${hardware.wattHours} IS NOT NULL`,
+          ),
+        )
+        .orderBy(ddesc(performanceEntries.fpsAvg))
+
+      const batteryMap = new Map<string, number>()
+      const seen = new Set<string>()
+      for (const r of batteryStats) {
+        if (!seen.has(r.gameId)) { seen.add(r.gameId); batteryMap.set(r.gameId, r.estimatedBatteryMin) }
+      }
+
+      // Build results
+      const results = localGames.map((g) => {
+        const p = perfMap.get(g.id)
+        return {
+          id: g.id,
+          title: g.title,
+          capsuleImage: g.capsuleImage,
+          headerImage: g.headerImage,
+          playabilityStatus: g.playabilityStatus ?? null,
+          platformStatus: platformMap.get(g.id) ?? null,
+          isRawPerformer: p?.isRawPerformer ?? false,
+          isPoorPerformance: p?.isPoorPerformance ?? false,
+          bestFps: p?.bestFps ?? null,
+          estimatedBatteryMin: batteryMap.get(g.id) ?? null,
+          benchmarkCount: bmMap.get(g.id) ?? 0,
+          commentCount: cmMap.get(g.id) ?? 0,
+          steamReviewScore: g.steamReviewScore ?? null,
+        }
+      })
+
+      return { results, total: results.length }
+    },
+    {
+      query: t.Object({
+        q: t.String(),
+        playabilityStatus: t.Optional(t.String()),
+      }),
+      detail: {
+        description: "Search synced games only — returns mobile-optimized results with performance tags. No Steam-only entries.",
+      },
+    },
+  )
