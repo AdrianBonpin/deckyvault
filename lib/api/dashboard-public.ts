@@ -55,6 +55,7 @@ export const dashboardPublicRoutes = new Elysia({ prefix: "/dashboard", detail: 
 
       return trending.rows
     },
+    { detail: { description: "Trending games based on 7-day benchmark and comment activity." } },
   )
 
   // ── Best Performing New Releases ─────────────────────────────────
@@ -86,6 +87,7 @@ export const dashboardPublicRoutes = new Elysia({ prefix: "/dashboard", detail: 
 
       return results.rows
     },
+    { detail: { description: "Best performing new releases from the last 30 days with at least 3 benchmarks." } },
   )
 
   // ── Most Tested Games ─────────────────────────────────────────────
@@ -112,6 +114,7 @@ export const dashboardPublicRoutes = new Elysia({ prefix: "/dashboard", detail: 
 
       return results.rows
     },
+    { detail: { description: "Games with the most benchmark entries, ordered by count descending." } },
   )
 
   // ── Recently Added Benchmarks ──────────────────────────────────────
@@ -139,6 +142,7 @@ export const dashboardPublicRoutes = new Elysia({ prefix: "/dashboard", detail: 
 
       return results.rows
     },
+    { detail: { description: "Games with the most recently added benchmarks, ordered by latest entry date." } },
   )
 
   // ── Most Reported Games ────────────────────────────────────────────
@@ -164,4 +168,5 @@ export const dashboardPublicRoutes = new Elysia({ prefix: "/dashboard", detail: 
 
       return results.rows
     },
+    { detail: { description: "Games with the most open reports against their performance entries." } },
   )

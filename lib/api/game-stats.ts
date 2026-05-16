@@ -368,5 +368,6 @@ export const gameStatsRoutes = new Elysia({ prefix: "/games", detail: { tags: ["
   },
   {
     params: t.Object({ gameId: t.String() }),
+    detail: { description: "Aggregated performance statistics for a game — boxplot, historical, upscaler stats, FPS ranges, device breakdown, and battery life estimates." },
   },
 )

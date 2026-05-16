@@ -184,5 +184,6 @@ export const gamesPerformanceRoutes = new Elysia({
   },
   {
     params: t.Object({ gameId: t.String() }),
+    detail: { description: "Returns all non-removed performance presets for a game with user, hardware, platform support, and screenshot data. Ordered by pinned then upvotes." },
   },
 )

@@ -532,6 +532,19 @@ export const mobileRoutes = new Elysia({
   },
   {
     params: t.Object({ gameId: t.String() }),
+    response: t.Union([
+      t.Object({
+        game: t.Any(),
+        stats: t.Any(),
+        presets: t.Array(t.Any()),
+        platformSupport: t.Array(t.Any()),
+        comments: t.Object({
+          data: t.Array(t.Any()),
+          total: t.Number(),
+        }),
+      }),
+      t.Object({ error: t.String() }),
+    ]),
   },
 )
   // ── Mobile Search (DB-synced games only, no Steam results) ──────
@@ -692,6 +705,27 @@ export const mobileRoutes = new Elysia({
       detail: {
         description: "Search synced games only — returns mobile-optimized results with performance tags. No Steam-only entries.",
       },
+      response: t.Union([
+        t.Object({
+          results: t.Array(t.Object({
+            id: t.String(),
+            title: t.String(),
+            capsuleImage: t.Union([t.String(), t.Null()]),
+            headerImage: t.Union([t.String(), t.Null()]),
+            playabilityStatus: t.Union([t.String(), t.Null()]),
+            platformStatus: t.Union([t.String(), t.Null()]),
+            isRawPerformer: t.Boolean(),
+            isPoorPerformance: t.Boolean(),
+            bestFps: t.Union([t.Number(), t.Null()]),
+            estimatedBatteryMin: t.Union([t.Number(), t.Null()]),
+            benchmarkCount: t.Number(),
+            commentCount: t.Number(),
+            steamReviewScore: t.Union([t.Number(), t.Null()]),
+          })),
+          total: t.Number(),
+        }),
+        t.Object({ error: t.String() }),
+      ]),
     },
   )
   // ── Benchmark Detail (structured sections) ────────────────────
@@ -842,6 +876,20 @@ export const mobileRoutes = new Elysia({
       detail: {
         description: "Full benchmark entry detail with structured sections for mobile display — Performance, Hardware & Power, Software, and Game Info.",
       },
+      response: t.Union([
+        t.Object({
+          benchmark: t.Any(),
+          performance: t.Any(),
+          hardwarePower: t.Any(),
+          software: t.Any(),
+          gameInfo: t.Any(),
+          settingsJson: t.Union([t.Array(t.Any()), t.Null()]),
+          screenshots: t.Array(t.Any()),
+          youtubeVideoId: t.Union([t.String(), t.Null()]),
+          userNotes: t.Union([t.String(), t.Null()]),
+        }),
+        t.Object({ error: t.String() }),
+      ]),
     },
   )
   // ── Dashboard (consolidated home screen) ───────────────────────
@@ -909,5 +957,10 @@ export const mobileRoutes = new Elysia({
       detail: {
         description: "Consolidated home screen data — recent benchmarks, trending, and most tested in one call.",
       },
+      response: t.Object({
+        recentBenchmarks: t.Array(t.Any()),
+        trending: t.Array(t.Any()),
+        mostTested: t.Array(t.Any()),
+      }),
     },
   )

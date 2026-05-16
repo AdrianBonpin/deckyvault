@@ -528,5 +528,8 @@ export const searchUnifiedRoutes = new Elysia({ prefix: "/search", detail: { tag
       isFree: t.Optional(t.String()),
       hasMultiplayer: t.Optional(t.String()),
     }),
+    detail: {
+      description: "Unified search across local database and Steam store. Returns both synced games (with performance data) and Steam-only results.",
+    },
   },
 )
