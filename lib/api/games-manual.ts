@@ -3,6 +3,7 @@ import { db } from "@/lib/db/index"
 import { games, gameVersions, gamePlatformSupport } from "@/lib/db/schema"
 import { ilike, eq } from "drizzle-orm"
 import { requireRole } from "@/lib/auth/guard"
+import { generateSlug } from "@/lib/utils/slug"
 
 export const gamesManualRoutes = new Elysia({ prefix: "/games", detail: { tags: ["Games"] } })
   .post(
@@ -31,6 +32,25 @@ export const gamesManualRoutes = new Elysia({ prefix: "/games", detail: { tags: 
         }
       }
 
+      // Generate slug for non-Steam games
+      const slug = generateSlug(body.title)
+      let finalSlug: string | null = slug
+      if (slug) {
+        let suffix = 2
+        while (true) {
+          const existingSlug = await db
+            .select({ id: games.id })
+            .from(games)
+            .where(eq(games.slug, finalSlug))
+            .limit(1)
+          if (existingSlug.length === 0) break
+          finalSlug = `${slug}-${suffix}`
+          suffix++
+        }
+      } else {
+        finalSlug = null
+      }
+
       // Create the game
       const [game] = await db
         .insert(games)
@@ -40,6 +60,7 @@ export const gamesManualRoutes = new Elysia({ prefix: "/games", detail: { tags: 
           publisher: body.publisher || null,
           description: body.description || null,
           source: body.source || "manual",
+          slug: finalSlug,
           headerImage: body.headerImage || null,
           capsuleImage: body.capsuleImage || null,
           storeUrl: body.storeUrl || null,
