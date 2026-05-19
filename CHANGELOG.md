@@ -2,6 +2,22 @@
 
 All notable changes to DeckyVault will be documented in this file.
 
+## [2026.2.0] - 2026-05-20
+
+### Added
+- **ProtonDB URL compatibility:** `/app/[steamid]` permanently redirects to `/game/[steamid]` — replace `protondb.com` with `deckyvault.xyz` in any ProtonDB URL to land on the matching DeckyVault game page
+- **Human-readable share URLs:** share button now copies clean URLs with numeric Steam App IDs for Steam games and title-based slugs for non-Steam games, instead of opaque UUIDs
+- **Auto-generated slugs for non-Steam games:** new `slug` column on `games` table, populated on creation from the game title with automatic deduplication
+
+### Changed
+- Share URLs now use `steamAppId` (Steam) or `slug` (non-Steam) instead of the internal UUID
+
+### Technical
+- Added `slug` column to `games` table with partial unique index
+- Extended `resolveGame()` to support slug-based lookups as a fallback resolution path
+- Added `lib/utils/slug.ts` for slug generation utility
+- Backfilled slugs for all existing non-Steam games
+
 ## [2026.1.0] - 2026-05-16
 
 ### Added
