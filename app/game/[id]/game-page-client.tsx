@@ -61,6 +61,7 @@ interface Game {
     capsuleImage: string | null
     storeUrl: string | null
     source: string
+    slug: string | null
     lastSync: string | null
     syncStatus: string | null
     createdAt: string
@@ -1901,6 +1902,9 @@ export function GamePageClient({
                             <PresetDetailModal
                                 preset={preset}
                                 gameId={gameId}
+                                gameSource={game.source}
+                                gameSteamAppId={game.steamAppId}
+                                gameSlug={game.slug ?? null}
                                 onClose={handlePresetClose}
                                 onDelete={handleDeletePreset}
                                 onReport={handleReportPreset}

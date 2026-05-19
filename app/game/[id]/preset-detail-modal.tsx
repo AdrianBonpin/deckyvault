@@ -73,6 +73,9 @@ interface Preset {
 interface PresetDetailModalProps {
     preset: Preset
     gameId: string
+    gameSource: string
+    gameSteamAppId: number | null
+    gameSlug: string | null
     onClose: () => void
     onDelete: (presetId: string) => void
     onReport: (
@@ -140,6 +143,9 @@ function hasGameInfoData(p: Preset): boolean {
 export function PresetDetailModal({
     preset,
     gameId,
+    gameSource,
+    gameSteamAppId,
+    gameSlug,
     onClose,
     onDelete,
     onReport,
@@ -169,7 +175,15 @@ export function PresetDetailModal({
     const isAuthenticated = !!session?.user
 
     const handleShare = () => {
-        const url = `${window.location.origin}/game/${gameId}?preset=${preset.id}`
+        let identifier: string
+        if (gameSource === "steam" && gameSteamAppId != null) {
+            identifier = String(gameSteamAppId)
+        } else if (gameSlug) {
+            identifier = gameSlug
+        } else {
+            identifier = gameId // fallback for edge cases
+        }
+        const url = `${window.location.origin}/game/${identifier}?preset=${preset.id}`
         navigator.clipboard.writeText(url)
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
