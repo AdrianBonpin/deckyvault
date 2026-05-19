@@ -323,6 +323,14 @@ function extractVersionFromTable(html: string): string | null {
     }
   }
 
+  // Inline element pattern: "Last known name" followed by a <span> or other
+  // inline tag inside the same cell (e.g. <td>Last known name <span>v1.2.3</span></td>)
+  const inlineMatch = html.match(/Last known name[^<]*<[^>]*>([^<]+)</i)
+  if (inlineMatch) {
+    const val = inlineMatch[1].trim()
+    if (val.length > 1 && !val.startsWith("http")) return val
+  }
+
   // Broader: look for "Last known name" anywhere nearby a <td> with content
   const looseMatch = html.match(/Last known name[^<]*(?:<[^>]+>)*?\s*<t[hd][^>]*>([^<]+)</i)
   if (looseMatch) {

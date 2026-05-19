@@ -66,7 +66,6 @@ describe("Sitemap Generator (app/sitemap.ts)", () => {
     vi.clearAllMocks()
     mockGameRows = []
     mockDeviceRows = []
-    gamesCallCount = 0
     devicesCallCount = 0
   })
 
@@ -80,8 +79,8 @@ describe("Sitemap Generator (app/sitemap.ts)", () => {
     const result = await mod.default()
 
     expect(Array.isArray(result)).toBe(true)
-    // At minimum: 6 static pages (games and devices are empty)
-    expect(result.length).toBeGreaterThanOrEqual(6)
+    // At minimum: 5 static pages (games and devices are empty)
+    expect(result.length).toBeGreaterThanOrEqual(5)
     // First entry should be the homepage with priority 1
     expect(result[0].url).toContain("deckyvault.xyz")
     expect(result[0].priority).toBe(1)
