@@ -49,6 +49,7 @@ export const games = pgTable(
       .$defaultFn(() => crypto.randomUUID()),
     steamAppId: integer("steam_app_id").unique(),
     source: gameSourceEnum("source").default("steam").notNull(),
+    slug: text("slug").unique(),
     title: text("title").notNull(),
     description: text("description"),
     publisher: text("publisher"),

@@ -183,6 +183,13 @@
       "when": 1778921901471,
       "tag": "0025_flowery_molten_man",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1779214557250,
+      "tag": "0026_polite_drax",
+      "breakpoints": true
     }
   ]
 }
