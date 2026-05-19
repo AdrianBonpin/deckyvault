@@ -32,12 +32,23 @@ async function resolveGame(id: string) {
             .limit(1)
         game = rows[0]
     } else {
+        // Try UUID first
         const rows = await db
             .select()
             .from(games)
             .where(eq(games.id, id))
             .limit(1)
         game = rows[0]
+
+        // Fallback: try slug lookup
+        if (!game) {
+            const slugRows = await db
+                .select()
+                .from(games)
+                .where(eq(games.slug, id))
+                .limit(1)
+            game = slugRows[0]
+        }
     }
     return game
 }
@@ -245,6 +256,7 @@ export default async function GamePage({
         capsuleImage: game.capsuleImage,
         storeUrl: game.storeUrl,
         source: game.source,
+        slug: game.slug,
         lastSync: game.lastSync ? game.lastSync.toISOString() : null,
         syncStatus: game.syncStatus,
         createdAt: game.createdAt.toISOString(),
