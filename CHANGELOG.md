@@ -2,6 +2,28 @@
 
 All notable changes to DeckyVault will be documented in this file.
 
+## [2026.2.1] - 2026-05-25
+
+### Fixed
+- **Page title duplication on /games and /devices:** titles now read "Games | DeckyVault" and "Devices | DeckyVault" instead of the duplicated "Games — DeckyVault | DeckyVault"
+- **Missing metadata on /compare and /profile:** these pages now have unique `<title>` and `<meta description>` tags instead of reusing the homepage title
+- **Duplicate H1 on game detail pages:** each game page now has a single `<h1>` heading
+- **Truncated meta descriptions on game pages:** descriptions no longer cut off mid-sentence — truncation now respects word boundaries
+
+### Added
+- **Canonical URL tag** on homepage — prevents duplicate-content indexing
+- **BreadcrumbList structured data** on game detail, games listing, and devices listing pages — enables breadcrumb rich results in search
+- **Organization structured data** on homepage — enhances brand visibility in search results
+- **AggregateRating structured data** on game detail pages — enables star ratings in SERPs when Steam review scores are available
+- **Preconnect hints** for external CDN origins (Steam, SteamGridDB, Cloudflare R2, Discord, Google) — improves page load performance
+
+### Changed
+- Removed `user-scalable=no` from viewport meta tag — improves mobile accessibility compliance (WCAG 1.4.4)
+
+### Technical
+- Added `lib/utils/seo.ts` with shared `smartTruncate()` and `buildBreadcrumbList()` utilities
+- Added `app/__tests__/metadata.test.ts` integration test suite for page-level SEO metadata
+
 ## [2026.2.0] - 2026-05-20
 
 ### Added
