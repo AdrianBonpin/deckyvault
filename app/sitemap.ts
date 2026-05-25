@@ -41,7 +41,7 @@ export async function generateSitemaps(): Promise<{ id: string }[]> {
         .from(games)
         .where(or(ne(games.syncStatus, "failed"), isNull(games.syncStatus))),
     )
-    const count = countResult?.[0]?.count ?? 0
+    const count = Number(countResult?.[0]?.count ?? 0)
     if (count > GAMES_PER_SITEMAP) {
       const pages = Math.ceil(count / GAMES_PER_SITEMAP)
       for (let i = 0; i < pages; i++) {
