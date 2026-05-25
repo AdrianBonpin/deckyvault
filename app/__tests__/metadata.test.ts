@@ -95,25 +95,42 @@ describe("Page Metadata", () => {
 
   describe("Compare layout", () => {
     it("exports unique title and description", async () => {
-      try {
-        const { metadata } = await import("@/app/compare/layout")
-        expect(metadata.title).toBe("Compare Games")
-        expect(metadata.description).toBeDefined()
-      } catch {
-        throw new Error("app/compare/layout.tsx not created yet")
-      }
+      const { metadata } = await import("@/app/compare/layout")
+      expect(metadata.title).toBe("Compare Games")
+      expect(metadata.description).toBeDefined()
     })
   })
 
   describe("Profile layout", () => {
     it("exports unique title and description", async () => {
-      try {
-        const { metadata } = await import("@/app/profile/layout")
-        expect(metadata.title).toBe("Profile")
-        expect(metadata.description).toBeDefined()
-      } catch {
-        throw new Error("app/profile/layout.tsx not created yet")
+      const { metadata } = await import("@/app/profile/layout")
+      expect(metadata.title).toBe("Profile")
+      expect(metadata.description).toBeDefined()
+    })
+  })
+
+  describe("End-to-end metadata consolidation", () => {
+    it("all public pages have unique titles", async () => {
+      const pages = [
+        { name: "layout", expected: "DeckyVault - Steam Deck Benchmarks & Settings" },
+        { name: "games/page", expected: "Games" },
+        { name: "devices/page", expected: "Devices" },
+        { name: "compare/layout", expected: "Compare Games" },
+      ]
+
+      const titles = new Set<string>()
+      for (const page of pages) {
+        const mod = await import(`@/app/${page.name}`)
+        const actualTitle = mod.metadata.title?.default ?? mod.metadata.title
+        expect(actualTitle).toBe(page.expected)
+        const resolvedTitle = page.name === "layout"
+          ? actualTitle
+          : `${actualTitle} | DeckyVault`
+        titles.add(resolvedTitle)
       }
+
+      expect(titles.has("DeckyVault - Steam Deck Benchmarks & Settings")).toBe(true)
+      expect(titles.size).toBe(pages.length)
     })
   })
 })
