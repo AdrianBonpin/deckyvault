@@ -582,6 +582,23 @@ export default function Landing() {
                     }),
                 }}
             />
+
+            {/* Organization structured data */}
+            <script
+                type='application/ld+json'
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "Organization",
+                        name: "DeckyVault",
+                        url: "https://deckyvault.xyz",
+                        logo: "https://deckyvault.xyz/icon.png",
+                        sameAs: [
+                            "https://github.com/AdrianBonpin/deckyvault",
+                        ],
+                    }),
+                }}
+            />
         </>
     )
 }
