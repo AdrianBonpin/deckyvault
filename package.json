@@ -12,8 +12,8 @@
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
     "db:seed": "bun run lib/db/seed.ts",
-    "test": "bun test --isolate",
-    "test:watch": "bun test --isolate --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:ci": "vitest run"
   },
   "dependencies": {
