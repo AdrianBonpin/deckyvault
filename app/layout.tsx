@@ -14,8 +14,6 @@ export const viewport: Viewport = {
     width: "device-width",
     initialScale: 1,
     viewportFit: "cover",
-    maximumScale: 1,
-    userScalable: false,
     themeColor: "#eb3779",
 }
 
@@ -79,6 +77,9 @@ export const metadata: Metadata = {
             "max-snippet": -1,
         },
     },
+    alternates: {
+        canonical: "https://deckyvault.xyz",
+    },
 }
 
 export default function RootLayout({
@@ -92,6 +93,20 @@ export default function RootLayout({
             className={`${font.variable} bg-background text-text antialiased overscroll-none`}
         >
             <head>
+                {/* DNS prefetch + preconnect for external image CDNs */}
+                <link rel="dns-prefetch" href="https://cdn.akamai.steamstatic.com" />
+                <link rel="preconnect" href="https://cdn.akamai.steamstatic.com" crossOrigin="anonymous" />
+                <link rel="dns-prefetch" href="https://cdn.steamgriddb.com" />
+                <link rel="preconnect" href="https://cdn.steamgriddb.com" crossOrigin="anonymous" />
+                <link rel="dns-prefetch" href="https://cdn2.steamgriddb.com" />
+                <link rel="preconnect" href="https://cdn2.steamgriddb.com" crossOrigin="anonymous" />
+                <link rel="dns-prefetch" href="https://cdn.deckyvault.xyz" />
+                <link rel="preconnect" href="https://cdn.deckyvault.xyz" crossOrigin="anonymous" />
+                <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
+                <link rel="preconnect" href="https://lh3.googleusercontent.com" crossOrigin="anonymous" />
+                <link rel="dns-prefetch" href="https://cdn.discordapp.com" />
+                <link rel="preconnect" href="https://cdn.discordapp.com" crossOrigin="anonymous" />
+                {/* PWA meta */}
                 <meta name="apple-mobile-web-app-capable" content="yes" />
                 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
             </head>
