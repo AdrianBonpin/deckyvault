@@ -8,13 +8,13 @@ import type { Metadata } from "next"
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
-  title: "Devices — DeckyVault",
+  title: "Devices",
   description:
     "Browse benchmark data for handheld and console gaming devices. Compare FPS, performance stats, and community benchmarks on DeckyVault.",
   keywords: ["steam deck", "handheld", "console", "benchmarks", "FPS", "performance", "devices"],
   alternates: { canonical: "https://deckyvault.xyz/devices" },
   openGraph: {
-    title: "Devices — DeckyVault",
+    title: "Devices | DeckyVault",
     description:
       "Browse benchmark data for handheld and console gaming devices on DeckyVault.",
     url: "https://deckyvault.xyz/devices",

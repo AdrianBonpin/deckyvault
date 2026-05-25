@@ -16,7 +16,7 @@ import { GamesPageClient } from "./games-page-client"
 export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
-  title: "Games — DeckyVault",
+  title: "Games",
   description:
     "Browse the full catalog of Steam Deck games with benchmarks, community settings, and performance data. Filter by genre, device, and more.",
   keywords: [
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "https://deckyvault.xyz/games" },
   openGraph: {
-    title: "Games — DeckyVault",
+    title: "Games | DeckyVault",
     description:
       "Browse the full catalog of Steam Deck games with benchmarks and performance data.",
     url: "https://deckyvault.xyz/games",
