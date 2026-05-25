@@ -1,5 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 
+// Mock drizzle-orm to avoid ESM named-export resolution errors between test files
+vi.mock("drizzle-orm", () => ({
+  eq: vi.fn((col, val) => ({ col, val })),
+}))
+vi.mock("drizzle-orm/pg-core", () => ({
+  pgTable: vi.fn((name, columns, indexes) => ({ name, columns, indexes })),
+  pgEnum: vi.fn((name, values) => ({ name, values })),
+  text: vi.fn((name) => name),
+  integer: vi.fn((name) => name),
+  real: vi.fn((name) => name),
+  boolean: vi.fn((name) => name),
+  timestamp: vi.fn((name) => name),
+  jsonb: vi.fn((name) => name),
+  index: vi.fn((name) => ({ on: vi.fn() })),
+}))
 // ── Mock global fetch so syncSteamGame doesn't hit real APIs ──
 const mockFetch = vi.fn()
 Object.assign(globalThis, { fetch: mockFetch as unknown as typeof fetch })

@@ -1,8 +1,33 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { db } from "@/lib/db/index"
 import { checkAndAutoPin } from "@/lib/api/auto-pin"
-import { performanceEntries } from "@/lib/db/schema"
-import { eq } from "drizzle-orm"
+
+// Mock drizzle-orm to avoid ESM named-export resolution errors between test files
+vi.mock("drizzle-orm", () => ({
+  eq: vi.fn((col, val) => ({ col, val })),
+}))
+vi.mock("drizzle-orm/pg-core", () => ({
+  pgTable: vi.fn((name, columns, indexes) => ({ name, columns, indexes })),
+  pgEnum: vi.fn((name, values) => ({ name, values })),
+  text: vi.fn((name) => name),
+  integer: vi.fn((name) => name),
+  real: vi.fn((name) => name),
+  boolean: vi.fn((name) => name),
+  timestamp: vi.fn((name) => name),
+  jsonb: vi.fn((name) => name),
+  index: vi.fn((name) => ({ on: vi.fn() })),
+}))
+
+// Mock db schema — only the symbols the module under test references
+vi.mock("@/lib/db/schema", () => ({
+  performanceEntries: {
+    id: "id",
+    isPinned: "is_pinned",
+    isRemoved: "is_removed",
+    upvotes: "upvotes",
+    downvotes: "downvotes",
+  },
+}))
 
 // Mock the database
 vi.mock("@/lib/db/index", () => ({
