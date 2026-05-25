@@ -391,6 +391,26 @@ export default async function GamePage({
                     ),
                 }}
             />
+            {/* AggregateRating — based on Steam review score when available */}
+            {game.steamReviewScore != null && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                            "@context": "https://schema.org",
+                            "@type": "AggregateRating",
+                            itemReviewed: {
+                                "@type": "VideoGame",
+                                name: game.title,
+                            },
+                            ratingValue: (game.steamReviewScore / 10).toFixed(1),
+                            bestRating: "10",
+                            worstRating: "0",
+                            ratingCount: game.steamReviewCount ?? undefined,
+                        }),
+                    }}
+                />
+            )}
             <Suspense fallback={<div className="min-h-screen" />}>
                 <GamePageClient
                     game={serializedGame}
