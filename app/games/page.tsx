@@ -10,6 +10,7 @@ import {
 } from "@/lib/db/schema"
 import { sql, eq, and, desc, inArray } from "drizzle-orm"
 import { isSyncStale, syncSteamGame } from "@/lib/steam/sync"
+import { buildBreadcrumbList } from "@/lib/utils/seo"
 import { GamesPageClient } from "./games-page-client"
 
 // This page needs live data — skip static generation at build time
@@ -275,6 +276,17 @@ export default async function GamesPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildBreadcrumbList([
+              { name: "Home", url: "https://deckyvault.xyz" },
+              { name: "Games", url: "https://deckyvault.xyz/games" },
+            ]),
+          ),
+        }}
       />
       <GamesPageClient
         initialGames={initialGames}

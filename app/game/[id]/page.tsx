@@ -16,7 +16,7 @@ import {
 import { and, desc, eq, sql } from "drizzle-orm"
 import { isSyncStale, syncSteamGame, ensureSteamGame } from "@/lib/steam/sync"
 import { getR2PublicUrl } from "@/lib/storage"
-import { smartTruncate } from "@/lib/utils/seo"
+import { smartTruncate, buildBreadcrumbList } from "@/lib/utils/seo"
 import { GamePageClient } from "./game-page-client"
 
 // This page needs live data — skip static generation at build time
@@ -377,6 +377,18 @@ export default async function GamePage({
                         operatingSystem: "SteamOS",
                         ...(game.storeUrl && { offers: { "@type": "Offer", url: game.storeUrl } }),
                     }),
+                }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(
+                        buildBreadcrumbList([
+                            { name: "Home", url: "https://deckyvault.xyz" },
+                            { name: "Games", url: "https://deckyvault.xyz/games" },
+                            { name: game.title, url: `https://deckyvault.xyz/game/${game.id}` },
+                        ]),
+                    ),
                 }}
             />
             <Suspense fallback={<div className="min-h-screen" />}>

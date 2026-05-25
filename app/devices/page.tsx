@@ -1,6 +1,7 @@
 import { db } from "@/lib/db/index"
 import { hardware, performanceEntries, gameVersions, games } from "@/lib/db/schema"
 import { eq, sql, desc } from "drizzle-orm"
+import { buildBreadcrumbList } from "@/lib/utils/seo"
 import { DevicesPageClient } from "./page-client"
 import type { Metadata } from "next"
 
@@ -125,6 +126,17 @@ export default async function DevicesPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            buildBreadcrumbList([
+              { name: "Home", url: "https://deckyvault.xyz" },
+              { name: "Devices", url: "https://deckyvault.xyz/devices" },
+            ]),
+          ),
+        }}
       />
       <DevicesPageClient devices={devices} />
     </>
