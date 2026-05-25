@@ -16,6 +16,7 @@ import {
 import { and, desc, eq, sql } from "drizzle-orm"
 import { isSyncStale, syncSteamGame, ensureSteamGame } from "@/lib/steam/sync"
 import { getR2PublicUrl } from "@/lib/storage"
+import { smartTruncate } from "@/lib/utils/seo"
 import { GamePageClient } from "./game-page-client"
 
 // This page needs live data — skip static generation at build time
@@ -62,8 +63,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     }
 
     const description = game.description
-        ? game.description.slice(0, 160)
-        : `Find benchmarks, community presets, and performance settings for ${game.title} on Steam Deck.`
+        ? smartTruncate(game.description, 160)
+        : `Find benchmarks, community presets, and performance settings for ${game.title} on Steam Deck. Compare FPS, TDP, and battery life from community reports.`
 
     return {
         title: `${game.title} - Benchmarks & Settings`,
@@ -71,7 +72,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         alternates: { canonical: `https://deckyvault.xyz/game/${game.id}` },
         openGraph: {
             title: `${game.title} - Benchmarks & Settings | DeckyVault`,
-            description: game.description?.slice(0, 200) ?? `Benchmarks and settings for ${game.title}`,
+            description: game.description ? smartTruncate(game.description, 200) : `Benchmarks and settings for ${game.title}`,
             url: `https://deckyvault.xyz/game/${game.id}`,
             images: [{ url: `/game/${game.id}/opengraph-image`, width: 1200, height: 630 }],
             type: "website",
@@ -80,7 +81,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         twitter: {
             card: "summary_large_image",
             title: `${game.title} - Benchmarks & Settings | DeckyVault`,
-            description: game.description?.slice(0, 200) ?? `Benchmarks and settings for ${game.title}`,
+            description: game.description ? smartTruncate(game.description, 200) : `Benchmarks and settings for ${game.title}`,
             images: [`/game/${game.id}/opengraph-image`],
         },
     }
