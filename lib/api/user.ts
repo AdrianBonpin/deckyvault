@@ -188,6 +188,13 @@ export const userRoutes = new Elysia({ prefix: "/user", detail: { tags: ["Users"
   .post(
     "/me/set-password",
     async ({ request, body, set }) => {
+      // Reject non-JSON content types
+      const contentType = request.headers.get("content-type") || ""
+      if (!contentType.includes("application/json")) {
+        set.status = 415
+        return { error: "Content-Type must be application/json" }
+      }
+
       const session = await auth.api.getSession({
         headers: request.headers,
       })
@@ -230,6 +237,10 @@ export const userRoutes = new Elysia({ prefix: "/user", detail: { tags: ["Users"
       body: t.Object({
         newPassword: t.String({ minLength: 10 }),
       }),
+      detail: {
+        description: "Set a password for the authenticated user. Requires JSON body.",
+        tags: ["Users"],
+      },
     },
   )
   .get(

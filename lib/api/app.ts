@@ -78,7 +78,7 @@ export const app = new Elysia({ prefix: "/api" })
       documentation: {
         info: {
           title: "DeckyVault API",
-          version: "2026.1.102",
+          version: "2026.2.1",
           description:
             "API for DeckyVault — Steam Deck game compatibility, performance reports, and community features.",
         },
@@ -249,7 +249,7 @@ export const app = new Elysia({ prefix: "/api" })
   .use(rateLimit("default"))
   .get("/", () => ({
     name: "DeckyVault API",
-    version: "2026.1.102",
+    version: "2026.2.1",
   }))
 
 export type App = typeof app
