@@ -1,4 +1,4 @@
-import { Elysia } from "elysia"
+import { Elysia, t } from "elysia"
 import { openapi } from "@elysia/openapi"
 import { cron, Patterns } from "@elysia/cron"
 import { auth } from "@/lib/auth"
@@ -45,6 +45,10 @@ import { savedFilterRoutes } from "@/lib/api/saved-filters"
 import { cronRoutes } from "@/lib/api/cron"
 import { profilePhotoRoutes } from "@/lib/api/profile-photo"
 import { screenshotRoutes } from "@/lib/api/screenshots"
+import { loginEmailSchema } from "@/lib/auth/validation"
+import { db } from "@/lib/db"
+import { user } from "@/lib/db/schema/auth"
+import { eq } from "drizzle-orm"
 import { mobileRoutes } from "@/lib/api/mobile"
 
 const betterAuth = new Elysia({ name: "better-auth" })
@@ -156,6 +160,33 @@ export const app = new Elysia({ prefix: "/api" })
       .use(betterAuth)
       .use(userRoutes)
       .use(profilePhotoRoutes)
+      .post(
+        "/auth/check-email",
+        async ({ body, set }) => {
+          const result = loginEmailSchema.safeParse(body)
+          if (!result.success) {
+            set.status = 400
+            return { error: result.error.issues[0].message }
+          }
+
+          const { email } = result.data
+          const existingUser = await db
+            .select({ id: user.id })
+            .from(user)
+            .where(eq(user.email, email.toLowerCase()))
+            .limit(1)
+
+          return { exists: existingUser.length > 0 }
+        },
+        {
+          body: t.Object({ email: t.String() }),
+          response: t.Union([
+            t.Object({ exists: t.Boolean() }),
+            t.Object({ error: t.String() }),
+          ]),
+          detail: { hide: true },
+        },
+      )
   )
   // ── Read-heavy public routes (read rate limit) ───────────────
   .group("", (app) =>
