@@ -26,7 +26,15 @@ export async function proxy(req: NextRequest) {
     if (path === "/signup") {
         const step = req.nextUrl.searchParams.get("step")
         if (step === "otp" || step === "passkey") {
-            return NextResponse.next()
+            // Wizard step URLs require a valid session (created by signUp.email() in step 1).
+            // Without a session, redirect to /signup to prevent URL-guessing bypass.
+            const wizardSession = await auth.api.getSession({
+                headers: req.headers,
+            })
+            if (wizardSession) {
+                return NextResponse.next()
+            }
+            return NextResponse.redirect(new URL("/signup", req.url))
         }
     }
 
