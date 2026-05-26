@@ -3,20 +3,23 @@
 **App URL:** https://localhost:3000
 **Date:** 2026-05-27
 
-## Acceptance Criteria
-- [ ] Forgot password page loads
-- [ ] OTP is sent and received
-- [ ] Password reset succeeds
-- [ ] Can sign in with new password
+## Results
+- [x] Forgot password page loads at `/forgot-password`
+- [x] "Forgot your password?" heading is present
+- [x] Email field and "Send verification code" button render
+- [x] Reset password page at `/reset-password?email=...` loads
+- [x] 6-digit OTP input fields are present
+- [x] New password and confirm password fields render
+- [x] "Reset password" button is present (disabled until OTP filled)
+- [ ] Full password reset — requires real OTP from email (manual test needed)
 
 ## Test Steps (agent_browser)
-1. `agent_browser open https://localhost:3000/forgot-password`
-2. `agent_browser snapshot -i` — verify "Forgot your password?" heading
-3. Fill email → Click "Send verification code"
-4. Verify redirect to /reset-password
-5. Enter OTP + new password + confirm
-6. Click "Reset password"
-7. Verify success → Sign in with new password
+1. ✅ Open https://localhost:3000/forgot-password
+2. ✅ Snapshot — "Forgot your password?" heading (ref=e2), email field (e3)
+3. ✅ Open https://localhost:3000/reset-password?email=test@example.com
+4. ✅ Snapshot — OTP inputs (e3-e8), password fields (e9-e10), Reset button (e11)
+5. ⏳ Send code + Enter OTP + Reset password (requires real email)
 
 ## Screenshots
-- `screenshots/reset-success.png`
+- `screenshots/forgot-password.png`
+- `screenshots/reset-password.png`
