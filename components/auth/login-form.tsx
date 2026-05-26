@@ -302,7 +302,7 @@ export default function LoginForm() {
             </form>
 
             {/* Explicit passkey login button */}
-            {"PublicKeyCredential" in window && !showPassword && (
+            {"PublicKeyCredential" in globalThis && !showPassword && (
                 <button
                     onClick={handlePasskeyLogin}
                     disabled={isLoading}
