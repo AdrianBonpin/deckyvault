@@ -32,6 +32,19 @@ vi.mock("@/lib/db/schema", () => ({
   gamePlatformSupport: { gameId: "gameId", hardwareSlug: "hardwareSlug", protonStatus: "protonStatus" },
   user: { id: "id", name: "name", image: "image", role: "role" },
   entryScreenshots: { id: "id", entryId: "entryId", storageKey: "storageKey", orderIndex: "orderIndex" },
+  steamReviewSentimentEnum: {
+    enumValues: [
+      "overwhelmingly_positive",
+      "very_positive",
+      "positive",
+      "mostly_positive",
+      "mixed",
+      "mostly_negative",
+      "negative",
+      "very_negative",
+      "overwhelmingly_negative",
+    ],
+  },
 }))
 
 vi.mock("drizzle-orm", () => ({
@@ -43,18 +56,21 @@ vi.mock("drizzle-orm", () => ({
   isNull: vi.fn((col: unknown) => col),
   inArray: vi.fn((col: unknown, vals: unknown) => ({ col, vals })),
   sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({ raw: strings, vals: values })),
-}))
-
-vi.mock("@/lib/steam/sync", () => ({
-  isSyncStale: vi.fn(() => false),
-  syncSteamGame: vi.fn(() => Promise.resolve()),
+  avg: vi.fn((col: unknown) => col),
+  count: vi.fn((col: unknown) => col),
 }))
 
 vi.mock("@/lib/storage", () => ({
   getR2PublicUrl: vi.fn(() => "https://r2.example.com"),
 }))
 
-vi.mock("@/lib/auth", () => ({}))
+vi.mock("@/lib/auth", () => ({
+  auth: {
+    $Infer: { Session: { user: {} } },
+    api: {},
+    handler: vi.fn(),
+  },
+}))
 vi.mock("@/lib/auth-client", () => ({}))
 
 vi.mock("@/lib/updates", () => ({

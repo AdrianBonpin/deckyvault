@@ -32,13 +32,61 @@ vi.mock("@/lib/db/schema", () => ({
     capsuleImage: "capsuleImage",
     syncStatus: "syncStatus",
   },
+  gameVersions: {
+    id: "id",
+    gameId: "gameId",
+    versionString: "versionString",
+    buildId: "buildId",
+  },
+  performanceEntries: {
+    id: "id",
+    versionId: "versionId",
+    isRemoved: "isRemoved",
+    hardwareSlug: "hardwareSlug",
+    fpsAvg: "fpsAvg",
+    fpsLow: "fpsLow",
+    fpsHigh: "fpsHigh",
+  },
   hardware: { slug: "slug", createdAt: "createdAt" },
+  gameComments: { gameId: "gameId", id: "id" },
+  gamePlatformSupport: {
+    gameId: "gameId",
+    hardwareSlug: "hardwareSlug",
+    protonStatus: "protonStatus",
+  },
+  user: { id: "id", name: "name", image: "image", role: "role" },
+  entryScreenshots: {
+    id: "id",
+    entryId: "entryId",
+    storageKey: "storageKey",
+    orderIndex: "orderIndex",
+  },
+  steamReviewSentimentEnum: {
+    enumValues: [
+      "overwhelmingly_positive",
+      "very_positive",
+      "positive",
+      "mostly_positive",
+      "mixed",
+      "mostly_negative",
+      "negative",
+      "very_negative",
+      "overwhelmingly_negative",
+    ],
+  },
 }))
 
 vi.mock("drizzle-orm", () => ({
+  eq: vi.fn((col: unknown, val: unknown) => ({ col, val })),
+  and: vi.fn((...args: unknown[]) => args),
+  desc: vi.fn((col: unknown) => col),
   or: vi.fn((...args: unknown[]) => args[0]),
   ne: vi.fn((col: unknown) => col),
   isNull: vi.fn((col: unknown) => col),
+  inArray: vi.fn((col: unknown, vals: unknown) => ({ col, vals })),
+  sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({ raw: strings, vals: values })),
+  avg: vi.fn((col: unknown) => col),
+  count: vi.fn((col: unknown) => col),
 }))
 
 const mockGetAllUpdates = vi.fn(() => [])
