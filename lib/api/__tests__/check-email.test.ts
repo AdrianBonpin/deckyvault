@@ -39,3 +39,26 @@ describe("check-email response contract", () => {
     expect(typeof errorShape.error).toBe("string")
   })
 })
+
+describe("check-email does NOT block deckyvault.xyz for login", () => {
+  it("accepts a @deckyvault.xyz email through loginEmailSchema", () => {
+    const result = loginEmailSchema.safeParse({
+      email: "admin@deckyvault.xyz",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("accepts a @DECKYVAULT.XYZ email (uppercase) through loginEmailSchema", () => {
+    const result = loginEmailSchema.safeParse({
+      email: "admin@DECKYVAULT.XYZ",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("the response contract still matches { exists: boolean }", () => {
+    const successShape = { exists: true }
+    const failureShape = { exists: false }
+    expect(typeof successShape.exists).toBe("boolean")
+    expect(typeof failureShape.exists).toBe("boolean")
+  })
+})
