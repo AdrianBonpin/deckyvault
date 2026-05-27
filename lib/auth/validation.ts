@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { isDeckyVaultEmail, DOMAIN_BLOCK_ERROR } from "./domain-block"
 
 export const loginEmailSchema = z.object({
     email: z.string().email("Please enter a valid email address"),
@@ -9,16 +10,26 @@ export const loginSchema = z.object({
     password: z.string().min(1, "Password is required"),
 })
 
-export const signupSchema = z.object({
-    name: z
-        .string()
-        .min(1, "Name is required")
-        .max(100, "Name must be 100 characters or less"),
-    email: z.string().email("Please enter a valid email address"),
-    password: z
-        .string()
-        .min(10, "Password must be at least 10 characters"),
-})
+export const signupSchema = z
+    .object({
+        name: z
+            .string()
+            .min(1, "Name is required")
+            .max(100, "Name must be 100 characters or less"),
+        email: z.string().email("Please enter a valid email address"),
+        password: z
+            .string()
+            .min(10, "Password must be at least 10 characters"),
+    })
+    .refine(
+        (data) =>
+            process.env.NODE_ENV === "development" ||
+            !isDeckyVaultEmail(data.email),
+        {
+            message: DOMAIN_BLOCK_ERROR,
+            path: ["email"],
+        },
+    )
 
 export const otpSchema = z.object({
     otp: z.string().length(6, "OTP must be exactly 6 digits"),

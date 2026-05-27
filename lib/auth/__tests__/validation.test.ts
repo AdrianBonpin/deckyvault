@@ -180,3 +180,57 @@ describe("resetPasswordSchema", () => {
     expect(result.success).toBe(false)
   })
 })
+
+describe("signupSchema — domain block", () => {
+  it("rejects @deckyvault.xyz email when NODE_ENV is not development", () => {
+    const result = signupSchema.safeParse({
+      name: "Test User",
+      email: "user@deckyvault.xyz",
+      password: "abcdefghij",
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const emailIssues = result.error.issues.filter(
+        (i) => i.path[0] === "email"
+      )
+      expect(emailIssues.length).toBeGreaterThan(0)
+      expect(emailIssues[0].message).toContain("deckyvault.xyz")
+    }
+  })
+
+  it("rejects @DECKYVAULT.XYZ email (uppercase) when not in dev", () => {
+    const result = signupSchema.safeParse({
+      name: "Test User",
+      email: "admin@DECKYVAULT.XYZ",
+      password: "abcdefghij",
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("rejects @deckyvault.xyz with plus addressing when not in dev", () => {
+    const result = signupSchema.safeParse({
+      name: "Test User",
+      email: "user+spam@deckyvault.xyz",
+      password: "abcdefghij",
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("accepts @gmail.com email (non-deckyvault domain)", () => {
+    const result = signupSchema.safeParse({
+      name: "Test User",
+      email: "user@gmail.com",
+      password: "abcdefghij",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("accepts valid email from any non-deckyvault domain", () => {
+    const result = signupSchema.safeParse({
+      name: "Test User",
+      email: "hello@outlook.com",
+      password: "abcdefghij",
+    })
+    expect(result.success).toBe(true)
+  })
+})
