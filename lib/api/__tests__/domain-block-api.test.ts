@@ -6,14 +6,17 @@ import { isDeckyVaultEmail, DOMAIN_BLOCK_ERROR } from "@/lib/auth/domain-block"
  * The domain-block onBeforeHandle handler – mirrors the logic
  * wired into the auth group in lib/api/app.ts.  Tested in isolation
  * here so we don't need to stand up the full app / DB.
+ *
+ * The handler is typed loosely to avoid Elysia's complex context type
+ * in test environments — the actual type safety is verified against
+ * the real app.ts implementation at integration test time.
  */
-const domainBlockOnBeforeHandle = async ({
-  request,
-  set,
-}: {
-  request: Request
-  set: { status: number }
-}) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const domainBlockOnBeforeHandle = async (context: any) => {
+  const { request, set } = context as {
+    request: Request
+    set: { status: number }
+  }
   const url = new URL(request.url)
   const isSignUp =
     url.pathname === "/api/auth/sign-up/email" &&
