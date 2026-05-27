@@ -105,7 +105,7 @@ export default function SignupFormStep({ onSuccess }: SignupFormStepProps) {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
+                    placeholder="you@deckyvault.xyz"
                     className="w-full px-4 py-3 rounded-lg border border-border bg-text/5 text-text text-sm placeholder:text-text/40 outline-none focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors"
                 />
                 {errors.email && (
