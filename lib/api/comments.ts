@@ -119,52 +119,6 @@ export const commentsRoutes = new Elysia({
         return { error: "Comment content exceeds maximum size (50KB)" }
       }
 
-      // ── Anti-spam: duplicate detection ─────────────────────────
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
-      const [duplicate] = await db
-        .select({ id: gameComments.id })
-        .from(gameComments)
-        .where(
-          and(
-            eq(gameComments.gameId, params.gameId),
-            eq(gameComments.userId, guard.user.id),
-            eq(gameComments.isRemoved, false),
-            sql`${gameComments.createdAt} >= ${fiveMinutesAgo}`,
-          ),
-        )
-        .limit(1)
-
-      if (duplicate) {
-        const [recent] = await db
-          .select({ content: gameComments.content })
-          .from(gameComments)
-          .where(eq(gameComments.id, duplicate.id))
-          .limit(1)
-
-        if (recent && JSON.stringify(recent.content) === contentStr) {
-          set.status = 409
-          return { error: "Duplicate comment detected — you posted identical content in the last 5 minutes" }
-        }
-      }
-
-      // ── Anti-spam: per-user hourly cap ─────────────────────────
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
-      const [{ count: recentCount }] = await db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(gameComments)
-        .where(
-          and(
-            eq(gameComments.userId, guard.user.id),
-            eq(gameComments.isRemoved, false),
-            sql`${gameComments.createdAt} >= ${oneHourAgo}`,
-          ),
-        )
-
-      if (recentCount >= 30) {
-        set.status = 429
-        return { error: "Too many comments — you've reached the hourly limit of 30" }
-      }
-
       // If parentId is provided, verify it exists and belongs to the same game
       if (body.parentId) {
         const [parent] = await db

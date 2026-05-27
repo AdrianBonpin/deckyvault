@@ -1,42 +1,5 @@
 import { Elysia, t } from "elysia"
 
-// ── In-memory rate limiter for contact form ──────────────────────
-const contactLimiter = new Map<string, { count: number; resetAt: number }>()
-const RATE_LIMIT_MAX = 3
-const RATE_LIMIT_WINDOW = 60 * 60 * 1000 // 1 hour in ms
-
-// Clean up expired entries every 5 minutes
-setInterval(() => {
-  const now = Date.now()
-  for (const [key, entry] of contactLimiter) {
-    if (now > entry.resetAt) contactLimiter.delete(key)
-  }
-}, 5 * 60 * 1000)
-
-function getClientIP(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for")
-  if (forwarded) return forwarded.split(",")[0].trim()
-  return "unknown"
-}
-
-function checkContactRateLimit(ip: string): { allowed: boolean; retryAfter: number } {
-  const now = Date.now()
-  const entry = contactLimiter.get(ip)
-
-  if (!entry || now > entry.resetAt) {
-    contactLimiter.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW })
-    return { allowed: true, retryAfter: 0 }
-  }
-
-  if (entry.count >= RATE_LIMIT_MAX) {
-    const retryAfter = Math.ceil((entry.resetAt - now) / 1000)
-    return { allowed: false, retryAfter }
-  }
-
-  entry.count++
-  return { allowed: true, retryAfter: 0 }
-}
-
 // ── Discord embed colors by category ─────────────────────────────
 const CATEGORY_COLORS: Record<string, number> = {
   bug: 0xe74c3c,           // red
@@ -85,14 +48,6 @@ export const contactRoutes = new Elysia({ prefix: "/contact", detail: { tags: ["
         set.status = 200
         return { success: true }
       }
-    }
-
-    // ── Rate limit ──────────────────────────────────────────────
-    const ip = getClientIP(request)
-    const rateCheck = checkContactRateLimit(ip)
-    if (!rateCheck.allowed) {
-      set.status = 429
-      return { error: "Too many submissions. Please try again later.", retryAfter: rateCheck.retryAfter }
     }
 
     // ── Validate category ──────────────────────────────────────
@@ -149,7 +104,7 @@ export const contactRoutes = new Elysia({ prefix: "/contact", detail: { tags: ["
         ...(payload.name ? [{ name: "Name", value: payload.name, inline: true }] : []),
         ...(payload.email ? [{ name: "Email", value: payload.email, inline: true }] : []),
         ...(payload.gameUrl ? [{ name: "Game URL", value: payload.gameUrl, inline: false }] : []),
-        { name: "IP Hash", value: `\`${ip.slice(0, 8)}...\``, inline: true },
+        { name: "IP Hash", value: `\`${(request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown").slice(0, 8)}...\``, inline: true },
       ],
       timestamp: new Date().toISOString(),
     }

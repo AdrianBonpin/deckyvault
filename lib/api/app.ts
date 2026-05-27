@@ -2,7 +2,6 @@ import { Elysia, t } from "elysia"
 import { openapi } from "@elysia/openapi"
 import { cron, Patterns } from "@elysia/cron"
 import { auth } from "@/lib/auth"
-import { rateLimit } from "@/lib/auth/rate-limit"
 import { isDeckyVaultEmail, DOMAIN_BLOCK_ERROR } from "@/lib/auth/domain-block"
 import { taskRegistry } from "./cron"
 import {
@@ -154,10 +153,9 @@ export const app = new Elysia({ prefix: "/api" })
       error: code === "NOT_FOUND" ? "Not found" : "Internal server error",
     }
   })
-  // ── Auth routes (auth rate limit + betterAuth) ──────────────
+  // ── Auth routes ─────────────────────────────────────────────
   .group("", (app) =>
     app
-      .use(rateLimit("auth"))
       .onBeforeHandle(async ({ request, set }) => {
         const url = new URL(request.url)
         const isSignUp =
@@ -214,10 +212,9 @@ export const app = new Elysia({ prefix: "/api" })
         },
       )
   )
-  // ── Read-heavy public routes (read rate limit) ───────────────
+  // ── Read-heavy public routes ──────────────────────────────
   .group("", (app) =>
     app
-      .use(rateLimit("read"))
       .use(healthRoutes)
       .use(gamesRoutes)
       .use(gameVersionsRoutes)
@@ -246,10 +243,9 @@ export const app = new Elysia({ prefix: "/api" })
       .use(screenshotRoutes)
       .use(mobileRoutes)
   )
-  // ── Write routes (write rate limit + betterAuth) ─────────────
+  // ── Write routes ───────────────────────────────────────────
   .group("", (app) =>
     app
-      .use(rateLimit("write"))
       .use(betterAuth)
       .use(clientVersionRoutes)
       .use(performanceVerifyRoutes)
@@ -262,17 +258,15 @@ export const app = new Elysia({ prefix: "/api" })
       .use(adminStorageRoutes)
       .use(adminAnalyticsRoutes)
   )
-  // ── Strict rate limit (public forms, no auth) ───────────────
+  // ── Public forms (no auth) ─────────────────────────────────
   .group("", (app) =>
     app
-      .use(rateLimit("strict"))
       .use(contactRoutes)
       .use(communitySuggestionRoutes)
   )
-  // ── Cron (no rate limit) ─────────────────────────────────────
+  // ── Cron ─────────────────────────────────────────────────────
   .use(cronRoutes)
-  // ── Root (default rate limit) ────────────────────────────────
-  .use(rateLimit("default"))
+  // ── Root ────────────────────────────────────────────────────
   .get("/", () => ({
     name: "DeckyVault API",
     version: "2026.2.2",

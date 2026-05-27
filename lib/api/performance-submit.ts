@@ -145,31 +145,6 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance", deta
         return { error: "Missing required fields: versionId, hardwareSlug, fpsAvg" }
       }
 
-      // ── Submission cooldown: 60 seconds between entries per user ──
-      const sixtySecondsAgo = new Date(Date.now() - 60 * 1000)
-      const [lastEntry] = await db
-        .select({ createdAt: performanceEntries.createdAt })
-        .from(performanceEntries)
-        .where(
-          and(
-            eq(performanceEntries.userId, guard.user.id),
-            sql`${performanceEntries.createdAt} >= ${sixtySecondsAgo}`,
-          ),
-        )
-        .orderBy(sql`${performanceEntries.createdAt} DESC`)
-        .limit(1)
-
-      if (lastEntry) {
-        const retryAfter = Math.ceil(
-          (lastEntry.createdAt.getTime() + 60_000 - Date.now()) / 1000
-        )
-        set.status = 429
-        return {
-          error: "Please wait before submitting another benchmark",
-          retryAfter: Math.max(1, retryAfter),
-        }
-      }
-
       // ── Validation: fpsAvg bounds ───────────────────────────────
       if (typeof fpsAvg !== "number" || fpsAvg < 1 || fpsAvg > 500) {
         set.status = 400
