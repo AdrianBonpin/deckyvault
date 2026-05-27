@@ -4,7 +4,7 @@ describe("API version", () => {
   it("matches package.json version", () => {
     const pkg = require("../../../package.json")
     const expectedVersion = pkg.version
-    expect(expectedVersion).toBe("2026.2.1")
+    expect(expectedVersion).toBe("2026.2.2")
   })
 })
 

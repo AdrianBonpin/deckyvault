@@ -2,6 +2,21 @@
 
 All notable changes to DeckyVault will be documented in this file.
 
+## [2026.2.2] - 2026-05-27
+
+### Added
+- **Sign-up domain restriction for deckyvault.xyz:** new account creation with `@deckyvault.xyz` email addresses is now blocked in production. This prevents unauthorized use of the brand domain. The restriction is lifted in development builds.
+- **Branded email placeholder:** all auth forms (sign-up, login, forgot password) on web and mobile now use `you@deckyvault.xyz` as the default placeholder instead of the generic `you@example.com`
+
+### Changed
+- Server-side domain enforcement ensures the `@deckyvault.xyz` block cannot be bypassed by direct API calls or social login flows
+- Existing `@deckyvault.xyz` account holders can still log in, use password reset, and receive OTPs
+
+### Technical
+- Added `lib/auth/domain-block.ts` shared domain validation helper
+- Added Elysia middleware in `lib/api/app.ts` for server-side sign-up domain enforcement
+- Added Zod `.refine()` on `signupSchema` for client-side domain validation
+
 ## [2026.2.1] - 2026-05-25
 
 ### Fixed
