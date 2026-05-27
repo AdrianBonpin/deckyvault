@@ -3,6 +3,7 @@ import { openapi } from "@elysia/openapi"
 import { cron, Patterns } from "@elysia/cron"
 import { auth } from "@/lib/auth"
 import { rateLimit } from "@/lib/auth/rate-limit"
+import { isDeckyVaultEmail, DOMAIN_BLOCK_ERROR } from "@/lib/auth/domain-block"
 import { taskRegistry } from "./cron"
 import {
   healthRoutes,
@@ -157,6 +158,31 @@ export const app = new Elysia({ prefix: "/api" })
   .group("", (app) =>
     app
       .use(rateLimit("auth"))
+      .onBeforeHandle(async ({ request, set }) => {
+        const url = new URL(request.url)
+        const isSignUp =
+          url.pathname === "/api/auth/sign-up/email" &&
+          request.method === "POST"
+
+        if (!isSignUp) return
+
+        if (process.env.NODE_ENV !== "development") {
+          try {
+            const cloned = request.clone()
+            const body = await cloned.json()
+            if (isDeckyVaultEmail(body.email)) {
+              console.warn(
+                "[AUTH] Blocked sign-up attempt with deckyvault.xyz email",
+                body.email,
+              )
+              set.status = 400
+              return { error: DOMAIN_BLOCK_ERROR }
+            }
+          } catch {
+            // Malformed body — let Better Auth reject downstream
+          }
+        }
+      })
       .use(betterAuth)
       .use(userRoutes)
       .use(profilePhotoRoutes)
