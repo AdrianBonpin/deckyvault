@@ -116,7 +116,7 @@ export default function RootLayout({
                 </Suspense>
                 {children}
                 <Script
-                    src='https://analytics.ranlabs.space/api/script.js'
+                    src='https://stat.ranio.xyz/api/script.js'
                     data-site-id='b9817e8df599'
                     strategy='afterInteractive'
                 />
