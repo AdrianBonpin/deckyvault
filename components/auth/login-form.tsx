@@ -8,6 +8,7 @@ import {
     loginSchema,
 } from "@/lib/auth/validation"
 import SocialButtons from "./social-buttons"
+import TurnstileWidget, { type TurnstileWidgetHandle } from "./turnstile-widget"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 
@@ -44,8 +45,10 @@ export default function LoginForm() {
     const [isLoading, setIsLoading] = useState(false)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [emailChecked, setEmailChecked] = useState(false)
+    const [turnstileToken, setTurnstileToken] = useState("")
     const mountedRef = useRef(true)
     const passkeyInitiatedRef = useRef(false)
+    const turnstileRef = useRef<TurnstileWidgetHandle>(null)
 
     // Redirect to the intended page after successful login
     const handleLoginSuccess = useCallback(() => {
@@ -126,11 +129,21 @@ export default function LoginForm() {
         }
 
         setIsLoading(true)
-        const { error } = await authClient.signIn.email({ email, password })
+        const { error } = await authClient.signIn.email({
+            email,
+            password,
+            fetchOptions: {
+                headers: {
+                    "x-captcha-response": turnstileToken,
+                },
+            },
+        })
         setIsLoading(false)
 
         if (error) {
             setError(error.message || "Invalid credentials. Please try again.")
+            turnstileRef.current?.reset()
+            setTurnstileToken("")
             return
         }
 
@@ -142,6 +155,8 @@ export default function LoginForm() {
         setPassword("")
         setError("")
         setEmailChecked(false)
+        turnstileRef.current?.reset()
+        setTurnstileToken("")
     }
 
     const handlePasskeyError = useCallback((ctx: { error?: { message?: string } }) => {
@@ -281,6 +296,15 @@ export default function LoginForm() {
                             Forgot password?
                         </Link>
                     </div>
+                )}
+                {showPassword && (
+                    <TurnstileWidget
+                        ref={turnstileRef}
+                        onToken={setTurnstileToken}
+                        onExpire={() => {
+                            setTurnstileToken("")
+                        }}
+                    />
                 )}
                 <button
                     type="submit"

@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { KeyRound, Loader2, ArrowLeft } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import {
     forgotPasswordSchema,
 } from "@/lib/auth/validation"
+import TurnstileWidget, { type TurnstileWidgetHandle } from "./turnstile-widget"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -14,6 +15,8 @@ export default function ForgotPasswordForm() {
     const [email, setEmail] = useState("")
     const [error, setError] = useState("")
     const [isLoading, setIsLoading] = useState(false)
+    const [turnstileToken, setTurnstileToken] = useState("")
+    const turnstileRef = useRef<TurnstileWidgetHandle>(null)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -28,6 +31,11 @@ export default function ForgotPasswordForm() {
         setIsLoading(true)
         const { error } = await authClient.emailOtp.requestPasswordReset({
             email,
+            fetchOptions: {
+                headers: {
+                    "x-captcha-response": turnstileToken,
+                },
+            },
         })
         setIsLoading(false)
 
@@ -35,6 +43,8 @@ export default function ForgotPasswordForm() {
             setError(
                 error.message || "Something went wrong. Please try again.",
             )
+            turnstileRef.current?.reset()
+            setTurnstileToken("")
             return
         }
 
@@ -76,12 +86,18 @@ export default function ForgotPasswordForm() {
 
             <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !turnstileToken}
                 className="w-full py-3 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                 Send verification code
             </button>
+
+            <TurnstileWidget
+                ref={turnstileRef}
+                onToken={setTurnstileToken}
+                onExpire={() => setTurnstileToken("")}
+            />
 
             <Link
                 href="/login"

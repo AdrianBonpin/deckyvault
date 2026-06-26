@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Loader2 } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { signupSchema } from "@/lib/auth/validation"
 import SocialButtons from "./social-buttons"
 import PasswordStrengthMeter from "./password-strength"
+import TurnstileWidget, { type TurnstileWidgetHandle } from "./turnstile-widget"
 import Link from "next/link"
 
 interface SignupFormStepProps {
@@ -19,6 +20,8 @@ export default function SignupFormStep({ onSuccess }: SignupFormStepProps) {
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [serverError, setServerError] = useState("")
     const [isLoading, setIsLoading] = useState(false)
+    const [turnstileToken, setTurnstileToken] = useState("")
+    const turnstileRef = useRef<TurnstileWidgetHandle>(null)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -41,6 +44,11 @@ export default function SignupFormStep({ onSuccess }: SignupFormStepProps) {
             name,
             email,
             password,
+            fetchOptions: {
+                headers: {
+                    "x-captcha-response": turnstileToken,
+                },
+            },
         })
         setIsLoading(false)
 
@@ -48,6 +56,8 @@ export default function SignupFormStep({ onSuccess }: SignupFormStepProps) {
             setServerError(
                 error.message || "Something went wrong. Please try again.",
             )
+            turnstileRef.current?.reset()
+            setTurnstileToken("")
             return
         }
 
@@ -134,12 +144,18 @@ export default function SignupFormStep({ onSuccess }: SignupFormStepProps) {
 
             <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !turnstileToken}
                 className="w-full py-3 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                 Create account
             </button>
+
+            <TurnstileWidget
+                ref={turnstileRef}
+                onToken={setTurnstileToken}
+                onExpire={() => setTurnstileToken("")}
+            />
 
             <p className="text-center text-sm text-text/50">
                 Already have an account?{" "}

@@ -1,5 +1,5 @@
 import { betterAuth } from 'better-auth'
-import { admin, emailOTP, lastLoginMethod } from 'better-auth/plugins'
+import { admin, captcha, emailOTP, lastLoginMethod } from 'better-auth/plugins'
 import { passkey } from '@better-auth/passkey'
 import { expo } from '@better-auth/expo'
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
@@ -38,6 +38,10 @@ export const auth = betterAuth({
         provider: 'pg'
     }),
     plugins: [
+        captcha({
+            provider: 'cloudflare-turnstile',
+            secretKey: process.env.TURNSTILE_SECRET_KEY!,
+        }),
         emailOTP({
             async sendVerificationOTP({ email, otp, type }) {
                 await sendOTP({ email, otp, type })
