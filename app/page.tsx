@@ -55,7 +55,8 @@ function SkeletonSections() {
                     className='space-y-3'
                 >
                     <div className='h-5 w-48 bg-text/5 rounded animate-pulse' />
-                    <div className='flex gap-3 flex-wrap gap-3 pb-2'>
+                    <div className='overflow-x-auto overflow-y-hidden' style={{ pointerEvents: 'none' }}>
+                        <div className='flex gap-3 pb-2' style={{ pointerEvents: 'auto' }}>
                         {[1, 2, 3, 4].map((j) => (
                             <div
                                 key={j}
@@ -68,6 +69,7 @@ function SkeletonSections() {
                                 </div>
                             </div>
                         ))}
+                    </div>
                     </div>
                 </div>
             ))}
@@ -121,7 +123,8 @@ function GameSection({
                 </div>
             </div>
 
-            <div className='flex gap-3 flex-wrap gap-3 pb-2 -mx-1 px-1'>
+            <div className='overflow-x-auto overflow-y-hidden -mx-1 px-1' style={{ pointerEvents: 'none' }}>
+                        <div className='flex gap-3 pb-2 px-1' style={{ pointerEvents: 'auto' }}>
                 {games.map((game, idx) => (
                     <motion.div
                         key={game.id}
@@ -199,6 +202,7 @@ function GameSection({
                     </motion.div>
                 ))}
             </div>
+        </div>
         </motion.section>
     )
 }
@@ -228,7 +232,8 @@ function SaleSection({
                 </div>
             </div>
 
-            <div className='flex gap-3 flex-wrap gap-3 pb-2 -mx-1 px-1'>
+            <div className='overflow-x-auto overflow-y-hidden -mx-1 px-1' style={{ pointerEvents: 'none' }}>
+                        <div className='flex gap-3 pb-2 px-1' style={{ pointerEvents: 'auto' }}>
                 {games.map((game, idx) => {
                     const discountPct = game.price_initial && game.price_current
                         ? Math.round((1 - game.price_current / game.price_initial) * 100)
@@ -324,6 +329,7 @@ function SaleSection({
                     )
                 })}
             </div>
+        </div>
 
             {/* Disclaimer */}
             <p className='text-[10px] text-text/20 mt-1 text-right'>
