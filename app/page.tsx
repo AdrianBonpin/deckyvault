@@ -121,7 +121,7 @@ function GameSection({
                 </div>
             </div>
 
-            <div className='flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none'>
+            <div className='flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none overscroll-y-none'>
                 {games.map((game, idx) => (
                     <motion.div
                         key={game.id}
@@ -228,7 +228,7 @@ function SaleSection({
                 </div>
             </div>
 
-            <div className='flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none'>
+            <div className='flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none overscroll-y-none'>
                 {games.map((game, idx) => {
                     const discountPct = game.price_initial && game.price_current
                         ? Math.round((1 - game.price_current / game.price_initial) * 100)
