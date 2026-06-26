@@ -129,8 +129,6 @@ function GameSection({
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.3, delay: idx * 0.05 }}
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.98 }}
                         className='group shrink-0 w-36 sm:w-44 rounded-xl bg-text/3 border border-border hover:border-text/30 hover:bg-text/6 transition-colors cursor-pointer overflow-hidden'
                         onClick={() => router.push(`/game/${game.id}?sync=1`)}
                     >
@@ -140,7 +138,7 @@ function GameSection({
                                     src={game.capsule_image}
                                     alt={game.title}
                                     fill
-                                    className='object-cover group-hover:scale-105 transition-transform duration-300'
+                                    className='object-cover group-hover:scale-[0.97] transition-transform duration-300'
                                     sizes='(max-width: 640px) 144px, 176px'
                                 />
                             ) : (
@@ -243,8 +241,6 @@ function SaleSection({
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.3, delay: idx * 0.05 }}
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.98 }}
                             className='group shrink-0 w-36 sm:w-44 rounded-xl bg-text/3 border border-border hover:border-text/30 hover:bg-text/6 transition-colors cursor-pointer overflow-hidden'
                             onClick={() => router.push(`/game/${game.id}?sync=1`)}
                         >
@@ -254,7 +250,7 @@ function SaleSection({
                                         src={game.capsule_image}
                                         alt={game.title}
                                         fill
-                                        className='object-cover group-hover:scale-105 transition-transform duration-300'
+                                        className='object-cover group-hover:scale-[0.97] transition-transform duration-300'
                                         sizes='(max-width: 640px) 144px, 176px'
                                     />
                                 ) : (
