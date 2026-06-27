@@ -309,3 +309,21 @@ benchmark_percentiles=97,AVG,1,0.1
             return ""
         except (IOError, FileNotFoundError):
             return ""
+
+    async def export_to_file(self, data: dict, export_path: str) -> dict:
+        """RPC: Write a DeckyVaultImportV1 payload as JSON to the given path.
+        Returns {success: bool, path: str, error: str?}."""
+        try:
+            # Sanitize the filename — the frontend passes a full path including filename
+            export_dir = os.path.dirname(export_path)
+            if export_dir and not os.path.exists(export_dir):
+                os.makedirs(export_dir, exist_ok=True)
+
+            with open(export_path, 'w') as f:
+                json.dump(data, f, indent=2)
+
+            return {"success": True, "path": export_path}
+        except PermissionError:
+            return {"success": False, "path": "", "error": f"Permission denied writing to {export_path}"}
+        except Exception as e:
+            return {"success": False, "path": "", "error": str(e)}
