@@ -57,23 +57,32 @@ export default function LoginForm() {
 
     // Preload passkeys for conditional UI — must be called on mount when
     // both email + password fields are in the DOM.
+    // Note: WebAuthn conditional mediation can throw NetworkError on pages
+    // with self-signed certs (common in dev). We catch and suppress it.
     useEffect(() => {
         mountedRef.current = true
         if ("PublicKeyCredential" in window && !passkeyInitiatedRef.current) {
             passkeyInitiatedRef.current = true
             suppressPasskeyErrors = true
-            authClient.signIn.passkey({
-                autoFill: true,
-                fetchOptions: {
-                    onSuccess: handleLoginSuccess,
-                },
-            }).catch((err) => {
-                if (!isWebAuthnAbortError(err)) {
-                    console.warn("[passkey-conditional-ui]", err)
+
+            const startPasskeyAutoFill = async () => {
+                try {
+                    await authClient.signIn.passkey({
+                        autoFill: true,
+                        fetchOptions: {
+                            onSuccess: handleLoginSuccess,
+                        },
+                    })
+                } catch (err) {
+                    if (!isWebAuthnAbortError(err)) {
+                        console.warn("[passkey-conditional-ui]", err)
+                    }
+                } finally {
+                    suppressPasskeyErrors = false
                 }
-            }).finally(() => {
-                suppressPasskeyErrors = false
-            })
+            }
+
+            startPasskeyAutoFill()
         }
         return () => { mountedRef.current = false }
     }, [handleLoginSuccess])
