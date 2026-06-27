@@ -9,6 +9,91 @@ except ImportError:
     decky = None
 
 
+def parse_mangohud_log(log_content: str) -> dict:
+    """Parse a MangoHud log file's content and return FPS stats.
+
+    Returns: {fpsAvg, fpsLow, fpsHigh, fpsOnePercentLow, tdpWatts, error?}
+    """
+    lines = log_content.strip().split('\n')
+
+    header_idx = None
+    fps_col = 0
+    frametime_col = None
+    gpu_power_col = None
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped or stripped.startswith('#'):
+            continue
+        if 'fps' in stripped.lower() and ',' in stripped:
+            columns = [c.strip().lower() for c in stripped.split(',')]
+            if 'fps' in columns:
+                fps_col = columns.index('fps')
+                if 'frametime' in columns:
+                    frametime_col = columns.index('frametime')
+                if 'gpu_power' in columns:
+                    gpu_power_col = columns.index('gpu_power')
+                header_idx = i
+                break
+
+    if header_idx is None:
+        return {"error": "Could not find FPS column in log header"}
+
+    fps_values = []
+    frametime_values = []
+    gpu_power_values = []
+
+    for line in lines[header_idx + 1:]:
+        stripped = line.strip()
+        if not stripped or stripped.startswith('#'):
+            continue
+        if stripped.startswith(('97%', 'AVG', '1%', '0.1%', '5%')):
+            continue
+        parts = [p.strip() for p in stripped.split(',')]
+        try:
+            fps = float(parts[fps_col])
+            fps_values.append(fps)
+            if frametime_col is not None and frametime_col < len(parts):
+                frametime_values.append(float(parts[frametime_col]))
+            if gpu_power_col is not None and gpu_power_col < len(parts):
+                gpu_power_values.append(float(parts[gpu_power_col]))
+        except (ValueError, IndexError):
+            continue
+
+    if not fps_values:
+        return {"error": "No FPS data found in log"}
+
+    fps_avg = round(sum(fps_values) / len(fps_values), 1)
+    fps_low = round(min(fps_values), 1)
+    fps_high = round(max(fps_values), 1)
+
+    # 1% low: average the slowest 1% of frame times (largest frametimes),
+    # then convert to FPS. Falls back to the lowest FPS percentile if no
+    # frametime data is available.
+    if frametime_values:
+        sorted_ft = sorted(frametime_values)
+        one_percent_count = max(1, int(len(sorted_ft) * 0.01))
+        worst_ft = sorted_ft[-one_percent_count:]
+        avg_worst_ft = sum(worst_ft) / len(worst_ft)
+        fps_one_percent_low = round(1000.0 / avg_worst_ft, 1) if avg_worst_ft > 0 else None
+    else:
+        sorted_fps = sorted(fps_values)
+        one_percent_idx = max(0, int(len(sorted_fps) * 0.01))
+        fps_one_percent_low = round(sorted_fps[one_percent_idx], 1)
+
+    tdp_watts = None
+    if gpu_power_values:
+        tdp_watts = round(sum(gpu_power_values) / len(gpu_power_values), 1)
+
+    return {
+        "fpsAvg": fps_avg,
+        "fpsLow": fps_low,
+        "fpsHigh": fps_high,
+        "fpsOnePercentLow": fps_one_percent_low,
+        "tdpWatts": tdp_watts,
+    }
+
+
 class Plugin:
     async def _main(self):
         if decky:
@@ -117,3 +202,26 @@ benchmark_percentiles=97,AVG,1,0.1
             with open(config_path, 'r') as f:
                 return {"exists": True, "content": f.read(), "path": config_path}
         return {"exists": False, "content": "", "path": config_path}
+
+    async def read_and_parse_mangohud_log(self, log_path: str = "/tmp/deckyvault-mangohud.log") -> dict:
+        """RPC: Read the MangoHud log file and return parsed FPS stats.
+        Returns parsed stats dict or {error: str}."""
+        if not os.path.exists(log_path):
+            return {"error": f"MangoHud log not found at {log_path}. Make sure MangoHud is enabled and logging."}
+        try:
+            with open(log_path, 'r') as f:
+                content = f.read()
+            if not content.strip():
+                return {"error": "MangoHud log is empty. Recording may have been too short."}
+            return parse_mangohud_log(content)
+        except Exception as e:
+            return {"error": f"Failed to read log: {str(e)}"}
+
+    async def clear_mangohud_log(self, log_path: str = "/tmp/deckyvault-mangohud.log") -> dict:
+        """RPC: Delete the MangoHud log file so the next recording starts fresh."""
+        try:
+            if os.path.exists(log_path):
+                os.remove(log_path)
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
