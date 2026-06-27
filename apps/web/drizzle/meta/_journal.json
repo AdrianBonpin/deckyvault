@@ -190,6 +190,13 @@
       "when": 1779214557250,
       "tag": "0026_polite_drax",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1782593630361,
+      "tag": "0027_slimy_stryfe",
+      "breakpoints": true
     }
   ]
 }
