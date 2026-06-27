@@ -2,6 +2,7 @@ import { betterAuth } from 'better-auth'
 import { admin, captcha, emailOTP, lastLoginMethod } from 'better-auth/plugins'
 import { passkey } from '@better-auth/passkey'
 import { expo } from '@better-auth/expo'
+import { apiKey } from '@better-auth/api-key'
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { db } from '@/lib/db/index'
 import { ac, admin as adminRole, moderator, contributor, user } from '@/lib/auth/permissions'
@@ -71,6 +72,19 @@ export const auth = betterAuth({
             },
             defaultRole: 'user',
             adminRoles: ['admin'],
+        }),
+        apiKey({
+            defaultPrefix: 'dv_',
+            requireName: true,
+            keyExpiration: {
+                defaultExpiresIn: null,
+                disableCustomExpiresTime: false,
+            },
+            rateLimit: {
+                enabled: true,
+                timeWindow: 1000 * 60 * 60, // 1 hour
+                maxRequests: 1000,
+            },
         }),
         expo(),
     ],

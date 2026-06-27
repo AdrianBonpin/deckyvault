@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { User, Shield, Link as LinkIcon } from "lucide-react"
+import { User, Shield, Link as LinkIcon, Key } from "lucide-react"
 import { SettingsProfileTab } from "@/components/profile/settings-profile-tab"
 import { SettingsSecurityTab } from "@/components/profile/settings-security-tab"
 import { SettingsAccountsTab } from "@/components/profile/settings-accounts-tab"
+import { SettingsApiKeysTab } from "@/components/profile/settings-api-keys-tab"
 
 interface AuthMethods {
     hasPassword: boolean
@@ -13,12 +14,13 @@ interface AuthMethods {
     totalAuthMethods: number
 }
 
-type SettingsSubTab = "profile" | "security" | "accounts"
+type SettingsSubTab = "profile" | "security" | "accounts" | "api-keys"
 
 const subTabs: { id: SettingsSubTab; label: string; icon: typeof User }[] = [
     { id: "profile", label: "Profile", icon: User },
     { id: "security", label: "Security", icon: Shield },
     { id: "accounts", label: "Linked Accounts", icon: LinkIcon },
+    { id: "api-keys", label: "API Keys", icon: Key },
 ]
 
 interface SettingsContainerProps {
@@ -144,6 +146,9 @@ export function SettingsContainer({
                         isLoadingAuthMethods={isLoadingAuthMethods}
                         onRefreshAuthMethods={refreshAuthMethods}
                     />
+                )}
+                {activeSubTab === "api-keys" && (
+                    <SettingsApiKeysTab />
                 )}
             </div>
         </div>
