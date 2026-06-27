@@ -1,0 +1,9 @@
+{
+  "name": "DeckyVault",
+  "version": "0.1.0",
+  "description": "Automatically record performance metrics and export/upload to DeckyVault",
+  "author": "DeckyVault",
+  "license": "MIT",
+  "icon": "",
+  "permissions": ["system"]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@deckyvault/plugin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w"
+  },
+  "dependencies": {
+    "@deckyvault/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28",
+    "@rollup/plugin-typescript": "^12",
+    "rollup": "^4",
+    "typescript": "^5"
+  }
+}
