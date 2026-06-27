@@ -1,9 +1,11 @@
 {
   "name": "DeckyVault",
-  "version": "0.1.0",
-  "description": "Automatically record performance metrics and export/upload to DeckyVault",
   "author": "DeckyVault",
-  "license": "MIT",
-  "icon": "",
-  "permissions": ["system"]
+  "flags": ["debug"],
+  "api_version": 1,
+  "publish": {
+    "tags": ["performance", "benchmark", "mangohud"],
+    "description": "Record performance metrics and export/upload them to DeckyVault",
+    "image": ""
+  }
 }
