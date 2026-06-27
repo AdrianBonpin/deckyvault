@@ -327,3 +327,74 @@ benchmark_percentiles=97,AVG,1,0.1
             return {"success": False, "path": "", "error": f"Permission denied writing to {export_path}"}
         except Exception as e:
             return {"success": False, "path": "", "error": str(e)}
+
+    async def upload_to_deckyvault(self, data: dict, api_key: str, base_url: str = "https://deckyvault.xyz") -> dict:
+        """RPC: Upload a DeckyVaultImportV1 payload to the DeckyVault API.
+        Uses urllib to avoid external dependencies.
+        Returns {success: bool, data: dict?, error: str?, status: int?}."""
+        import urllib.request
+        import urllib.error
+
+        try:
+            url = f"{base_url}/api/performance/import"
+            payload = json.dumps(data).encode('utf-8')
+
+            req = urllib.request.Request(
+                url,
+                data=payload,
+                headers={
+                    "Content-Type": "application/json",
+                    "x-api-key": api_key,
+                },
+                method="POST"
+            )
+
+            with urllib.request.urlopen(req, timeout=30) as response:
+                status = response.status
+                body = response.read().decode('utf-8')
+                result = json.loads(body)
+
+                if status == 201:
+                    return {"success": True, "data": result, "status": status}
+                else:
+                    return {"success": False, "error": result.get("error", "Upload failed"), "status": status}
+
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode('utf-8')
+            try:
+                error_msg = json.loads(error_body).get("error", error_body)
+            except json.JSONDecodeError:
+                error_msg = error_body
+            return {"success": False, "error": error_msg, "status": e.code}
+        except urllib.error.URLError as e:
+            return {"success": False, "error": f"Network error: {str(e.reason)}", "status": 0}
+        except Exception as e:
+            return {"success": False, "error": str(e), "status": 0}
+
+    async def test_api_key(self, api_key: str, base_url: str = "https://deckyvault.xyz") -> dict:
+        """RPC: Test if an API key is valid by calling the games lookup endpoint.
+        Returns {valid: bool, error: str?}."""
+        import urllib.request
+        import urllib.error
+
+        try:
+            url = f"{base_url}/api/games/lookup?steamAppId=0"
+            req = urllib.request.Request(
+                url,
+                headers={"x-api-key": api_key},
+                method="GET"
+            )
+            with urllib.request.urlopen(req, timeout=10) as response:
+                # A 404 (game not found) still means the API key is valid
+                return {"valid": True}
+        except urllib.error.HTTPError as e:
+            if e.code == 401:
+                return {"valid": False, "error": "Invalid API key"}
+            elif e.code == 404:
+                return {"valid": True}  # Key works, just no game with ID 0
+            else:
+                return {"valid": False, "error": f"Server returned status {e.code}"}
+        except urllib.error.URLError as e:
+            return {"valid": False, "error": f"Network error: {str(e.reason)}"}
+        except Exception as e:
+            return {"valid": False, "error": str(e)}
