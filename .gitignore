@@ -43,3 +43,9 @@ yarn-error.log*
 
 # docs/superpowers
 /docs/superpowers
+
+# git worktrees
+.worktrees/
+
+# stray
+post.md
