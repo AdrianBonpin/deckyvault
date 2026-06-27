@@ -225,3 +225,87 @@ benchmark_percentiles=97,AVG,1,0.1
             return {"success": True}
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+    async def get_hardware_info(self) -> dict:
+        """RPC: Detect hardware model from DMI. Returns {slug, name, raw}."""
+        # Steam Deck models: Jupiter = LCD, Galileo = OLED
+        product_name = ""
+        try:
+            with open("/sys/class/dmi/id/product_name", 'r') as f:
+                product_name = f.read().strip()
+        except (IOError, FileNotFoundError):
+            pass
+
+        slug = "unknown"
+        name = "Unknown Device"
+
+        if product_name == "Jupiter":
+            slug = "steamdeck-lcd"
+            name = "Steam Deck LCD"
+        elif product_name == "Galileo":
+            slug = "steamdeck-oled"
+            name = "Steam Deck OLED"
+        elif product_name:
+            name = product_name
+            slug = product_name.lower().replace(" ", "-")
+
+        return {"slug": slug, "name": name, "raw": product_name}
+
+    async def get_os_version(self) -> str:
+        """RPC: Read OS version from /etc/os-release."""
+        try:
+            with open("/etc/os-release", 'r') as f:
+                for line in f:
+                    if line.startswith("PRETTY_NAME="):
+                        return line.split("=", 1)[1].strip().strip('"')
+            return "unknown"
+        except (IOError, FileNotFoundError):
+            return "unknown"
+
+    async def get_proton_version(self, app_id: int) -> str:
+        """RPC: Attempt to read the Proton version for a Steam app.
+        Reads from the Steam compatdata directory."""
+        try:
+            home = os.path.expanduser("~")
+            # Steam compat data lives in ~/.steam/steam/steamapps/compatdata/<appid>/
+            compat_path = os.path.join(home, ".steam", "steam", "steamapps", "compatdata", str(app_id))
+            version_file = os.path.join(compat_path, "version")
+            if os.path.exists(version_file):
+                with open(version_file, 'r') as f:
+                    return f.read().strip()
+            return ""
+        except (IOError, FileNotFoundError):
+            return ""
+
+    async def get_launch_options(self, app_id: int) -> str:
+        """RPC: Read launch options for a Steam app from localconfig.vdf.
+        This is best-effort — the VDF format is not officially documented."""
+        try:
+            home = os.path.expanduser("~")
+            # localconfig.vdf path varies; try common locations
+            config_paths = [
+                os.path.join(home, ".steam", "steam", "usercfg", "localconfig.vdf"),
+                os.path.join(home, ".local", "share", "Steam", "usercfg", "localconfig.vdf"),
+            ]
+            for config_path in config_paths:
+                if os.path.exists(config_path):
+                    with open(config_path, 'r') as f:
+                        content = f.read()
+                    # Best-effort: look for LaunchOptions near the app ID
+                    # This is a simple heuristic — VDF parsing is complex
+                    app_str = f'"{app_id}"'
+                    idx = content.find(app_str)
+                    if idx != -1:
+                        # Search for LaunchOptions within ~2000 chars after app ID
+                        search_region = content[idx:idx + 2000]
+                        lo_idx = search_region.find('"LaunchOptions"')
+                        if lo_idx != -1:
+                            # Extract the value between quotes
+                            value_start = search_region.find('"', lo_idx + len('"LaunchOptions"')) + 1
+                            value_end = search_region.find('"', value_start)
+                            if value_start > 0 and value_end > value_start:
+                                return search_region[value_start:value_end]
+                    return ""
+            return ""
+        except (IOError, FileNotFoundError):
+            return ""
