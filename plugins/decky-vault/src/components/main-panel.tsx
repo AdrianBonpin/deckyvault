@@ -137,12 +137,12 @@ export default function MainPanel({
 
   async function handleCopyLaunchOption() {
     try {
-      await navigator.clipboard.writeText("mangohud %command%")
+      await navigator.clipboard.writeText("~/deckyvault-mangohud.sh %command%")
       setCopiedLaunchOpt(true)
       setTimeout(() => setCopiedLaunchOpt(false), 2000)
     } catch {
       const ta = document.createElement("textarea")
-      ta.value = "mangohud %command%"
+      ta.value = "~/deckyvault-mangohud.sh %command%"
       document.body.appendChild(ta)
       ta.select()
       document.execCommand("copy")
