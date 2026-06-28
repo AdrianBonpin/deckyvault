@@ -12,10 +12,12 @@ import {
   FaTimes,
   FaDownload,
   FaCog,
+  FaFileExport,
+  FaFileImport,
 } from "react-icons/fa"
 import type { PluginSettings } from "../lib/store"
 import { KNOWN_HARDWARE_SLUGS } from "@deckyvault/shared"
-import { testApiKey, checkMangohud, writeMangohudConfig, getMangohudConfig } from "../lib/api"
+import { testApiKey, checkMangohud, writeMangohudConfig, exportConfig, importConfig } from "../lib/api"
 
 interface SettingsPanelProps {
   settings: PluginSettings
@@ -26,8 +28,8 @@ interface SettingsPanelProps {
 }
 
 const HARDWARE_OPTIONS = [
-  { label: "Auto-detect", value: "" },
-  ...KNOWN_HARDWARE_SLUGS.map((slug) => ({ label: slug, value: slug })),
+  { label: "Auto-detect", data: "" },
+  ...KNOWN_HARDWARE_SLUGS.map((slug) => ({ label: slug, data: slug })),
 ]
 
 export default function SettingsPanel({
@@ -42,8 +44,8 @@ export default function SettingsPanel({
     path: string
     version: string
   }>({ checked: false, installed: false, path: "", version: "" })
-  const [showMangohudGuide, setShowMangohudGuide] = useState(false)
   const [configWritten, setConfigWritten] = useState(false)
+  const [configStatus, setConfigStatus] = useState<{ message: string; isError: boolean } | null>(null)
 
   async function handleTestKey() {
     if (!settings.apiKey) {
@@ -76,6 +78,30 @@ export default function SettingsPanel({
   async function handleWriteConfig() {
     const result = await writeMangohudConfig()
     setConfigWritten(result.success)
+  }
+
+  async function handleExportConfig() {
+    setConfigStatus(null)
+    const result = await exportConfig(settings)
+    if (result.success) {
+      setConfigStatus({ message: `Config saved to ${result.path}`, isError: false })
+    } else {
+      setConfigStatus({ message: result.error || "Export failed", isError: true })
+    }
+  }
+
+  async function handleImportConfig() {
+    setConfigStatus(null)
+    const result = await importConfig()
+    if (result.success && result.settings) {
+      onUpdateSetting("apiKey", result.settings.apiKey || "")
+      onUpdateSetting("exportPath", result.settings.exportPath || "/home/deck/Downloads")
+      onUpdateSetting("baseUrl", result.settings.baseUrl || "https://deckyvault.xyz")
+      onUpdateSetting("hardwareSlug", result.settings.hardwareSlug || null)
+      setConfigStatus({ message: "Config imported from Downloads", isError: false })
+    } else {
+      setConfigStatus({ message: result.error || "No config file found in Downloads", isError: true })
+    }
   }
 
   return (
@@ -152,6 +178,40 @@ export default function SettingsPanel({
         </PanelSectionRow>
       </PanelSection>
 
+      {/* ── Config Export/Import ────────────────────────────────── */}
+      <PanelSection title="Configuration">
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={handleExportConfig}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <FaFileExport />
+              Export Config to Downloads
+            </div>
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={handleImportConfig}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <FaFileImport />
+              Import Config from Downloads
+            </div>
+          </ButtonItem>
+        </PanelSectionRow>
+        {configStatus && (
+          <PanelSectionRow>
+            <div
+              className={staticClasses.Text}
+              style={{
+                fontSize: "12px",
+                padding: "4px 0",
+                color: configStatus.isError ? "#e74c3c" : "#2ecc71",
+              }}
+            >
+              {configStatus.isError ? <FaTimes /> : <FaCheck />} {configStatus.message}
+            </div>
+          </PanelSectionRow>
+        )}
+      </PanelSection>
+
       {/* ── MangoHud Setup ──────────────────────────────────────── */}
       <PanelSection title="MangoHud Setup">
         <PanelSectionRow>
@@ -205,53 +265,45 @@ export default function SettingsPanel({
         )}
 
         <PanelSectionRow>
-          <ButtonItem layout="below" onClick={() => setShowMangohudGuide(!showMangohudGuide)}>
-            {showMangohudGuide ? "Hide Guide" : "Show Installation Guide"}
-          </ButtonItem>
+          <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px", lineHeight: "1.6" }}>
+            <strong>Steam Deck (SteamOS):</strong>
+            <br />
+            MangoHud is pre-installed. Enable it per-game by adding
+            <code style={{ display: "block", margin: "4px 0", padding: "4px", background: "rgba(255,255,255,0.1)" }}>
+              mangohud %command%
+            </code>
+            to the game's Steam launch options (right-click game → Properties → Launch Options).
+
+            <br /><br />
+            <strong>Other Linux handhelds</strong> (ROG Ally, Legion Go):
+            <br />
+            Install via package manager:
+            <code style={{ display: "block", margin: "4px 0", padding: "4px", background: "rgba(255,255,255,0.1)" }}>
+              sudo apt install mangohud
+            </code>
+            or Flatpak:
+            <code style={{ display: "block", margin: "4px 0", padding: "4px", background: "rgba(255,255,255,0.1)" }}>
+              flatpak install flathub org.freedesktop.Platform.VulkanLayer.MangoHud
+            </code>
+
+            <br /><br />
+            <strong>Manual build:</strong>
+            <br />
+            See{" "}
+            <a href="https://github.com/flightlessmango/MangoHud" style={{ color: "#66c0f4" }}>
+              github.com/flightlessmango/MangoHud
+            </a>
+
+            <br /><br />
+            <strong>Troubleshooting:</strong>
+            <br />
+            • Log file empty? Check MangoHud is enabled for the game and the config was written.
+            <br />
+            • Wrong path? Ensure the plugin can write to /tmp/.
+            <br />
+            • Not attaching? Try adding <code>mangohud %command%</code> to Steam launch options explicitly.
+          </div>
         </PanelSectionRow>
-
-        {showMangohudGuide && (
-          <PanelSectionRow>
-            <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px", lineHeight: "1.6" }}>
-              <strong>Steam Deck (SteamOS):</strong>
-              <br />
-              MangoHud is pre-installed. Enable it per-game by adding
-              <code style={{ display: "block", margin: "4px 0", padding: "4px", background: "rgba(255,255,255,0.1)" }}>
-                mangohud %command%
-              </code>
-              to the game's Steam launch options (right-click game → Properties → Launch Options).
-
-              <br /><br />
-              <strong>Other Linux handhelds</strong> (ROG Ally, Legion Go):
-              <br />
-              Install via package manager:
-              <code style={{ display: "block", margin: "4px 0", padding: "4px", background: "rgba(255,255,255,0.1)" }}>
-                sudo apt install mangohud
-              </code>
-              or Flatpak:
-              <code style={{ display: "block", margin: "4px 0", padding: "4px", background: "rgba(255,255,255,0.1)" }}>
-                flatpak install flathub org.freedesktop.Platform.VulkanLayer.MangoHud
-              </code>
-
-              <br /><br />
-              <strong>Manual build:</strong>
-              <br />
-              See{" "}
-              <a href="https://github.com/flightlessmango/MangoHud" style={{ color: "#66c0f4" }}>
-                github.com/flightlessmango/MangoHud
-              </a>
-
-              <br /><br />
-              <strong>Troubleshooting:</strong>
-              <br />
-              • Log file empty? Check MangoHud is enabled for the game and the config was written.
-              <br />
-              • Wrong path? Ensure the plugin can write to /tmp/.
-              <br />
-              • Not attaching? Try adding <code>mangohud %command%</code> to Steam launch options explicitly.
-            </div>
-          </PanelSectionRow>
-        )}
       </PanelSection>
     </>
   )

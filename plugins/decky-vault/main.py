@@ -414,3 +414,37 @@ benchmark_percentiles=97,AVG,1,0.1
             return {"valid": False, "error": f"Network error: {str(e.reason)}"}
         except Exception as e:
             return {"valid": False, "error": str(e)}
+
+    async def export_config(self, settings: dict) -> dict:
+        """RPC: Export current settings to Downloads/deckyvault-config.json.
+        Returns {success: bool, path?: str, error?: str}."""
+        try:
+            home = os.path.expanduser("~")
+            config_path = os.path.join(home, "Downloads", "deckyvault-config.json")
+            with open(config_path, 'w') as f:
+                json.dump(settings, f, indent=2)
+            return {"success": True, "path": config_path}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def import_config(self) -> dict:
+        """RPC: Import settings from the latest deckyvault-config.json in Downloads.
+        Returns {success: bool, settings?: dict, error?: str}."""
+        try:
+            home = os.path.expanduser("~")
+            config_path = os.path.join(home, "Downloads", "deckyvault-config.json")
+            if not os.path.exists(config_path):
+                return {"success": False, "error": "No deckyvault-config.json found in Downloads"}
+            with open(config_path, 'r') as f:
+                settings = json.load(f)
+            return {
+                "success": True,
+                "settings": {
+                    "apiKey": settings.get("apiKey", ""),
+                    "exportPath": settings.get("exportPath", "/home/deck/Downloads"),
+                    "baseUrl": settings.get("baseUrl", "https://deckyvault.xyz"),
+                    "hardwareSlug": settings.get("hardwareSlug", None),
+                }
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}

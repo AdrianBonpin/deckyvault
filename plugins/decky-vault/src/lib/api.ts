@@ -74,3 +74,26 @@ export const testApiKey = callable<[apiKey: string, baseUrl?: string], {
   valid: boolean
   error?: string
 }>("test_api_key")
+
+// ── Config Export/Import ────────────────────────────────────────
+export const exportConfig = callable<[settings: {
+  apiKey: string
+  exportPath: string
+  baseUrl: string
+  hardwareSlug: string | null
+}], {
+  success: boolean
+  path?: string
+  error?: string
+}>("export_config")
+
+export const importConfig = callable<[], {
+  success: boolean
+  settings?: {
+    apiKey: string
+    exportPath: string
+    baseUrl: string
+    hardwareSlug: string | null
+  }
+  error?: string
+}>("import_config")
