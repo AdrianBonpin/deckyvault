@@ -1,30 +1,26 @@
-// Decky Loader API type declarations
-// These mirror the APIs available in the Steam Deck game mode CEF context
+// Steam Deck CEF context globals — these are Valve's internal APIs,
+// available in the Steam Deck game mode browser context.
+// Not part of @decky/api; accessed directly from the global scope.
 
 declare global {
-  const DeckyPlugin: {
-    log: (...args: unknown[]) => void
-    debug: (...args: unknown[]) => void
-    info: (...args: unknown[]) => void
-    error: (...args: unknown[]) => void
-  }
-
   const SteamClient: {
     Apps: {
-      GetAppData: (appId: number) => Promise<{
-        strAppName: string
-        strShortcutName: string
-        strExePath: string
-      }>
       RegisterForGameStarted: (
         callback: (appId: number) => void,
       ) => { unregister: () => void }
       RegisterForGameStopped: (
         callback: (appId: number) => void,
       ) => { unregister: () => void }
+      GetCurrentGameInfo: () => Promise<{
+        appId: number
+        strAppName: string
+      }>
     }
     System: {
       GetOSVersion: () => Promise<string>
+    }
+    UI: {
+      GetUIMode: () => Promise<number>
     }
   }
 }

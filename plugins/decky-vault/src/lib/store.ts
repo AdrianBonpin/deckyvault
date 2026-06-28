@@ -1,0 +1,225 @@
+import { useState, useEffect, useCallback, useRef } from "react"
+import type { DeckyVaultImportV1, HardwareSlug } from "@deckyvault/shared"
+import { getSettings, setSetting } from "./api"
+
+// ── Types ───────────────────────────────────────────────────────
+
+export interface PluginSettings {
+  apiKey: string
+  exportPath: string
+  hardwareSlug: string | null  // null = auto-detect
+  baseUrl: string
+}
+
+const DEFAULT_SETTINGS: PluginSettings = {
+  apiKey: "",
+  exportPath: "/home/deck/Downloads",
+  hardwareSlug: null,
+  baseUrl: "https://deckyvault.xyz",
+}
+
+export type RecordingState = "idle" | "recording" | "stopped"
+
+export interface SessionData {
+  appId: number | null
+  gameName: string
+  startedAt: number
+  // Auto-captured (filled after stop)
+  fpsAvg: number | null
+  fpsLow: number | null
+  fpsHigh: number | null
+  fpsOnePercentLow: number | null
+  tdpWatts: number | null
+  hardwareSlug: string
+  hardwareName: string
+  osVersion: string
+  protonVersion: string
+  // Manual inputs (filled by user in the form)
+  upscalerType: string
+  upscalerVersion: string
+  frameGenMethod: string
+  settingsJson: string
+  loadTimeSsd: string
+  loadTimeSd: string
+  launchOptions: string
+  userNotes: string
+}
+
+export interface RecentSession {
+  appId: number | null
+  gameName: string
+  fpsAvg: number | null
+  date: string  // ISO string
+}
+
+function createEmptySession(): SessionData {
+  return {
+    appId: null,
+    gameName: "",
+    startedAt: 0,
+    fpsAvg: null,
+    fpsLow: null,
+    fpsHigh: null,
+    fpsOnePercentLow: null,
+    tdpWatts: null,
+    hardwareSlug: "",
+    hardwareName: "",
+    osVersion: "",
+    protonVersion: "",
+    upscalerType: "none",
+    upscalerVersion: "",
+    frameGenMethod: "none",
+    settingsJson: "",
+    loadTimeSsd: "",
+    loadTimeSd: "",
+    launchOptions: "",
+    userNotes: "",
+  }
+}
+
+// ── Settings Hook ───────────────────────────────────────────────
+
+export function useSettings() {
+  const [settings, setSettings] = useState<PluginSettings>(DEFAULT_SETTINGS)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const raw = await getSettings()
+        setSettings({
+          apiKey: (raw.apiKey as string) || "",
+          exportPath: (raw.exportPath as string) || DEFAULT_SETTINGS.exportPath,
+          hardwareSlug: (raw.hardwareSlug as string) || null,
+          baseUrl: (raw.baseUrl as string) || DEFAULT_SETTINGS.baseUrl,
+        })
+      } catch (e) {
+        console.error("Failed to load settings:", e)
+      } finally {
+        setLoaded(true)
+      }
+    }
+    load()
+  }, [])
+
+  const updateSetting = useCallback(async (key: keyof PluginSettings, value: string | null) => {
+    setSettings((prev) => ({ ...prev, [key]: value }))
+    try {
+      await setSetting(key, value)
+    } catch (e) {
+      console.error(`Failed to save setting ${key}:`, e)
+    }
+  }, [])
+
+  return { settings, updateSetting, loaded }
+}
+
+// ── Session Hook ────────────────────────────────────────────────
+
+export function useSession() {
+  const [recordingState, setRecordingState] = useState<RecordingState>("idle")
+  const [session, setSession] = useState<SessionData>(createEmptySession())
+  const [recentSessions, setRecentSessions] = useState<RecentSession[]>([])
+  const [error, setError] = useState<string>("")
+  const currentAppIdRef = useRef<number | null>(null)
+  const currentAppNameRef = useRef<string>("")
+
+  const startRecording = useCallback(() => {
+    setError("")
+    setSession({
+      ...createEmptySession(),
+      appId: currentAppIdRef.current,
+      gameName: currentAppNameRef.current,
+      startedAt: Date.now(),
+    })
+    setRecordingState("recording")
+  }, [])
+
+  const stopRecording = useCallback(() => {
+    setRecordingState("stopped")
+  }, [])
+
+  const updateSession = useCallback((updates: Partial<SessionData>) => {
+    setSession((prev) => ({ ...prev, ...updates }))
+  }, [])
+
+  const addToRecent = useCallback((sess: SessionData) => {
+    const recent: RecentSession = {
+      appId: sess.appId,
+      gameName: sess.gameName,
+      fpsAvg: sess.fpsAvg,
+      date: new Date().toISOString(),
+    }
+    setRecentSessions((prev) => [recent, ...prev].slice(0, 5))
+  }, [])
+
+  const reset = useCallback(() => {
+    setRecordingState("idle")
+    setSession(createEmptySession())
+    setError("")
+  }, [])
+
+  // Called when a game starts (via SteamClient event)
+  const onGameStart = useCallback((appId: number, gameName: string) => {
+    currentAppIdRef.current = appId
+    currentAppNameRef.current = gameName
+  }, [])
+
+  // Called when a game stops (via SteamClient event)
+  const onGameStop = useCallback(() => {
+    currentAppIdRef.current = null
+    currentAppNameRef.current = ""
+  }, [])
+
+  return {
+    recordingState,
+    session,
+    recentSessions,
+    error,
+    setError,
+    startRecording,
+    stopRecording,
+    updateSession,
+    addToRecent,
+    reset,
+    onGameStart,
+    onGameStop,
+  }
+}
+
+// ── Payload Builder ─────────────────────────────────────────────
+
+export function buildImportPayload(sess: SessionData): DeckyVaultImportV1 {
+  return {
+    version: 1,
+    steamAppId: sess.appId ?? 0,
+    hardwareSlug: sess.hardwareSlug,
+    fpsAvg: sess.fpsAvg ?? 0,
+    fpsLow: sess.fpsLow,
+    fpsOnePercentLow: sess.fpsOnePercentLow,
+    fpsHigh: sess.fpsHigh,
+    protonVersion: sess.protonVersion || null,
+    osVersion: sess.osVersion || null,
+    upscalerType: sess.upscalerType,
+    upscalerVersion: sess.upscalerVersion || null,
+    frameGenMethod: sess.frameGenMethod,
+    tdpWatts: sess.tdpWatts,
+    loadTimeSsd: sess.loadTimeSsd ? Number(sess.loadTimeSsd) : null,
+    loadTimeSd: sess.loadTimeSd ? Number(sess.loadTimeSd) : null,
+    launchOptions: sess.launchOptions || null,
+    settingsJson: sess.settingsJson ? tryParseJson(sess.settingsJson) : null,
+    userNotes: sess.userNotes || null,
+  }
+}
+
+function tryParseJson(text: string): unknown[] | null {
+  try {
+    const parsed = JSON.parse(text)
+    return Array.isArray(parsed) ? parsed : [parsed]
+  } catch {
+    return [{ text }]
+  }
+}
+
+export { DEFAULT_SETTINGS }
+export type { HardwareSlug }

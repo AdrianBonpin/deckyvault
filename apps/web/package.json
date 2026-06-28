@@ -37,7 +37,7 @@
     "@tiptap/pm": "^3.22.4",
     "@tiptap/react": "^3.22.4",
     "@tiptap/starter-kit": "^3.22.4",
-    "better-auth": "^1.6.9",
+    "better-auth": "^1.6.22",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "echarts": "^6.0.0",
@@ -59,7 +59,8 @@
     "resend": "^6.12.2",
     "serwist": "^9.5.11",
     "sharp": "^0.34.5",
-    "web-haptics": "^0.0.6"
+    "web-haptics": "^0.0.6",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
