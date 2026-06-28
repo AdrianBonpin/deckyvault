@@ -33,10 +33,20 @@ export const readAndParseMangohudLog = callable<[logPath?: string], {
   error?: string
 }>("read_and_parse_mangohud_log")
 
-export const clearMangohudLog = callable<[logPath?: string], {
+export const clearMangohudLog = callable<[], {
   success: boolean
   error?: string
 }>("clear_mangohud_log")
+
+export const startMangohudLogging = callable<[], {
+  success: boolean
+  error?: string
+}>("start_mangohud_logging")
+
+export const stopMangohudLogging = callable<[], {
+  success: boolean
+  error?: string
+}>("stop_mangohud_logging")
 
 // ── System Info ─────────────────────────────────────────────────
 export const getHardwareInfo = callable<[], {

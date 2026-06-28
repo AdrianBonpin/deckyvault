@@ -192,7 +192,6 @@ class Plugin:
 # DeckyVault MangoHud logging config
 output_folder=/tmp
 output_file=deckyvault-mangohud.log
-autostart_log=0
 fps
 frame_timing
 cpu_power
@@ -216,6 +215,40 @@ benchmark_percentiles=97,AVG,1,0.1
             with open(config_path, 'r') as f:
                 return {"exists": True, "content": f.read(), "path": config_path}
         return {"exists": False, "content": "", "path": config_path}
+
+    async def start_mangohud_logging(self) -> dict:
+        """RPC: Start MangoHud logging via mangohudctl."""
+        import subprocess
+        try:
+            result = subprocess.run(
+                ["mangohudctl", "set", "log_session", "true"],
+                capture_output=True, text=True, timeout=5
+            )
+            if result.returncode == 0:
+                return {"success": True}
+            else:
+                return {"success": False, "error": result.stderr.strip() or "mangohudctl failed"}
+        except FileNotFoundError:
+            return {"success": False, "error": "mangohudctl not found. Is MangoHud running?"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def stop_mangohud_logging(self) -> dict:
+        """RPC: Stop MangoHud logging via mangohudctl."""
+        import subprocess
+        try:
+            result = subprocess.run(
+                ["mangohudctl", "set", "log_session", "false"],
+                capture_output=True, text=True, timeout=5
+            )
+            if result.returncode == 0:
+                return {"success": True}
+            else:
+                return {"success": False, "error": result.stderr.strip() or "mangohudctl failed"}
+        except FileNotFoundError:
+            return {"success": False, "error": "mangohudctl not found. Is MangoHud running?"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
     async def _find_mangohud_log(self) -> str | None:
         """Find the most recent MangoHud log file in /tmp/.

@@ -9,12 +9,13 @@ import {
 } from "@decky/api"
 import { FaChartLine } from "react-icons/fa"
 import MainPanel from "./components/main-panel"
-import SettingsPanel from "./components/settings-panel"
 import { useSettings, useSession } from "./lib/store"
 import {
   readAndParseMangohudLog,
   clearMangohudLog,
   writeMangohudConfig,
+  startMangohudLogging,
+  stopMangohudLogging,
   getHardwareInfo,
   getOsVersion,
   getProtonVersion,
@@ -71,16 +72,20 @@ function Content() {
 
   // ── Handle start recording ────────────────────────────────────
   async function handleStart() {
-    // Write MangoHud config with autostart_log so logging begins immediately
+    // Write MangoHud config with logging settings
     await writeMangohudConfig()
     // Clear any previous log file
     await clearMangohudLog()
+    // Start MangoHud logging via mangohudctl
+    await startMangohudLogging()
     startRecording()
   }
 
   // ── Handle stop recording: parse log + read system info ────────
   async function handleStop() {
     try {
+      // Stop MangoHud logging via mangohudctl
+      await stopMangohudLogging()
       stopRecording()
 
       // Parse the MangoHud log
@@ -161,9 +166,6 @@ function Content() {
         onReset={reset}
         setError={setError}
         setGameName={setGameName}
-      />
-      <SettingsPanel
-        settings={settings}
         onUpdateSetting={updateSetting}
       />
     </>
