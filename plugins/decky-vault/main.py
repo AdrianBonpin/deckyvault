@@ -186,12 +186,11 @@ class Plugin:
             os.makedirs(config_dir, exist_ok=True)
 
             # MangoHud config that enables logging with the metrics we need.
-            # output_folder is required for logging to work.
-            # We log to /tmp so the plugin can read it after the session.
+            # autostart_log starts logging immediately when MangoHud initializes.
             config_content = """\
 # DeckyVault MangoHud logging config
 output_folder=/tmp
-output_file=deckyvault-mangohud.log
+autostart_log=0
 fps
 frame_timing
 cpu_power
@@ -254,21 +253,20 @@ benchmark_percentiles=97,AVG,1,0.1
         """Find the most recent MangoHud log file in /tmp/.
         MangoHud creates log files with the game name and timestamp."""
         import glob
-        # Look for any CSV or log files in /tmp that might be MangoHud logs
         candidates = []
-        for pattern in ["/tmp/*.csv", "/tmp/*.log", "/tmp/MangoHud*"]:
+        # MangoHud log files are typically .csv or have MangoHud in the name
+        for pattern in ["/tmp/*MangoHud*", "/tmp/*.csv", "/tmp/*.log"]:
             for f in glob.glob(pattern):
-                # Skip our own known file
-                if "deckyvault" in f:
-                    candidates.append(f)
+                # Skip directories
+                if os.path.isdir(f):
                     continue
-                # Check if the file starts with a MangoHud header
+                # Check if it looks like a MangoHud log (has fps/frametime header)
                 try:
                     with open(f, 'r') as fh:
-                        first_line = fh.readline()
-                        if 'MangoHud' in first_line or 'fps' in first_line.lower():
+                        first_lines = "".join(fh.readline() for _ in range(5))
+                        if 'fps' in first_lines.lower() or 'MangoHud' in first_lines:
                             candidates.append(f)
-                except (IOError, UnicodeDecodeError):
+                except (IOError, UnicodeDecodeError, PermissionError):
                     pass
         if not candidates:
             return None
@@ -299,12 +297,13 @@ benchmark_percentiles=97,AVG,1,0.1
         """RPC: Delete all MangoHud log files in /tmp/ so the next recording starts fresh."""
         import glob
         try:
-            for pattern in ["/tmp/*.csv", "/tmp/*.log", "/tmp/MangoHud*"]:
+            for pattern in ["/tmp/*MangoHud*", "/tmp/*.csv", "/tmp/*.log"]:
                 for f in glob.glob(pattern):
-                    try:
-                        os.remove(f)
-                    except (IOError, PermissionError):
-                        pass
+                    if os.path.isfile(f):
+                        try:
+                            os.remove(f)
+                        except (IOError, PermissionError):
+                            pass
             return {"success": True}
         except Exception as e:
             return {"success": False, "error": str(e)}

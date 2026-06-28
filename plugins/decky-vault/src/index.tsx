@@ -14,8 +14,6 @@ import {
   readAndParseMangohudLog,
   clearMangohudLog,
   writeMangohudConfig,
-  startMangohudLogging,
-  stopMangohudLogging,
   getHardwareInfo,
   getOsVersion,
   getProtonVersion,
@@ -72,20 +70,16 @@ function Content() {
 
   // ── Handle start recording ────────────────────────────────────
   async function handleStart() {
-    // Write MangoHud config with logging settings
+    // Write MangoHud config with autostart_log so logging begins on game launch
     await writeMangohudConfig()
     // Clear any previous log file
     await clearMangohudLog()
-    // Start MangoHud logging via mangohudctl
-    await startMangohudLogging()
     startRecording()
   }
 
   // ── Handle stop recording: parse log + read system info ────────
   async function handleStop() {
     try {
-      // Stop MangoHud logging via mangohudctl
-      await stopMangohudLogging()
       stopRecording()
 
       // Parse the MangoHud log
