@@ -435,46 +435,36 @@ exec mangohud "$@"
         import subprocess
         import re
 
-        # Method 1: Check for Steam game processes by looking at cmdline
-        # Steam games run under Proton, so we look for the game's .exe in cmdline
+        home = os.path.expanduser("~")
+        steam_path = os.path.join(home, ".steam", "steam")
+        compat_dir = os.path.join(steam_path, "steamapps", "compatdata")
+
+        # Get all running PIDs and their cmdlines
         try:
             r = subprocess.run(
                 ["ps", "-eo", "pid,args", "--no-headers"],
                 capture_output=True, text=True, timeout=3
             )
-            if r.returncode == 0:
-                for line in r.stdout.split('\n'):
-                    # Look for Proton game processes (contain .exe)
-                    if '.exe' in line.lower() and 'proton' in line.lower():
-                        # Extract game name from path
-                        m = re.search(r'/([^/]+)\.exe', line, re.IGNORECASE)
-                        if m:
-                            return {"appId": None, "name": m.group(1)}
-                    # Also check for native Linux games
-                    if 'gameoverlayrenderer' in line and 'steamapps/common' in line:
-                        m = re.search(r'steamapps/common/([^/]+)', line)
-                        if m:
-                            return {"appId": None, "name": m.group(1)}
+            if r.returncode != 0:
+                return {"appId": None, "name": ""}
+            all_procs = r.stdout
         except:
-            pass
+            return {"appId": None, "name": ""}
 
-        # Method 2: Check Steam's running game state via appmanifest
-        try:
-            home = os.path.expanduser("~")
-            steam_path = os.path.join(home, ".steam", "steam")
-            # Check if any compatdata directories have active processes
-            compat_dir = os.path.join(steam_path, "steamapps", "compatdata")
-            if os.path.exists(compat_dir):
-                for app_id_str in os.listdir(compat_dir):
-                    if not app_id_str.isdigit():
-                        continue
-                    # Check if this app has a running process
+        # Check each compatdata directory for running processes
+        if os.path.exists(compat_dir):
+            for app_id_str in sorted(os.listdir(compat_dir), reverse=True):
+                if not app_id_str.isdigit():
+                    continue
+                # Check if this app has a running process by searching for the app ID
+                # in the process tree (Steam runtime includes app ID in some form)
+                try:
                     r = subprocess.run(
                         ["pgrep", "-f", app_id_str],
                         capture_output=True, timeout=2
                     )
                     if r.returncode == 0:
-                        # Found a running game! Get its name from appmanifest
+                        # Found a running game! Get its proper name from appmanifest
                         manifest_path = os.path.join(steam_path, "steamapps", f"appmanifest_{app_id_str}.acf")
                         if os.path.exists(manifest_path):
                             with open(manifest_path, 'r') as f:
@@ -483,8 +473,15 @@ exec mangohud "$@"
                             if m:
                                 return {"appId": int(app_id_str), "name": m.group(1)}
                         return {"appId": int(app_id_str), "name": f"App {app_id_str}"}
-        except:
-            pass
+                except:
+                    continue
+
+        # Fallback: extract name from .exe path
+        for line in all_procs.split('\n'):
+            if '.exe' in line.lower() and 'proton' in line.lower():
+                m = re.search(r'/([^/]+)\.exe', line, re.IGNORECASE)
+                if m:
+                    return {"appId": None, "name": m.group(1)}
 
         return {"appId": None, "name": ""}
 
