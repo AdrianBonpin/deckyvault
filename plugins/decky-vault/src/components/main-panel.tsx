@@ -306,6 +306,14 @@ export default function MainPanel({
             </div>
           </PanelSectionRow>
         )}
+        {session.gameName && (
+          <PanelSectionRow>
+            <div className={staticClasses.Text} style={{ fontSize: "13px", padding: "4px 0" }}>
+              <strong>Game:</strong> {session.gameName}
+              {session.appId && <> <strong>App ID:</strong> {session.appId}</>}
+            </div>
+          </PanelSectionRow>
+        )}
         <PanelSectionRow>
           <ButtonItem layout="below" onClick={handleTestKey} disabled={keyTestStatus === "testing"}>
             {keyTestStatus === "testing" ? "Testing..." : "Test API Key"}
