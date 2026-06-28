@@ -156,34 +156,25 @@ class Plugin:
 
     async def check_mangohud(self) -> dict:
         """RPC: Check if MangoHud is installed. Returns {installed: bool, path: str, version: str}."""
-        import subprocess
+        import subprocess as sp
+        import os
         try:
-            result = subprocess.run(
-                ["which", "mangohud"],
-                capture_output=True, text=True, timeout=5
-            )
-            if result.returncode == 0:
-                mangohud_path = result.stdout.strip()
-                # Get version
-                version_result = subprocess.run(
-                    ["mangohud", "--version"],
-                    capture_output=True, text=True, timeout=5
-                )
-                version = version_result.stdout.strip() if version_result.returncode == 0 else "unknown"
-                # Clean up version string (remove git hash suffix)
-                if version and "-" in version:
-                    version = version.split("-")[0]
-                # Fallback: try with full path if first attempt failed
-                if version == "unknown" and mangohud_path:
-                    try:
-                        v2 = subprocess.run([mangohud_path, "--version"], capture_output=True, text=True, timeout=5)
-                        if v2.returncode == 0:
-                            version = v2.stdout.strip().split("-")[0]
-                    except:
-                        pass
-                return {"installed": True, "path": mangohud_path, "version": version}
-            else:
-                return {"installed": False, "path": "", "version": ""}
+            # Use the full path to avoid PATH issues
+            mangohud_path = "/usr/bin/mangohud"
+            if not os.path.exists(mangohud_path):
+                # Fall back to which
+                r = sp.run(["which", "mangohud"], capture_output=True, text=True, timeout=5)
+                if r.returncode != 0:
+                    return {"installed": False, "path": "", "version": ""}
+                mangohud_path = r.stdout.strip()
+
+            # Get version using the full path
+            v = sp.run([mangohud_path, "--version"], capture_output=True, text=True, timeout=5)
+            version = v.stdout.strip() if v.returncode == 0 else ""
+            if version and "-" in version:
+                version = version.split("-")[0]
+
+            return {"installed": True, "path": mangohud_path, "version": version or ""}
         except Exception as e:
             return {"installed": False, "path": "", "version": "", "error": str(e)}
 
