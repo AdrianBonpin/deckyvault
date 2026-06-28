@@ -173,6 +173,14 @@ class Plugin:
                 # Clean up version string (remove git hash suffix)
                 if version and "-" in version:
                     version = version.split("-")[0]
+                # Fallback: try with full path if first attempt failed
+                if version == "unknown" and mangohud_path:
+                    try:
+                        v2 = subprocess.run([mangohud_path, "--version"], capture_output=True, text=True, timeout=5)
+                        if v2.returncode == 0:
+                            version = v2.stdout.strip().split("-")[0]
+                    except:
+                        pass
                 return {"installed": True, "path": mangohud_path, "version": version}
             else:
                 return {"installed": False, "path": "", "version": ""}
