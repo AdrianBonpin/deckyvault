@@ -3,8 +3,8 @@ import {
   ButtonItem,
   PanelSection,
   PanelSectionRow,
-  Field,
   DropdownItem,
+  TextField,
   staticClasses,
 } from "@decky/ui"
 import {
@@ -138,15 +138,12 @@ export default function SessionForm({
         </PanelSectionRow>
 
         <PanelSectionRow>
-          <Field label="Upscaler Version" bottomSeparator="none">
-            <input
-              type="text"
-              value={session.upscalerVersion}
-              onChange={(e) => onUpdateSession({ upscalerVersion: e.target.value })}
-              placeholder="e.g. 2.4"
-              style={{ width: "100%", padding: "4px 8px" }}
-            />
-          </Field>
+          <TextField
+            label="Upscaler Version"
+            value={session.upscalerVersion}
+            onChange={(e) => onUpdateSession({ upscalerVersion: e.target.value })}
+            placeholder="e.g. 2.4"
+          />
         </PanelSectionRow>
 
         <PanelSectionRow>
@@ -171,39 +168,32 @@ export default function SessionForm({
         </PanelSectionRow>
 
         <PanelSectionRow>
-          <Field label="Load Time - SSD (seconds)" bottomSeparator="none">
-            <input
-              type="number"
-              value={session.loadTimeSsd}
-              onChange={(e) => onUpdateSession({ loadTimeSsd: e.target.value })}
-              placeholder="e.g. 12.5"
-              style={{ width: "100%", padding: "4px 8px" }}
-            />
-          </Field>
+          <TextField
+            label="Load Time - SSD (seconds)"
+            value={session.loadTimeSsd}
+            onChange={(e) => onUpdateSession({ loadTimeSsd: e.target.value })}
+            placeholder="e.g. 12.5"
+            mustBeNumeric
+          />
         </PanelSectionRow>
 
         <PanelSectionRow>
-          <Field label="Load Time - SD Card (seconds)" bottomSeparator="none">
-            <input
-              type="number"
-              value={session.loadTimeSd}
-              onChange={(e) => onUpdateSession({ loadTimeSd: e.target.value })}
-              placeholder="e.g. 25.0"
-              style={{ width: "100%", padding: "4px 8px" }}
-            />
-          </Field>
+          <TextField
+            label="Load Time - SD Card (seconds)"
+            value={session.loadTimeSd}
+            onChange={(e) => onUpdateSession({ loadTimeSd: e.target.value })}
+            placeholder="e.g. 25.0"
+            mustBeNumeric
+          />
         </PanelSectionRow>
 
         <PanelSectionRow>
-          <Field label="Launch Options" bottomSeparator="none">
-            <input
-              type="text"
-              value={session.launchOptions}
-              onChange={(e) => onUpdateSession({ launchOptions: e.target.value })}
-              placeholder="e.g. mangohud %command%"
-              style={{ width: "100%", padding: "4px 8px" }}
-            />
-          </Field>
+          <TextField
+            label="Launch Options"
+            value={session.launchOptions}
+            onChange={(e) => onUpdateSession({ launchOptions: e.target.value })}
+            placeholder="e.g. mangohud %command%"
+          />
         </PanelSectionRow>
 
         <PanelSectionRow>

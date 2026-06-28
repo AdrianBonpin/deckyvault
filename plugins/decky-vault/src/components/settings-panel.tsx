@@ -3,8 +3,8 @@ import {
   ButtonItem,
   PanelSection,
   PanelSectionRow,
-  Field,
   DropdownItem,
+  TextField,
   staticClasses,
 } from "@decky/ui"
 import {
@@ -83,15 +83,13 @@ export default function SettingsPanel({
       {/* ── API Key ─────────────────────────────────────────────── */}
       <PanelSection title="DeckyVault Account">
         <PanelSectionRow>
-          <Field label="API Key" bottomSeparator="none">
-            <input
-              type="password"
-              value={settings.apiKey}
-              onChange={(e) => onUpdateSetting("apiKey", e.target.value)}
-              placeholder="dv_..."
-              style={{ width: "100%", padding: "4px 8px" }}
-            />
-          </Field>
+          <TextField
+            label="API Key"
+            value={settings.apiKey}
+            onChange={(e) => onUpdateSetting("apiKey", e.target.value)}
+            placeholder="dv_..."
+            bIsPassword
+          />
         </PanelSectionRow>
 
         <PanelSectionRow>
@@ -127,27 +125,21 @@ export default function SettingsPanel({
       {/* ── Export Path ─────────────────────────────────────────── */}
       <PanelSection title="Export">
         <PanelSectionRow>
-          <Field label="Export Path" bottomSeparator="none">
-            <input
-              type="text"
-              value={settings.exportPath}
-              onChange={(e) => onUpdateSetting("exportPath", e.target.value)}
-              placeholder="/home/deck/Downloads"
-              style={{ width: "100%", padding: "4px 8px" }}
-            />
-          </Field>
+          <TextField
+            label="Export Path"
+            value={settings.exportPath}
+            onChange={(e) => onUpdateSetting("exportPath", e.target.value)}
+            placeholder="/home/deck/Downloads"
+          />
         </PanelSectionRow>
 
         <PanelSectionRow>
-          <Field label="Server URL" bottomSeparator="none">
-            <input
-              type="text"
-              value={settings.baseUrl}
-              onChange={(e) => onUpdateSetting("baseUrl", e.target.value)}
-              placeholder="https://deckyvault.xyz"
-              style={{ width: "100%", padding: "4px 8px" }}
-            />
-          </Field>
+          <TextField
+            label="Server URL"
+            value={settings.baseUrl}
+            onChange={(e) => onUpdateSetting("baseUrl", e.target.value)}
+            placeholder="https://deckyvault.xyz"
+          />
         </PanelSectionRow>
 
         <PanelSectionRow>

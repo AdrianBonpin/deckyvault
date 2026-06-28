@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 import {
   PanelSection,
   PanelSectionRow,
-  ButtonItem,
   staticClasses,
 } from "@decky/ui"
 import {
@@ -37,7 +36,6 @@ function Content() {
     onGameStart,
     onGameStop,
   } = useSession()
-  const [activeTab, setActiveTab] = useState<"main" | "settings">("main")
   const gameStartedUnregRef = useRef<{ unregister: () => void } | null>(null)
   const gameStoppedUnregRef = useRef<{ unregister: () => void } | null>(null)
 
@@ -144,46 +142,23 @@ function Content() {
 
   return (
     <>
-      {/* ── Tab navigation ──────────────────────────────────────── */}
-      <PanelSection title="DeckyVault">
-        <PanelSectionRow>
-          <ButtonItem
-            layout="below"
-            onClick={() => setActiveTab("main")}
-          >
-            {activeTab === "main" ? "▶ Record" : "Record"}
-          </ButtonItem>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <ButtonItem
-            layout="below"
-            onClick={() => setActiveTab("settings")}
-          >
-            {activeTab === "settings" ? "▶ Settings" : "Settings"}
-          </ButtonItem>
-        </PanelSectionRow>
-      </PanelSection>
-
-      {activeTab === "main" ? (
-        <MainPanel
-          recordingState={recordingState}
-          session={session}
-          recentSessions={recentSessions}
-          error={error}
-          settings={settings}
-          onStart={handleStart}
-          onStop={handleStop}
-          onUpdateSession={updateSession}
-          onAddToRecent={addToRecent}
-          onReset={reset}
-          setError={setError}
-        />
-      ) : (
-        <SettingsPanel
-          settings={settings}
-          onUpdateSetting={updateSetting}
-        />
-      )}
+      <MainPanel
+        recordingState={recordingState}
+        session={session}
+        recentSessions={recentSessions}
+        error={error}
+        settings={settings}
+        onStart={handleStart}
+        onStop={handleStop}
+        onUpdateSession={updateSession}
+        onAddToRecent={addToRecent}
+        onReset={reset}
+        setError={setError}
+      />
+      <SettingsPanel
+        settings={settings}
+        onUpdateSetting={updateSetting}
+      />
     </>
   )
 }
