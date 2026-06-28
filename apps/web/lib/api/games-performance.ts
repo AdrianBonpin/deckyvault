@@ -8,7 +8,7 @@ import {
   gamePlatformSupport,
   entryScreenshots,
 } from "@/lib/db/schema"
-import { and, desc, eq, sql } from "drizzle-orm"
+import { and, desc, eq } from "drizzle-orm"
 import { getR2PublicUrl } from "@/lib/storage"
 
 /**
@@ -86,7 +86,6 @@ export const gamesPerformanceRoutes = new Elysia({
         and(
           eq(gameVersions.gameId, gameId),
           eq(performanceEntries.isRemoved, false),
-          sql`${performanceEntries.settingsJson} IS NOT NULL`,
         ),
       )
       .orderBy(
