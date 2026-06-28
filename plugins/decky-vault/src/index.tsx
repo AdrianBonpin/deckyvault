@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import {
   PanelSection,
   PanelSectionRow,
+  ButtonItem,
   staticClasses,
 } from "@decky/ui"
 import {
@@ -144,38 +145,24 @@ function Content() {
   return (
     <>
       {/* ── Tab navigation ──────────────────────────────────────── */}
-      <PanelSectionRow>
-        <div style={{ display: "flex", gap: "0", marginBottom: "8px" }}>
-          <button
+      <PanelSection title="DeckyVault">
+        <PanelSectionRow>
+          <ButtonItem
+            layout="below"
             onClick={() => setActiveTab("main")}
-            style={{
-              flex: 1,
-              padding: "8px",
-              background: activeTab === "main" ? "rgba(255,255,255,0.15)" : "transparent",
-              border: "none",
-              color: activeTab === "main" ? "#fff" : "rgba(255,255,255,0.5)",
-              cursor: "pointer",
-              borderRadius: "4px 0 0 4px",
-            }}
           >
-            Record
-          </button>
-          <button
+            {activeTab === "main" ? "▶ Record" : "Record"}
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem
+            layout="below"
             onClick={() => setActiveTab("settings")}
-            style={{
-              flex: 1,
-              padding: "8px",
-              background: activeTab === "settings" ? "rgba(255,255,255,0.15)" : "transparent",
-              border: "none",
-              color: activeTab === "settings" ? "#fff" : "rgba(255,255,255,0.5)",
-              cursor: "pointer",
-              borderRadius: "0 4px 4px 0",
-            }}
           >
-            Settings
-          </button>
-        </div>
-      </PanelSectionRow>
+            {activeTab === "settings" ? "▶ Settings" : "Settings"}
+          </ButtonItem>
+        </PanelSectionRow>
+      </PanelSection>
 
       {activeTab === "main" ? (
         <MainPanel
