@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import ssl
 
 try:
     import decky
@@ -349,7 +350,8 @@ benchmark_percentiles=97,AVG,1,0.1
                 method="POST"
             )
 
-            with urllib.request.urlopen(req, timeout=30) as response:
+            context = ssl._create_unverified_context()
+            with urllib.request.urlopen(req, timeout=30, context=context) as response:
                 status = response.status
                 body = response.read().decode('utf-8')
                 result = json.loads(body)
@@ -384,7 +386,8 @@ benchmark_percentiles=97,AVG,1,0.1
                 headers={"x-api-key": api_key},
                 method="GET"
             )
-            with urllib.request.urlopen(req, timeout=10) as response:
+            context = ssl._create_unverified_context()
+            with urllib.request.urlopen(req, timeout=10, context=context) as response:
                 # A 404 (game not found) still means the API key is valid
                 return {"valid": True}
         except urllib.error.HTTPError as e:
