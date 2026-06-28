@@ -7,6 +7,7 @@ import {
 import {
   definePlugin,
 } from "@decky/api"
+import { FaChartLine } from "react-icons/fa"
 import MainPanel from "./components/main-panel"
 import SettingsPanel from "./components/settings-panel"
 import { useSettings, useSession } from "./lib/store"
@@ -167,6 +168,8 @@ function DeckyVaultIcon() {
   return (
     <svg
       viewBox="0 0 2000 2000"
+      width="16"
+      height="16"
       xmlns="http://www.w3.org/2000/svg"
       style={{
         fillRule: "evenodd",
