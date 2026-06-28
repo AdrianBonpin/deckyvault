@@ -2,7 +2,7 @@ import { Elysia, t } from "elysia"
 import { createCrudRoutes } from "./crud-builder"
 import { performanceEntries, games, gameVersions, hardware, user, gamePlatformSupport, entryScreenshots, storageObjects } from "@/lib/db/schema"
 import { db } from "@/lib/db/index"
-import { eq, and, desc, sql } from "drizzle-orm"
+import { eq, and, desc, sql, inArray } from "drizzle-orm"
 import { requireRole } from "@/lib/auth/guard"
 import { checkAndAutoPin } from "./auto-pin"
 import { uploadObject, deleteObject, isR2Configured } from "@/lib/storage/r2-client"
@@ -415,7 +415,7 @@ export const performanceVerifyRoutes = new Elysia({
           .where(
             and(
               eq(entryScreenshots.entryId, params.id),
-              sql`${entryScreenshots.id} = ANY(${removedIds})`,
+              inArray(entryScreenshots.id, removedIds),
             ),
           )
 
@@ -429,7 +429,7 @@ export const performanceVerifyRoutes = new Elysia({
         // Delete the screenshot rows
         if (toRemove.length > 0) {
           await db.delete(entryScreenshots).where(
-            sql`${entryScreenshots.id} = ANY(${toRemove.map((s) => s.id)})`,
+            inArray(entryScreenshots.id, toRemove.map((s) => s.id)),
           )
         }
       }
@@ -531,7 +531,7 @@ export const performanceVerifyRoutes = new Elysia({
             .map((s) => s.id)
           if (oldIds.length > 0) {
             await db.delete(entryScreenshots).where(
-              sql`${entryScreenshots.id} = ANY(${oldIds})`
+              inArray(entryScreenshots.id, oldIds)
             )
           }
         }
