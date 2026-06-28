@@ -86,6 +86,11 @@ export const testApiKey = callable<[apiKey: string, baseUrl?: string], {
   error?: string
 }>("test_api_key")
 
+export const detectCurrentGame = callable<[], {
+  appId: number | null
+  name: string
+}>("detect_current_game")
+
 export const debugListTmp = callable<[], {
   files: Array<{ name: string; size: number; mtime: number }>
 }>("debug_list_tmp")

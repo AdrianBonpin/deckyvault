@@ -411,19 +411,62 @@ exec mangohud "$@"
             return "unknown"
 
     async def get_proton_version(self, app_id: int) -> str:
-        """RPC: Attempt to read the Proton version for a Steam app.
-        Reads from the Steam compatdata directory."""
+        """RPC: Read the Proton version for a Steam app from config_info."""
         try:
             home = os.path.expanduser("~")
-            # Steam compat data lives in ~/.steam/steam/steamapps/compatdata/<appid>/
-            compat_path = os.path.join(home, ".steam", "steam", "steamapps", "compatdata", str(app_id))
-            version_file = os.path.join(compat_path, "version")
-            if os.path.exists(version_file):
-                with open(version_file, 'r') as f:
-                    return f.read().strip()
+            config_path = os.path.join(home, ".steam", "steam", "steamapps", "compatdata", str(app_id), "config_info")
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    lines = f.readlines()
+                if len(lines) >= 2:
+                    proton_path = lines[1].strip()
+                    import re
+                    m = re.search(r'Proton[\s]+([\d.]+)', proton_path)
+                    if m:
+                        return m.group(1)
+                    return proton_path.split("/")[-1] if proton_path else ""
             return ""
         except (IOError, FileNotFoundError):
             return ""
+
+    async def detect_current_game(self) -> dict:
+        """RPC: Detect the currently running game by checking active window and processes.
+        Returns {appId: int?, name: str}."""
+        import subprocess
+        import re
+
+        # Method 1: Try xdotool to get active window title
+        try:
+            r = subprocess.run(
+                ["xdotool", "getactivewindow", "getwindowname"],
+                capture_output=True, text=True, timeout=3
+            )
+            if r.returncode == 0:
+                title = r.stdout.strip()
+                if title and title != "Steam" and "Steam" not in title:
+                    return {"appId": None, "name": title}
+        except:
+            pass
+
+        # Method 2: Check for Steam game processes
+        try:
+            r = subprocess.run(
+                ["ps", "-eo", "comm", "--no-headers"],
+                capture_output=True, text=True, timeout=3
+            )
+            if r.returncode == 0:
+                # Common game-related processes
+                game_procs = [p for p in r.stdout.split('\n') if p and p not in (
+                    'steam', 'steamwebhelper', 'steamservice', 'steamclient',
+                    'bash', 'python3', 'mangohud', 'gamescope', 'Xorg',
+                    'kwin_wayland', 'plasmashell', 'konsole', 'dolphin'
+                )]
+                if game_procs:
+                    return {"appId": None, "name": game_procs[0]}
+        except:
+            pass
+
+        return {"appId": None, "name": ""}
 
     async def get_launch_options(self, app_id: int) -> str:
         """RPC: Read launch options for a Steam app from localconfig.vdf.
@@ -493,6 +536,8 @@ exec mangohud "$@"
                 headers={
                     "Content-Type": "application/json",
                     "x-api-key": api_key,
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:136.0) Gecko/20100101 Firefox/136.0",
+                    "Accept": "application/json",
                 },
                 method="POST"
             )
@@ -532,7 +577,7 @@ exec mangohud "$@"
                 url,
                 headers={
                     "x-api-key": api_key,
-                    "User-Agent": "DeckyVaultPlugin/0.1",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:136.0) Gecko/20100101 Firefox/136.0",
                 },
                 method="GET"
             )
