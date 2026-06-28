@@ -183,16 +183,13 @@ class Plugin:
             return {"installed": False, "path": "", "version": "", "error": str(e)}
 
     async def write_mangohud_config(self) -> dict:
-        """RPC: Write the MangoHud logging config to ~/.config/MangoHud/MangoHud.conf.
-        Returns {success: bool, path: str, error: str?}."""
+        """RPC: Write the MangoHud logging config and a wrapper script."""
         try:
             home = os.path.expanduser("~")
             config_dir = os.path.join(home, ".config", "MangoHud")
             config_path = os.path.join(config_dir, "MangoHud.conf")
             os.makedirs(config_dir, exist_ok=True)
 
-            # MangoHud config that enables logging with the metrics we need.
-            # autostart_log starts logging immediately when MangoHud initializes.
             config_content = """\
 # DeckyVault MangoHud logging config
 output_folder=/tmp
@@ -209,7 +206,18 @@ benchmark_percentiles=97,AVG,1,0.1
             with open(config_path, 'w') as f:
                 f.write(config_content)
 
-            return {"success": True, "path": config_path}
+            # Write a wrapper script that forces MangoHud to use our config
+            wrapper_path = os.path.join(home, "deckyvault-mangohud.sh")
+            wrapper_content = """\
+#!/bin/bash
+export MANGOHUD_CONFIGFILE="$HOME/.config/MangoHud/MangoHud.conf"
+exec mangohud "$@"
+"""
+            with open(wrapper_path, 'w') as f:
+                f.write(wrapper_content)
+            os.chmod(wrapper_path, 0o755)
+
+            return {"success": True, "path": config_path, "wrapper": wrapper_path}
         except Exception as e:
             return {"success": False, "path": "", "error": str(e)}
 

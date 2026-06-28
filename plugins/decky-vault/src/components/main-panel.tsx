@@ -338,7 +338,7 @@ export default function MainPanel({
             fontSize: "14px",
             textAlign: "center",
           }}>
-            mangohud %command%
+            ~/deckyvault-mangohud.sh %command%
           </div>
         </PanelSectionRow>
         <PanelSectionRow>
