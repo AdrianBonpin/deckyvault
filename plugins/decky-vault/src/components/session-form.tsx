@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   ButtonItem,
   PanelSection,
@@ -24,6 +24,7 @@ import {
   exportToFile,
   uploadToDeckyvault,
   listScreenshots,
+  readScreenshot,
   uploadScreenshots,
 } from "../lib/api"
 
@@ -77,6 +78,41 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+function Thumbnail({ src, size = 56 }: { src?: string; size?: number }) {
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt=""
+        style={{
+          width: size,
+          height: size,
+          objectFit: "cover",
+          borderRadius: "6px",
+          flexShrink: 0,
+          background: "#000",
+        }}
+      />
+    )
+  }
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "6px",
+        flexShrink: 0,
+        background: "rgba(255,255,255,0.08)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <FaImages style={{ opacity: 0.4 }} />
+    </div>
+  )
+}
+
 export default function SessionForm({
   session,
   error,
@@ -96,6 +132,8 @@ export default function SessionForm({
   const [availableShots, setAvailableShots] = useState<ScreenshotFile[]>([])
   const [shotsLoading, setShotsLoading] = useState(false)
   const [shotsError, setShotsError] = useState("")
+  // path → base64 data URL thumbnail for preview display
+  const [thumbnails, setThumbnails] = useState<Record<string, string>>({})
 
   async function openPicker() {
     if (selectedShots.length >= MAX_SCREENSHOTS) return
@@ -108,8 +146,29 @@ export default function SessionForm({
       setShotsError(result.error)
     }
     // Filter out already-selected paths
-    setAvailableShots(result.screenshots.filter((s) => !selectedShots.some((sel) => sel.path === s.path)))
+    const list = result.screenshots.filter((s) => !selectedShots.some((sel) => sel.path === s.path))
+    setAvailableShots(list)
+    // Load thumbnails for the list (and any selected shots not yet loaded)
+    loadThumbnails([...list, ...selectedShots])
   }
+
+  async function loadThumbnails(shots: ScreenshotFile[]) {
+    for (const shot of shots) {
+      if (thumbnails[shot.path]) continue // already loaded
+      const res = await readScreenshot(shot.path, 320)
+      if (res.dataUrl) {
+        setThumbnails((prev) => ({ ...prev, [shot.path]: res.dataUrl }))
+      }
+    }
+  }
+
+  // Load thumbnails for any selected shots without one yet
+  useEffect(() => {
+    if (selectedShots.length > 0) {
+      loadThumbnails(selectedShots)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedShots.map((s) => s.path).join(",")])
 
   function addShot(shot: ScreenshotFile) {
     if (selectedShots.length >= MAX_SCREENSHOTS) return
@@ -305,7 +364,7 @@ export default function SessionForm({
               background: "rgba(255,255,255,0.06)",
               border: "1px solid rgba(255,255,255,0.10)",
             }}>
-              <FaImages style={{ opacity: 0.6, flexShrink: 0 }} />
+              <Thumbnail src={thumbnails[shot.path]} />
               <div className={staticClasses.Text} style={{ flex: 1, minWidth: 0, fontSize: "12px" }}>
                 <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {shot.name}
@@ -381,7 +440,7 @@ export default function SessionForm({
               <PanelSectionRow key={shot.path}>
                 <ButtonItem layout="below" onClick={() => addShot(shot)}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <FaImages style={{ opacity: 0.6, flexShrink: 0 }} />
+                    <Thumbnail src={thumbnails[shot.path]} />
                     <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
                       <div style={{ fontSize: "12px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {formatShotTime(shot.mtime)}
