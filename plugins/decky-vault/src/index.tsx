@@ -42,15 +42,14 @@ function Content() {
   // ── Register SteamClient game events ──────────────────────────
   useEffect(() => {
     try {
-      const startedReg = SteamClient.Apps.RegisterForGameActionStart(
-        (_gameActionId: number, appId: string, _action: string, _source: number) => {
-          const appIdNum = parseInt(appId, 10)
-          onGameStart(appIdNum, `App ${appId}`)
-        },
-      )
+      // Use RegisterForGameStarted/Stopped — these are the most widely used
+      // APIs in Decky plugins despite TypeScript type warnings.
+      const startedReg = SteamClient.Apps.RegisterForGameStarted((appId: number) => {
+        onGameStart(appId, `App ${appId}`)
+      })
       gameStartedUnregRef.current = startedReg
 
-      const stoppedReg = SteamClient.Apps.RegisterForGameActionEnd((_gameActionId: number) => {
+      const stoppedReg = SteamClient.Apps.RegisterForGameStopped((_appId: number) => {
         onGameStop()
       })
       gameStoppedUnregRef.current = stoppedReg

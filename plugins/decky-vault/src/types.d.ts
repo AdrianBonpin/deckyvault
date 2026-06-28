@@ -5,6 +5,12 @@
 declare global {
   const SteamClient: {
     Apps: {
+      RegisterForGameStarted: (
+        callback: (appId: number) => void,
+      ) => { unregister: () => void }
+      RegisterForGameStopped: (
+        callback: (appId: number) => void,
+      ) => { unregister: () => void }
       RegisterForGameActionStart: (
         callback: (gameActionId: number, appId: string, action: string, source: number) => void,
       ) => { unregister: () => void }
