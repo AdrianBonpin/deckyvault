@@ -326,7 +326,7 @@ export default function MainPanel({
       <PanelSection title="Usage Instructions">
         <PanelSectionRow>
           <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "4px 0", lineHeight: "1.5" }}>
-            Add this to your game's Steam launch options, then press Start Recording before launching.
+            Add this to your game's Steam launch options, then launch the game. Press Start Recording once you're in-game and ready to benchmark.
           </div>
         </PanelSectionRow>
         <PanelSectionRow>
