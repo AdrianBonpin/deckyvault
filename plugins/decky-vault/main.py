@@ -233,8 +233,27 @@ benchmark_percentiles=97,AVG,1,0.1
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    async def start_mangohud_logging(self) -> dict:
+        """RPC: Start MangoHud logging via mangohudctl.
+        Retries a few times in case MangoHud hasn't started yet."""
+        import subprocess
+        import time
+        for attempt in range(5):
+            try:
+                result = subprocess.run(
+                    ["mangohudctl", "set", "log_session", "true"],
+                    capture_output=True, text=True, timeout=2
+                )
+                if result.returncode == 0:
+                    return {"success": True}
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
+            if attempt < 4:
+                await asyncio.sleep(2)
+        return {"success": False, "error": "Could not connect to MangoHud. Is the game running?"}
+
     async def stop_mangohud_logging(self) -> dict:
-        """RPC: Stop MangoHud logging via mangohudctl. Best-effort, may fail if game already closed."""
+        """RPC: Stop MangoHud logging via mangohudctl. Best-effort."""
         import subprocess
         try:
             result = subprocess.run(
@@ -244,7 +263,7 @@ benchmark_percentiles=97,AVG,1,0.1
             if result.returncode == 0:
                 return {"success": True}
             return {"success": False, "error": result.stderr.strip() or "mangohudctl failed"}
-        except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
+        except Exception as e:
             return {"success": False, "error": str(e)}
 
     async def _find_mangohud_log(self) -> str | None:

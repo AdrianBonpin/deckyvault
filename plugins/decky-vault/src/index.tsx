@@ -14,6 +14,7 @@ import {
   readAndParseMangohudLog,
   clearMangohudLog,
   writeMangohudConfig,
+  startMangohudLogging,
   stopMangohudLogging,
   getHardwareInfo,
   getOsVersion,
@@ -71,10 +72,12 @@ function Content() {
 
   // ── Handle start recording ────────────────────────────────────
   async function handleStart() {
-    // Write MangoHud config with autostart_log so logging begins on game launch
+    // Write MangoHud config with logging settings
     await writeMangohudConfig()
     // Clear any previous log file
     await clearMangohudLog()
+    // Fire-and-forget: try to start MangoHud logging (retries until game launches)
+    startMangohudLogging()
     startRecording()
   }
 
