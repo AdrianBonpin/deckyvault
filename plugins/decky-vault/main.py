@@ -465,7 +465,10 @@ benchmark_percentiles=97,AVG,1,0.1
             url = f"{base_url}/api/games/lookup?steamAppId=0"
             req = urllib.request.Request(
                 url,
-                headers={"x-api-key": api_key},
+                headers={
+                    "x-api-key": api_key,
+                    "User-Agent": "DeckyVaultPlugin/0.1",
+                },
                 method="GET"
             )
             context = _get_ssl_context()
