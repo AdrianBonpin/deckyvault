@@ -61,7 +61,7 @@ const SCREENSHOTS: Shot[] = [
         title: "Record while you play",
         caption:
             "Once in-game, open the panel and hit Start Recording. A live timer tracks your session. Stop when you're done benchmarking.",
-        file: "recording.png",
+        file: "recording.jpg",
         photo: true,
     },
     {
@@ -69,7 +69,7 @@ const SCREENSHOTS: Shot[] = [
         title: "Review & submit",
         caption:
             "After stopping, review the captured FPS, 1% lows, and power draw. Add notes, then upload straight to DeckyVault — or export to a file.",
-        file: "session-form.png",
+        file: "session-form.jpg",
         photo: true,
     },
     {
@@ -87,8 +87,8 @@ const HAS_SCREENSHOT: Record<string, boolean> = {
     "panel-overview": true,
     "pair-qr": true,
     "launch-option": true,
-    recording: false,
-    "session-form": false,
+    recording: true,
+    "session-form": true,
     "entry-live": true,
 }
 
@@ -181,6 +181,40 @@ const STEPS = [
                 stats, and <strong>upload to DeckyVault</strong>.
             </>
         ),
+    },
+]
+
+// ── Screenshot acts ────────────────────────────────────
+// The "See it in action" gallery is structured as a 3-act narrative so the
+// story flows: Set up → Capture → Share. Each act has a heading + a list of
+// shots. The last act's shot is rendered larger as a visual payoff.
+const ACTS: {
+    number: string
+    title: string
+    subtitle: string
+    shotIds: string[]
+    layout: "grid-3" | "grid-2" | "feature"
+}[] = [
+    {
+        number: "1",
+        title: "Get set up",
+        subtitle: "Three quick steps before your first benchmark.",
+        shotIds: ["panel-overview", "pair-qr", "launch-option"],
+        layout: "grid-3",
+    },
+    {
+        number: "2",
+        title: "Capture performance",
+        subtitle: "Hit record, play, then review your stats.",
+        shotIds: ["recording", "session-form"],
+        layout: "grid-2",
+    },
+    {
+        number: "3",
+        title: "Share & compare",
+        subtitle: "Your entry appears on the game's page for the community.",
+        shotIds: ["entry-live"],
+        layout: "feature",
     },
 ]
 
@@ -365,61 +399,122 @@ export function PluginPageClient() {
                 </div>
             </section>
 
-            {/* ── Screenshots gallery ──────────────────────────────── */}
-            <section className="px-4 md:px-[10svw] py-12 md:py-16 border-t border-border">
+            {/* ── See it in action: 3-act narrative ──────────────────────── */}
+            <section className="px-4 md:px-[10svw] py-12 md:py-20 border-t border-border">
                 <div className="max-w-6xl mx-auto">
-                    <h2 className="text-2xl md:text-3xl font-bold text-center mb-2">
-                        See it in action
-                    </h2>
-                    <p className="text-text/50 text-center mb-12 max-w-xl mx-auto">
-                        A walkthrough of the plugin, from pairing to publishing.
-                    </p>
+                    <div className="text-center mb-12 md:mb-16">
+                        <h2 className="text-2xl md:text-3xl font-bold mb-2">
+                            See it in action
+                        </h2>
+                        <p className="text-text/50 max-w-xl mx-auto">
+                            A walkthrough of the plugin, from pairing to publishing.
+                        </p>
+                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {SCREENSHOTS.map((shot, i) => (
-                            <motion.figure
-                                key={shot.id}
-                                initial={{ opacity: 0, y: 16 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: i * 0.05 }}
-                                className="rounded-xl border border-border bg-text/2 overflow-hidden flex flex-col"
-                            >
-                                <div className="relative aspect-[16/10] bg-gradient-to-br from-text/5 to-text/10 flex items-center justify-center p-3">
-                                    {HAS_SCREENSHOT[shot.id] ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img
-                                            src={`/plugin/${shot.file}`}
-                                            alt={shot.title}
-                                            className={shot.photo
-                                                ? "max-w-full max-h-full object-contain rounded-lg shadow-2xl shadow-black/40 ring-1 ring-black/20"
-                                                : "w-full h-full object-contain"}
-                                        />
-                                    ) : (
-                                        <div className="flex flex-col items-center gap-2 text-text/30 p-6 text-center">
-                                            <Gamepad2Icon className="h-10 w-10" />
-                                            <span className="text-xs font-mono">
-                                                /plugin/{shot.file}
-                                            </span>
-                                            <span className="text-xs">
-                                                {shot.photo ? "device photo" : "screenshot"} coming soon
-                                            </span>
+                    <div className="flex flex-col gap-10 md:gap-14">
+                        {ACTS.map((act, actIdx) => {
+                            const shots = act.shotIds
+                                .map((id) => SCREENSHOTS.find((s) => s.id === id))
+                                .filter((s): s is (typeof SCREENSHOTS)[number] => Boolean(s))
+
+                            return (
+                                <div key={act.number} className="flex flex-col">
+                                    {/* Act heading */}
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -12 }}
+                                        whileInView={{ opacity: 1, x: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: actIdx * 0.05 }}
+                                        className="flex items-center gap-3 mb-5"
+                                    >
+                                        <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shrink-0">
+                                            {act.number}
                                         </div>
+                                        <div className="min-w-0">
+                                            <h3 className="text-lg md:text-xl font-semibold leading-tight">
+                                                {act.title}
+                                            </h3>
+                                            <p className="text-sm text-text/50">
+                                                {act.subtitle}
+                                            </p>
+                                        </div>
+                                    </motion.div>
+
+                                    {/* Shot grid for this act */}
+                                    <div
+                                        className={
+                                            act.layout === "grid-3"
+                                                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                                                : act.layout === "grid-2"
+                                                    ? "grid grid-cols-1 sm:grid-cols-2 gap-4"
+                                                    : "grid grid-cols-1 gap-4"
+                                        }
+                                    >
+                                        {shots.map((shot) => {
+                                            const isFeature = act.layout === "feature"
+                                            return (
+                                                <motion.figure
+                                                    key={shot.id}
+                                                    initial={{ opacity: 0, y: 16 }}
+                                                    whileInView={{ opacity: 1, y: 0 }}
+                                                    viewport={{ once: true }}
+                                                    className="rounded-xl border border-border bg-text/2 overflow-hidden flex flex-col hover:border-primary/30 transition-colors"
+                                                >
+                                                    <div
+                                                        className={
+                                                            isFeature
+                                                                ? "relative aspect-[16/9] bg-gradient-to-br from-text/5 to-text/10 flex items-center justify-center p-4"
+                                                                : "relative aspect-[16/10] bg-gradient-to-br from-text/5 to-text/10 flex items-center justify-center p-3"
+                                                        }
+                                                    >
+                                                        {HAS_SCREENSHOT[shot.id] ? (
+                                                            // eslint-disable-next-line @next/next/no-img-element
+                                                            <img
+                                                                src={`/plugin/${shot.file}`}
+                                                                alt={shot.title}
+                                                                className={shot.photo
+                                                                    ? "max-w-full max-h-full object-contain rounded-lg shadow-2xl shadow-black/40 ring-1 ring-black/20"
+                                                                    : isFeature
+                                                                        ? "w-full h-full object-contain rounded-md"
+                                                                        : "w-full h-full object-contain"}
+                                                            />
+                                                        ) : (
+                                                            <div className="flex flex-col items-center gap-2 text-text/30 p-6 text-center">
+                                                                <Gamepad2Icon className="h-8 w-8 opacity-50" />
+                                                                <span className="text-xs">
+                                                                    {shot.photo ? "device photo" : "screenshot"} not yet captured
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <figcaption className="p-4 flex flex-col gap-1">
+                                                        <div className="text-sm font-semibold">
+                                                            {shot.title}
+                                                        </div>
+                                                        <p className="text-xs text-text/55 leading-relaxed">
+                                                            {shot.caption}
+                                                        </p>
+                                                    </figcaption>
+                                                </motion.figure>
+                                            )
+                                        })}
+                                    </div>
+
+                                    {/* Flow arrow between acts */}
+                                    {actIdx < ACTS.length - 1 && (
+                                        <motion.div
+                                            initial={{ opacity: 0 }}
+                                            whileInView={{ opacity: 1 }}
+                                            viewport={{ once: true }}
+                                            transition={{ delay: actIdx * 0.05 + 0.1 }}
+                                            className="flex justify-center mt-8 md:mt-10"
+                                        >
+                                            <div className="w-px h-8 md:h-10 bg-gradient-to-b from-primary/40 to-primary/10" />
+                                        </motion.div>
                                     )}
                                 </div>
-                                <figcaption className="p-4 flex flex-col gap-1">
-                                    <div className="text-sm font-semibold flex items-center gap-2">
-                                        <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[10px] font-bold flex items-center justify-center">
-                                            {i + 1}
-                                        </span>
-                                        {shot.title}
-                                    </div>
-                                    <p className="text-xs text-text/55 leading-relaxed pl-7">
-                                        {shot.caption}
-                                    </p>
-                                </figcaption>
-                            </motion.figure>
-                        ))}
+                            )
+                        })}
                     </div>
                 </div>
             </section>
