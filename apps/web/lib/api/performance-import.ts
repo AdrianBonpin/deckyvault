@@ -88,6 +88,8 @@ export const performanceImportRoutes = new Elysia({
           .values({
             gameId: game.id,
             isLatest: true,
+            versionString: body.versionString ?? null,
+            buildId: body.buildId ?? null,
           })
           .returning({ id: gameVersions.id })
         version = newVersion
@@ -260,6 +262,8 @@ export const performanceImportRoutes = new Elysia({
       fpsHigh: t.Optional(t.Nullable(t.Number())),
       protonVersion: t.Optional(t.Nullable(t.String())),
       osVersion: t.Optional(t.Nullable(t.String())),
+      versionString: t.Optional(t.Nullable(t.String())),
+      buildId: t.Optional(t.Nullable(t.String())),
       upscalerType: t.Optional(t.String()),
       upscalerVersion: t.Optional(t.Nullable(t.String())),
       frameGenMethod: t.Optional(t.String()),

@@ -34,6 +34,8 @@ export interface SessionData {
   hardwareName: string
   osVersion: string
   protonVersion: string
+  versionString: string
+  buildId: string
   // Manual inputs (filled by user in the form)
   upscalerType: string
   upscalerVersion: string
@@ -66,6 +68,8 @@ function createEmptySession(): SessionData {
     hardwareName: "",
     osVersion: "",
     protonVersion: "",
+    versionString: "",
+    buildId: "",
     upscalerType: "none",
     upscalerVersion: "",
     frameGenMethod: "none",
@@ -244,6 +248,8 @@ export function buildImportPayload(sess: SessionData): DeckyVaultImportV1 {
     fpsHigh: sess.fpsHigh,
     protonVersion: sess.protonVersion || null,
     osVersion: sess.osVersion || null,
+    versionString: sess.versionString || null,
+    buildId: sess.buildId || null,
     upscalerType: sess.upscalerType,
     upscalerVersion: sess.upscalerVersion || null,
     frameGenMethod: sess.frameGenMethod,
