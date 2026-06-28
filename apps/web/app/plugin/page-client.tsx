@@ -28,6 +28,10 @@ interface Shot {
     caption: string
     // filename the user should save the capture as (in /public/plugin/)
     file: string
+    // true = present as a device photo (rounded, shadow) instead of a flat
+    // screenshot. Use for in-game shots where the QAM overlay can't be
+    // captured by Steam's screenshot shortcut, so a phone photo is used.
+    photo?: boolean
 }
 
 const SCREENSHOTS: Shot[] = [
@@ -58,6 +62,7 @@ const SCREENSHOTS: Shot[] = [
         caption:
             "Once in-game, open the panel and hit Start Recording. A live timer tracks your session. Stop when you're done benchmarking.",
         file: "recording.png",
+        photo: true,
     },
     {
         id: "session-form",
@@ -65,6 +70,7 @@ const SCREENSHOTS: Shot[] = [
         caption:
             "After stopping, review the captured FPS, 1% lows, and power draw. Add notes, then upload straight to DeckyVault — or export to a file.",
         file: "session-form.png",
+        photo: true,
     },
     {
         id: "entry-live",
@@ -379,13 +385,15 @@ export function PluginPageClient() {
                                 transition={{ delay: i * 0.05 }}
                                 className="rounded-xl border border-border bg-text/2 overflow-hidden flex flex-col"
                             >
-                                <div className="relative aspect-[16/10] bg-gradient-to-br from-text/5 to-text/10 flex items-center justify-center">
+                                <div className="relative aspect-[16/10] bg-gradient-to-br from-text/5 to-text/10 flex items-center justify-center p-3">
                                     {HAS_SCREENSHOT[shot.id] ? (
                                         // eslint-disable-next-line @next/next/no-img-element
                                         <img
                                             src={`/plugin/${shot.file}`}
                                             alt={shot.title}
-                                            className="w-full h-full object-contain"
+                                            className={shot.photo
+                                                ? "max-w-full max-h-full object-contain rounded-lg shadow-2xl shadow-black/40 ring-1 ring-black/20"
+                                                : "w-full h-full object-contain"}
                                         />
                                     ) : (
                                         <div className="flex flex-col items-center gap-2 text-text/30 p-6 text-center">
@@ -394,7 +402,7 @@ export function PluginPageClient() {
                                                 /plugin/{shot.file}
                                             </span>
                                             <span className="text-xs">
-                                                screenshot coming soon
+                                                {shot.photo ? "device photo" : "screenshot"} coming soon
                                             </span>
                                         </div>
                                     )}
