@@ -5,16 +5,12 @@
 declare global {
   const SteamClient: {
     Apps: {
-      RegisterForGameStarted: (
-        callback: (appId: number) => void,
+      RegisterForGameActionStart: (
+        callback: (gameActionId: number, appId: string, action: string, source: number) => void,
       ) => { unregister: () => void }
-      RegisterForGameStopped: (
-        callback: (appId: number) => void,
+      RegisterForGameActionEnd: (
+        callback: (gameActionId: number) => void,
       ) => { unregister: () => void }
-      GetCurrentGameInfo: () => Promise<{
-        appId: number
-        strAppName: string
-      }>
     }
     System: {
       GetOSVersion: () => Promise<string>

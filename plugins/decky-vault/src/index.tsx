@@ -42,21 +42,15 @@ function Content() {
   // ── Register SteamClient game events ──────────────────────────
   useEffect(() => {
     try {
-      const startedReg = SteamClient.Apps.RegisterForGameStarted(async (appId: number) => {
-        let gameName = `App ${appId}`
-        try {
-          const info = await SteamClient.Apps.GetCurrentGameInfo()
-          if (info.appId === appId) {
-            gameName = info.strAppName
-          }
-        } catch {
-          // GetCurrentGameInfo may not be available in all contexts
-        }
-        onGameStart(appId, gameName)
-      })
+      const startedReg = SteamClient.Apps.RegisterForGameActionStart(
+        (_gameActionId: number, appId: string, _action: string, _source: number) => {
+          const appIdNum = parseInt(appId, 10)
+          onGameStart(appIdNum, `App ${appId}`)
+        },
+      )
       gameStartedUnregRef.current = startedReg
 
-      const stoppedReg = SteamClient.Apps.RegisterForGameStopped((_appId: number) => {
+      const stoppedReg = SteamClient.Apps.RegisterForGameActionEnd((_gameActionId: number) => {
         onGameStop()
       })
       gameStoppedUnregRef.current = stoppedReg
@@ -83,49 +77,58 @@ function Content() {
 
   // ── Handle stop recording: parse log + read system info ────────
   async function handleStop() {
-    stopRecording()
+    try {
+      stopRecording()
 
-    // Parse the MangoHud log
-    const logResult = await readAndParseMangohudLog()
-    if (logResult.error) {
-      setError(logResult.error)
-      // Still transition to stopped state so user can see the error + manual fields
-      return
-    }
+      // Parse the MangoHud log
+      const logResult = await readAndParseMangohudLog()
+      if (logResult.error) {
+        setError(logResult.error)
+        return
+      }
 
-    // Read system info in parallel
-    const [hwInfo, osVersion] = await Promise.all([
-      getHardwareInfo(),
-      getOsVersion(),
-    ])
-
-    // Read Proton version + launch options if we have an app ID
-    let protonVersion = ""
-    let launchOptions = ""
-    if (session.appId) {
-      const [pv, lo] = await Promise.all([
-        getProtonVersion(session.appId),
-        getLaunchOptions(session.appId),
+      // Read system info in parallel
+      const [hwInfo, osVersion] = await Promise.all([
+        getHardwareInfo(),
+        getOsVersion(),
       ])
-      protonVersion = pv
-      launchOptions = lo
+
+      // Read Proton version + launch options if we have an app ID
+      let protonVersion = ""
+      let launchOptions = ""
+      const currentAppId = session.appId
+      if (currentAppId) {
+        try {
+          const [pv, lo] = await Promise.all([
+            getProtonVersion(currentAppId),
+            getLaunchOptions(currentAppId),
+          ])
+          protonVersion = pv
+          launchOptions = lo
+        } catch {
+          // Non-critical, continue without
+        }
+      }
+
+      // Use settings hardware override if set, otherwise auto-detected
+      const hardwareSlug = settings.hardwareSlug || hwInfo.slug
+
+      updateSession({
+        fpsAvg: logResult.fpsAvg ?? null,
+        fpsLow: logResult.fpsLow ?? null,
+        fpsHigh: logResult.fpsHigh ?? null,
+        fpsOnePercentLow: logResult.fpsOnePercentLow ?? null,
+        tdpWatts: logResult.tdpWatts ?? null,
+        hardwareSlug,
+        hardwareName: hwInfo.name,
+        osVersion,
+        protonVersion,
+        launchOptions,
+      })
+    } catch (e) {
+      console.error("[DeckyVault] Error stopping recording:", e)
+      setError("Failed to process recording. Check the MangoHud log.")
     }
-
-    // Use settings hardware override if set, otherwise auto-detected
-    const hardwareSlug = settings.hardwareSlug || hwInfo.slug
-
-    updateSession({
-      fpsAvg: logResult.fpsAvg ?? null,
-      fpsLow: logResult.fpsLow ?? null,
-      fpsHigh: logResult.fpsHigh ?? null,
-      fpsOnePercentLow: logResult.fpsOnePercentLow ?? null,
-      tdpWatts: logResult.tdpWatts ?? null,
-      hardwareSlug,
-      hardwareName: hwInfo.name,
-      osVersion,
-      protonVersion,
-      launchOptions,
-    })
   }
 
   if (!loaded) {
@@ -215,7 +218,7 @@ export default definePlugin(() => {
     titleView: <div className={staticClasses.Title}>DeckyVault</div>,
     content: <Content />,
     icon: <DeckyVaultIcon />,
-    alwaysRender: false,
+    alwaysRender: true,
     onDismount() {
       console.log("[DeckyVault] Plugin unloading")
     },
