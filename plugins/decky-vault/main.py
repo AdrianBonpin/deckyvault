@@ -34,6 +34,7 @@ def parse_mangohud_log(log_content: str) -> dict:
     fps_col = 0
     frametime_col = None
     gpu_power_col = None
+    cpu_power_col = None
 
     for i, line in enumerate(lines):
         stripped = line.strip()
@@ -47,6 +48,8 @@ def parse_mangohud_log(log_content: str) -> dict:
                     frametime_col = columns.index('frametime')
                 if 'gpu_power' in columns:
                     gpu_power_col = columns.index('gpu_power')
+                if 'cpu_power' in columns:
+                    cpu_power_col = columns.index('cpu_power')
                 header_idx = i
                 break
 
@@ -56,6 +59,7 @@ def parse_mangohud_log(log_content: str) -> dict:
     fps_values = []
     frametime_values = []
     gpu_power_values = []
+    cpu_power_values = []
 
     for line in lines[header_idx + 1:]:
         stripped = line.strip()
@@ -71,6 +75,8 @@ def parse_mangohud_log(log_content: str) -> dict:
                 frametime_values.append(float(parts[frametime_col]))
             if gpu_power_col is not None and gpu_power_col < len(parts):
                 gpu_power_values.append(float(parts[gpu_power_col]))
+            if cpu_power_col is not None and cpu_power_col < len(parts):
+                cpu_power_values.append(float(parts[cpu_power_col]))
         except (ValueError, IndexError):
             continue
 
@@ -96,8 +102,17 @@ def parse_mangohud_log(log_content: str) -> dict:
         fps_one_percent_low = round(sorted_fps[one_percent_idx], 1)
 
     tdp_watts = None
-    if gpu_power_values:
-        tdp_watts = round(sum(gpu_power_values) / len(gpu_power_values), 1)
+    total_power_values = []
+    if gpu_power_values and cpu_power_values:
+        # Sum GPU and CPU power for total APU power
+        for gp, cp in zip(gpu_power_values, cpu_power_values):
+            total_power_values.append(gp + cp)
+    elif gpu_power_values:
+        total_power_values = gpu_power_values
+    elif cpu_power_values:
+        total_power_values = cpu_power_values
+    if total_power_values:
+        tdp_watts = round(sum(total_power_values) / len(total_power_values), 1)
 
     return {
         "fpsAvg": fps_avg,
@@ -155,44 +170,46 @@ class Plugin:
         return self._settings
 
     async def check_mangohud(self) -> dict:
-        """RPC: Check if MangoHud is installed. Returns {installed: bool, path: str, version: str}."""
-        import subprocess
+        """RPC: Check if MangoHud is installed."""
+        import os
+        import re
         try:
-            result = subprocess.run(
-                ["which", "mangohud"],
-                capture_output=True, text=True, timeout=5
-            )
-            if result.returncode == 0:
-                mangohud_path = result.stdout.strip()
-                # Get version
-                version_result = subprocess.run(
-                    ["mangohud", "--version"],
-                    capture_output=True, text=True, timeout=5
-                )
-                version = version_result.stdout.strip() if version_result.returncode == 0 else "unknown"
-                return {"installed": True, "path": mangohud_path, "version": version}
-            else:
+            path = "/usr/bin/mangohud"
+            exists = os.path.exists(path)
+            if not exists:
                 return {"installed": False, "path": "", "version": ""}
+
+            # Read version from the shell script itself
+            version = ""
+            try:
+                with open(path, 'r') as f:
+                    content = f.read()
+                # Look for the version line: echo v0.8.3-rc1-24-g33c2c7dd+
+                m = re.search(r'echo\s+(v?[\d.]+[^\s]*)', content)
+                if m:
+                    version = m.group(1)
+                    if "-" in version:
+                        version = version.split("-")[0]
+            except:
+                pass
+
+            return {"installed": True, "path": path, "version": version}
         except Exception as e:
             return {"installed": False, "path": "", "version": "", "error": str(e)}
 
     async def write_mangohud_config(self) -> dict:
-        """RPC: Write the MangoHud logging config to ~/.config/MangoHud/MangoHud.conf.
-        Returns {success: bool, path: str, error: str?}."""
+        """RPC: Write the MangoHud logging config and a wrapper script."""
         try:
             home = os.path.expanduser("~")
             config_dir = os.path.join(home, ".config", "MangoHud")
             config_path = os.path.join(config_dir, "MangoHud.conf")
             os.makedirs(config_dir, exist_ok=True)
 
-            # MangoHud config that enables logging with the metrics we need.
-            # output_folder is required for logging to work.
-            # We log to /tmp so the plugin can read it after the session.
             config_content = """\
 # DeckyVault MangoHud logging config
 output_folder=/tmp
-output_file=deckyvault-mangohud.log
-log_duration=0
+control=mangohud
+autostart_log=1
 fps
 frame_timing
 cpu_power
@@ -204,7 +221,18 @@ benchmark_percentiles=97,AVG,1,0.1
             with open(config_path, 'w') as f:
                 f.write(config_content)
 
-            return {"success": True, "path": config_path}
+            # Write a wrapper script that forces MangoHud to use our config
+            wrapper_path = os.path.join(home, "deckyvault-mangohud.sh")
+            wrapper_content = """\
+#!/bin/bash
+export MANGOHUD_CONFIGFILE="$HOME/.config/MangoHud/MangoHud.conf"
+exec mangohud "$@"
+"""
+            with open(wrapper_path, 'w') as f:
+                f.write(wrapper_content)
+            os.chmod(wrapper_path, 0o755)
+
+            return {"success": True, "path": config_path, "wrapper": wrapper_path}
         except Exception as e:
             return {"success": False, "path": "", "error": str(e)}
 
@@ -217,11 +245,111 @@ benchmark_percentiles=97,AVG,1,0.1
                 return {"exists": True, "content": f.read(), "path": config_path}
         return {"exists": False, "content": "", "path": config_path}
 
-    async def read_and_parse_mangohud_log(self, log_path: str = "/tmp/deckyvault-mangohud.log") -> dict:
+    async def start_mangohud_logging(self) -> dict:
+        """RPC: Start MangoHud logging via mangohudctl."""
+        import subprocess
+        try:
+            result = subprocess.run(
+                ["mangohudctl", "set", "log_session", "true"],
+                capture_output=True, text=True, timeout=5
+            )
+            if result.returncode == 0:
+                return {"success": True}
+            else:
+                return {"success": False, "error": result.stderr.strip() or "mangohudctl failed"}
+        except FileNotFoundError:
+            return {"success": False, "error": "mangohudctl not found. Is MangoHud running?"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def start_mangohud_logging(self) -> dict:
+        """RPC: Start MangoHud logging via mangohudctl.
+        Retries a few times in case MangoHud hasn't started yet."""
+        import subprocess
+        import time
+        for attempt in range(5):
+            try:
+                result = subprocess.run(
+                    ["mangohudctl", "set", "log_session", "true"],
+                    capture_output=True, text=True, timeout=2
+                )
+                if result.returncode == 0:
+                    return {"success": True}
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
+            if attempt < 4:
+                await asyncio.sleep(2)
+        return {"success": False, "error": "Could not connect to MangoHud. Is the game running?"}
+
+    async def stop_mangohud_logging(self) -> dict:
+        """RPC: Stop MangoHud logging via mangohudctl. Best-effort."""
+        import subprocess
+        try:
+            result = subprocess.run(
+                ["mangohudctl", "set", "log_session", "false"],
+                capture_output=True, text=True, timeout=2
+            )
+            if result.returncode == 0:
+                return {"success": True}
+            return {"success": False, "error": result.stderr.strip() or "mangohudctl failed"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def _find_mangohud_log(self) -> str | None:
+        """Find the most recent MangoHud log file in /tmp/."""
+        import glob
+        import time
+        candidates = []
+        now = time.time()
+        for pattern in ["/tmp/*MangoHud*", "/tmp/*.csv", "/tmp/*.log"]:
+            for f in glob.glob(pattern):
+                if os.path.isdir(f):
+                    continue
+                # Only consider files modified in the last hour
+                try:
+                    mtime = os.path.getmtime(f)
+                    if now - mtime > 3600:
+                        continue
+                except:
+                    pass
+                # Check if it looks like a MangoHud log
+                try:
+                    with open(f, 'r') as fh:
+                        first_lines = "".join(fh.readline() for _ in range(5))
+                        if 'fps' in first_lines.lower() or 'MangoHud' in first_lines:
+                            candidates.append(f)
+                except:
+                    candidates.append(f)  # Add anyway if we can't read it
+        if not candidates:
+            return None
+        candidates.sort(key=lambda f: os.path.getmtime(f), reverse=True)
+        return candidates[0]
+
+    async def debug_list_tmp(self) -> dict:
+        """RPC: List all files in /tmp/ for debugging."""
+        import glob
+        files = []
+        for f in glob.glob("/tmp/*"):
+            if os.path.isfile(f):
+                try:
+                    mtime = os.path.getmtime(f)
+                    size = os.path.getsize(f)
+                    files.append({"name": os.path.basename(f), "size": size, "mtime": mtime})
+                except:
+                    pass
+        files.sort(key=lambda x: x["mtime"], reverse=True)
+        return {"files": files[:30]}
+
+    async def read_and_parse_mangohud_log(self, log_path: str | None = None) -> dict:
         """RPC: Read the MangoHud log file and return parsed FPS stats.
+        If no log_path given, searches /tmp/ for the most recent MangoHud log.
         Returns parsed stats dict or {error: str}."""
+        if log_path is None:
+            log_path = await self._find_mangohud_log()
+            if log_path is None:
+                return {"error": "No MangoHud log found in /tmp/. Make sure MangoHud is enabled and logging."}
         if not os.path.exists(log_path):
-            return {"error": f"MangoHud log not found at {log_path}. Make sure MangoHud is enabled and logging."}
+            return {"error": f"MangoHud log not found at {log_path}."}
         try:
             with open(log_path, 'r') as f:
                 content = f.read()
@@ -231,11 +359,17 @@ benchmark_percentiles=97,AVG,1,0.1
         except Exception as e:
             return {"error": f"Failed to read log: {str(e)}"}
 
-    async def clear_mangohud_log(self, log_path: str = "/tmp/deckyvault-mangohud.log") -> dict:
-        """RPC: Delete the MangoHud log file so the next recording starts fresh."""
+    async def clear_mangohud_log(self) -> dict:
+        """RPC: Delete all MangoHud log files in /tmp/ so the next recording starts fresh."""
+        import glob
         try:
-            if os.path.exists(log_path):
-                os.remove(log_path)
+            for pattern in ["/tmp/*MangoHud*", "/tmp/*.csv", "/tmp/*.log"]:
+                for f in glob.glob(pattern):
+                    if os.path.isfile(f):
+                        try:
+                            os.remove(f)
+                        except (IOError, PermissionError):
+                            pass
             return {"success": True}
         except Exception as e:
             return {"success": False, "error": str(e)}
@@ -277,19 +411,79 @@ benchmark_percentiles=97,AVG,1,0.1
             return "unknown"
 
     async def get_proton_version(self, app_id: int) -> str:
-        """RPC: Attempt to read the Proton version for a Steam app.
-        Reads from the Steam compatdata directory."""
+        """RPC: Read the Proton version for a Steam app from config_info."""
         try:
             home = os.path.expanduser("~")
-            # Steam compat data lives in ~/.steam/steam/steamapps/compatdata/<appid>/
-            compat_path = os.path.join(home, ".steam", "steam", "steamapps", "compatdata", str(app_id))
-            version_file = os.path.join(compat_path, "version")
-            if os.path.exists(version_file):
-                with open(version_file, 'r') as f:
-                    return f.read().strip()
+            config_path = os.path.join(home, ".steam", "steam", "steamapps", "compatdata", str(app_id), "config_info")
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    lines = f.readlines()
+                if len(lines) >= 2:
+                    proton_path = lines[1].strip()
+                    import re
+                    m = re.search(r'Proton[\s]+([\d.]+)', proton_path)
+                    if m:
+                        return m.group(1)
+                    return proton_path.split("/")[-1] if proton_path else ""
             return ""
         except (IOError, FileNotFoundError):
             return ""
+
+    async def detect_current_game(self) -> dict:
+        """RPC: Detect the currently running game by checking processes.
+        Returns {appId: int?, name: str}."""
+        import subprocess
+        import re
+
+        home = os.path.expanduser("~")
+        steam_path = os.path.join(home, ".steam", "steam")
+        compat_dir = os.path.join(steam_path, "steamapps", "compatdata")
+
+        # Get all running PIDs and their cmdlines
+        try:
+            r = subprocess.run(
+                ["ps", "-eo", "pid,args", "--no-headers"],
+                capture_output=True, text=True, timeout=3
+            )
+            if r.returncode != 0:
+                return {"appId": None, "name": ""}
+            all_procs = r.stdout
+        except:
+            return {"appId": None, "name": ""}
+
+        # Check each compatdata directory for running processes
+        if os.path.exists(compat_dir):
+            for app_id_str in sorted(os.listdir(compat_dir), reverse=True):
+                if not app_id_str.isdigit():
+                    continue
+                # Check if this app has a running process by searching for the app ID
+                # in the process tree (Steam runtime includes app ID in some form)
+                try:
+                    r = subprocess.run(
+                        ["pgrep", "-f", app_id_str],
+                        capture_output=True, timeout=2
+                    )
+                    if r.returncode == 0:
+                        # Found a running game! Get its proper name from appmanifest
+                        manifest_path = os.path.join(steam_path, "steamapps", f"appmanifest_{app_id_str}.acf")
+                        if os.path.exists(manifest_path):
+                            with open(manifest_path, 'r') as f:
+                                content = f.read()
+                            m = re.search(r'"name"\s+"([^"]+)"', content)
+                            if m:
+                                return {"appId": int(app_id_str), "name": m.group(1)}
+                        return {"appId": int(app_id_str), "name": f"App {app_id_str}"}
+                except:
+                    continue
+
+        # Fallback: extract name from .exe path
+        for line in all_procs.split('\n'):
+            if '.exe' in line.lower() and 'proton' in line.lower():
+                m = re.search(r'/([^/]+)\.exe', line, re.IGNORECASE)
+                if m:
+                    return {"appId": None, "name": m.group(1)}
+
+        return {"appId": None, "name": ""}
 
     async def get_launch_options(self, app_id: int) -> str:
         """RPC: Read launch options for a Steam app from localconfig.vdf.
@@ -359,6 +553,8 @@ benchmark_percentiles=97,AVG,1,0.1
                 headers={
                     "Content-Type": "application/json",
                     "x-api-key": api_key,
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:136.0) Gecko/20100101 Firefox/136.0",
+                    "Accept": "application/json",
                 },
                 method="POST"
             )
@@ -396,7 +592,10 @@ benchmark_percentiles=97,AVG,1,0.1
             url = f"{base_url}/api/games/lookup?steamAppId=0"
             req = urllib.request.Request(
                 url,
-                headers={"x-api-key": api_key},
+                headers={
+                    "x-api-key": api_key,
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:136.0) Gecko/20100101 Firefox/136.0",
+                },
                 method="GET"
             )
             context = _get_ssl_context()

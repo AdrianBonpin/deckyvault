@@ -10,6 +10,7 @@ export const checkMangohud = callable<[], {
   path: string
   version: string
   error?: string
+  debug?: string
 }>("check_mangohud")
 
 export const writeMangohudConfig = callable<[], {
@@ -33,10 +34,20 @@ export const readAndParseMangohudLog = callable<[logPath?: string], {
   error?: string
 }>("read_and_parse_mangohud_log")
 
-export const clearMangohudLog = callable<[logPath?: string], {
+export const clearMangohudLog = callable<[], {
   success: boolean
   error?: string
 }>("clear_mangohud_log")
+
+export const startMangohudLogging = callable<[], {
+  success: boolean
+  error?: string
+}>("start_mangohud_logging")
+
+export const stopMangohudLogging = callable<[], {
+  success: boolean
+  error?: string
+}>("stop_mangohud_logging")
 
 // ── System Info ─────────────────────────────────────────────────
 export const getHardwareInfo = callable<[], {
@@ -74,6 +85,15 @@ export const testApiKey = callable<[apiKey: string, baseUrl?: string], {
   valid: boolean
   error?: string
 }>("test_api_key")
+
+export const detectCurrentGame = callable<[], {
+  appId: number | null
+  name: string
+}>("detect_current_game")
+
+export const debugListTmp = callable<[], {
+  files: Array<{ name: string; size: number; mtime: number }>
+}>("debug_list_tmp")
 
 // ── Config Export/Import ────────────────────────────────────────
 export const exportConfig = callable<[settings: {

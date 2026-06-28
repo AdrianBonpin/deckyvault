@@ -5,6 +5,7 @@ import {
   PanelSectionRow,
   DropdownItem,
   TextField,
+  Field,
   staticClasses,
 } from "@decky/ui"
 import {
@@ -156,18 +157,6 @@ export default function SessionForm({
         </PanelSectionRow>
 
         <PanelSectionRow>
-          <Field label="In-game Settings" bottomSeparator="none">
-            <textarea
-              value={session.settingsJson}
-              onChange={(e) => onUpdateSession({ settingsJson: e.target.value })}
-              placeholder="e.g. High preset, 1280x800, TAA"
-              rows={3}
-              style={{ width: "100%", padding: "4px 8px", resize: "vertical" }}
-            />
-          </Field>
-        </PanelSectionRow>
-
-        <PanelSectionRow>
           <TextField
             label="Load Time - SSD (seconds)"
             value={session.loadTimeSsd}
@@ -197,16 +186,12 @@ export default function SessionForm({
         </PanelSectionRow>
 
         <PanelSectionRow>
-          <Field label="Notes" bottomSeparator="none">
-            <textarea
-              value={session.userNotes}
-              onChange={(e) => onUpdateSession({ userNotes: e.target.value })}
-              placeholder="Any observations about performance..."
-              rows={3}
-              maxLength={5000}
-              style={{ width: "100%", padding: "4px 8px", resize: "vertical" }}
-            />
-          </Field>
+          <TextField
+            label="Notes"
+            value={session.userNotes}
+            onChange={(e) => onUpdateSession({ userNotes: e.target.value })}
+            placeholder="Any observations about performance..."
+          />
         </PanelSectionRow>
       </PanelSection>
 

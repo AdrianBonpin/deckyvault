@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import type { DeckyVaultImportV1, HardwareSlug } from "@deckyvault/shared"
-import { getSettings, setSetting } from "./api"
+import { getSettings, setSetting, detectCurrentGame } from "./api"
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -171,6 +171,13 @@ export function useSession() {
     currentAppNameRef.current = ""
   }, [])
 
+  // Manual game name override (fallback when SteamClient events don't fire)
+  const setGameName = useCallback((name: string, appId?: number) => {
+    currentAppNameRef.current = name
+    if (appId !== undefined) currentAppIdRef.current = appId
+    setSession((prev) => ({ ...prev, gameName: name, appId: appId ?? prev.appId }))
+  }, [])
+
   return {
     recordingState,
     session,
@@ -184,7 +191,44 @@ export function useSession() {
     reset,
     onGameStart,
     onGameStop,
+    setGameName,
   }
+}
+
+// ── Game Detection Hook ──────────────────────────────────────────
+// Polls the Python backend to detect the currently running game.
+// Falls back to manual input if no game is detected.
+
+export function useGameDetection(
+  setGameName: (name: string, appId?: number) => void,
+  recordingState: RecordingState,
+) {
+  const [detecting, setDetecting] = useState(false)
+  const lastDetectedRef = useRef<string>("")
+
+  useEffect(() => {
+    // Don't poll while recording (user is already in-game)
+    if (recordingState !== "idle") return
+
+    const interval = setInterval(async () => {
+      try {
+        setDetecting(true)
+        const result = await detectCurrentGame()
+        if (result.name && result.name !== lastDetectedRef.current) {
+          lastDetectedRef.current = result.name
+          setGameName(result.name, result.appId ?? undefined)
+        }
+      } catch {
+        // Silently retry
+      } finally {
+        setDetecting(false)
+      }
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [recordingState, setGameName])
+
+  return { detecting }
 }
 
 // ── Payload Builder ─────────────────────────────────────────────

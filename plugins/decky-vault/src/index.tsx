@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react"
 import {
   PanelSection,
   PanelSectionRow,
@@ -9,11 +8,13 @@ import {
 } from "@decky/api"
 import { FaChartLine } from "react-icons/fa"
 import MainPanel from "./components/main-panel"
-import SettingsPanel from "./components/settings-panel"
-import { useSettings, useSession } from "./lib/store"
+import { useSettings, useSession, useGameDetection } from "./lib/store"
 import {
   readAndParseMangohudLog,
   clearMangohudLog,
+  writeMangohudConfig,
+  startMangohudLogging,
+  stopMangohudLogging,
   getHardwareInfo,
   getOsVersion,
   getProtonVersion,
@@ -35,97 +36,79 @@ function Content() {
     reset,
     onGameStart,
     onGameStop,
+    setGameName,
   } = useSession()
-  const gameStartedUnregRef = useRef<{ unregister: () => void } | null>(null)
-  const gameStoppedUnregRef = useRef<{ unregister: () => void } | null>(null)
 
-  // ── Register SteamClient game events ──────────────────────────
-  useEffect(() => {
-    try {
-      const startedReg = SteamClient.Apps.RegisterForGameStarted(async (appId: number) => {
-        let gameName = `App ${appId}`
-        try {
-          const info = await SteamClient.Apps.GetCurrentGameInfo()
-          if (info.appId === appId) {
-            gameName = info.strAppName
-          }
-        } catch {
-          // GetCurrentGameInfo may not be available in all contexts
-        }
-        onGameStart(appId, gameName)
-      })
-      gameStartedUnregRef.current = startedReg
-
-      const stoppedReg = SteamClient.Apps.RegisterForGameStopped((_appId: number) => {
-        onGameStop()
-      })
-      gameStoppedUnregRef.current = stoppedReg
-    } catch (e) {
-      console.warn("[DeckyVault] SteamClient event registration failed:", e)
-    }
-
-    return () => {
-      try {
-        gameStartedUnregRef.current?.unregister()
-        gameStoppedUnregRef.current?.unregister()
-      } catch {
-        // ignore
-      }
-    }
-  }, [onGameStart, onGameStop])
+  // ── Game detection via polling ────────────────────────────────
+  useGameDetection(setGameName, recordingState)
 
   // ── Handle start recording ────────────────────────────────────
   async function handleStart() {
+    // Write MangoHud config with logging settings
+    await writeMangohudConfig()
     // Clear any previous log file
     await clearMangohudLog()
+    // Fire-and-forget: try to start MangoHud logging (retries until game launches)
+    startMangohudLogging()
     startRecording()
   }
 
   // ── Handle stop recording: parse log + read system info ────────
   async function handleStop() {
-    stopRecording()
+    try {
+      // Try to stop MangoHud logging (best-effort, may fail if game already closed)
+      await stopMangohudLogging()
+      stopRecording()
 
-    // Parse the MangoHud log
-    const logResult = await readAndParseMangohudLog()
-    if (logResult.error) {
-      setError(logResult.error)
-      // Still transition to stopped state so user can see the error + manual fields
-      return
-    }
+      // Parse the MangoHud log
+      const logResult = await readAndParseMangohudLog()
+      if (logResult.error) {
+        setError(logResult.error)
+        return
+      }
 
-    // Read system info in parallel
-    const [hwInfo, osVersion] = await Promise.all([
-      getHardwareInfo(),
-      getOsVersion(),
-    ])
-
-    // Read Proton version + launch options if we have an app ID
-    let protonVersion = ""
-    let launchOptions = ""
-    if (session.appId) {
-      const [pv, lo] = await Promise.all([
-        getProtonVersion(session.appId),
-        getLaunchOptions(session.appId),
+      // Read system info in parallel
+      const [hwInfo, osVersion] = await Promise.all([
+        getHardwareInfo(),
+        getOsVersion(),
       ])
-      protonVersion = pv
-      launchOptions = lo
+
+      // Read Proton version + launch options if we have an app ID
+      let protonVersion = ""
+      let launchOptions = ""
+      const currentAppId = session.appId
+      if (currentAppId) {
+        try {
+          const [pv, lo] = await Promise.all([
+            getProtonVersion(currentAppId),
+            getLaunchOptions(currentAppId),
+          ])
+          protonVersion = pv
+          launchOptions = lo
+        } catch {
+          // Non-critical, continue without
+        }
+      }
+
+      // Use settings hardware override if set, otherwise auto-detected
+      const hardwareSlug = settings.hardwareSlug || hwInfo.slug
+
+      updateSession({
+        fpsAvg: logResult.fpsAvg ?? null,
+        fpsLow: logResult.fpsLow ?? null,
+        fpsHigh: logResult.fpsHigh ?? null,
+        fpsOnePercentLow: logResult.fpsOnePercentLow ?? null,
+        tdpWatts: logResult.tdpWatts ?? null,
+        hardwareSlug,
+        hardwareName: hwInfo.name,
+        osVersion,
+        protonVersion,
+        launchOptions,
+      })
+    } catch (e) {
+      console.error("[DeckyVault] Error stopping recording:", e)
+      setError("Failed to process recording. Check the MangoHud log.")
     }
-
-    // Use settings hardware override if set, otherwise auto-detected
-    const hardwareSlug = settings.hardwareSlug || hwInfo.slug
-
-    updateSession({
-      fpsAvg: logResult.fpsAvg ?? null,
-      fpsLow: logResult.fpsLow ?? null,
-      fpsHigh: logResult.fpsHigh ?? null,
-      fpsOnePercentLow: logResult.fpsOnePercentLow ?? null,
-      tdpWatts: logResult.tdpWatts ?? null,
-      hardwareSlug,
-      hardwareName: hwInfo.name,
-      osVersion,
-      protonVersion,
-      launchOptions,
-    })
   }
 
   if (!loaded) {
@@ -154,9 +137,7 @@ function Content() {
         onAddToRecent={addToRecent}
         onReset={reset}
         setError={setError}
-      />
-      <SettingsPanel
-        settings={settings}
+        setGameName={setGameName}
         onUpdateSetting={updateSetting}
       />
     </>
@@ -215,7 +196,7 @@ export default definePlugin(() => {
     titleView: <div className={staticClasses.Title}>DeckyVault</div>,
     content: <Content />,
     icon: <DeckyVaultIcon />,
-    alwaysRender: false,
+    alwaysRender: true,
     onDismount() {
       console.log("[DeckyVault] Plugin unloading")
     },
