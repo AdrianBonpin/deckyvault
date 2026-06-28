@@ -535,14 +535,7 @@ export function ReviewStep({
                     )}
                 </div>
 
-                {data.settings.length === 0 ? (
-                    <div className='rounded-lg border border-border bg-text/5 p-4'>
-                        <p className='text-xs text-text/50'>
-                            Add game settings to enable screenshot upload
-                        </p>
-                    </div>
-                ) : (
-                    <div className='space-y-3'>
+                <div className='space-y-3'>
                         {/* Existing screenshots (from edit mode) */}
                         {existingScreenshots && existingScreenshots.length > 0 && (
                             <div className="space-y-2">
@@ -669,7 +662,6 @@ export function ReviewStep({
                             </div>
                         )}
                     </div>
-                )}
             </div>
 
             {/* User Notes */}
