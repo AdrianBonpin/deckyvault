@@ -152,7 +152,6 @@ export default async function GamePage({
                 and(
                     eq(gameVersions.gameId, game.id),
                     eq(performanceEntries.isRemoved, false),
-                    sql`${performanceEntries.settingsJson} IS NOT NULL`,
                 ),
             )
             .then((r) => r[0]?.count ?? 0),
@@ -217,7 +216,6 @@ export default async function GamePage({
                 and(
                     eq(gameVersions.gameId, game.id),
                     eq(performanceEntries.isRemoved, false),
-                    sql`${performanceEntries.settingsJson} IS NOT NULL`,
                 ),
             )
             .orderBy(desc(performanceEntries.isPinned), desc(performanceEntries.upvotes)),
