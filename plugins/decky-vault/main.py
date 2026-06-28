@@ -170,6 +170,9 @@ class Plugin:
                     capture_output=True, text=True, timeout=5
                 )
                 version = version_result.stdout.strip() if version_result.returncode == 0 else "unknown"
+                # Clean up version string (remove git hash suffix)
+                if version and "-" in version:
+                    version = version.split("-")[0]
                 return {"installed": True, "path": mangohud_path, "version": version}
             else:
                 return {"installed": False, "path": "", "version": ""}
