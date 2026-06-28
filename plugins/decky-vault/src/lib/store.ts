@@ -171,6 +171,13 @@ export function useSession() {
     currentAppNameRef.current = ""
   }, [])
 
+  // Manual game name override (fallback when SteamClient events don't fire)
+  const setGameName = useCallback((name: string, appId?: number) => {
+    currentAppNameRef.current = name
+    if (appId !== undefined) currentAppIdRef.current = appId
+    setSession((prev) => ({ ...prev, gameName: name, appId: appId ?? prev.appId }))
+  }, [])
+
   return {
     recordingState,
     session,
@@ -184,6 +191,7 @@ export function useSession() {
     reset,
     onGameStart,
     onGameStop,
+    setGameName,
   }
 }
 

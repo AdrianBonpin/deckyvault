@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react"
 import {
   ButtonItem,
   PanelSection,
   PanelSectionRow,
+  TextField,
   staticClasses,
 } from "@decky/ui"
 import {
   FaPlay,
   FaStop,
   FaClock,
+  FaGamepad,
 } from "react-icons/fa"
 import type { RecordingState, SessionData, RecentSession, PluginSettings } from "../lib/store"
 import SessionForm from "./session-form"
@@ -25,6 +26,7 @@ interface MainPanelProps {
   onAddToRecent: (sess: SessionData) => void
   onReset: () => void
   setError: (msg: string) => void
+  setGameName: (name: string, appId?: number) => void
 }
 
 export default function MainPanel({
@@ -39,6 +41,7 @@ export default function MainPanel({
   onAddToRecent,
   onReset,
   setError,
+  setGameName,
 }: MainPanelProps) {
   const [elapsed, setElapsed] = useState(0)
 
@@ -123,12 +126,22 @@ export default function MainPanel({
       )}
 
       {recordingState === "idle" && (
-        <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ padding: "8px 0", fontSize: "12px", opacity: 0.7 }}>
-            Enable MangoHud for your game, then press Start Recording before launching.
-            Configure MangoHud in the Settings tab.
-          </div>
-        </PanelSectionRow>
+        <>
+          <PanelSectionRow>
+            <TextField
+              label="Game Name"
+              value={session.gameName}
+              onChange={(e) => setGameName(e.target.value)}
+              placeholder="e.g. Cyberpunk 2077"
+            />
+          </PanelSectionRow>
+          <PanelSectionRow>
+            <div className={staticClasses.Text} style={{ padding: "8px 0", fontSize: "12px", opacity: 0.7 }}>
+              Enable MangoHud for your game, then press Start Recording before launching.
+              Configure MangoHud in the Settings tab.
+            </div>
+          </PanelSectionRow>
+        </>
       )}
 
       {recentSessions.length > 0 && recordingState === "idle" && (

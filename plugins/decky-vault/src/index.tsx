@@ -36,6 +36,7 @@ function Content() {
     reset,
     onGameStart,
     onGameStop,
+    setGameName,
   } = useSession()
   const gameStartedUnregRef = useRef<{ unregister: () => void } | null>(null)
   const gameStoppedUnregRef = useRef<{ unregister: () => void } | null>(null)
@@ -159,6 +160,7 @@ function Content() {
         onAddToRecent={addToRecent}
         onReset={reset}
         setError={setError}
+        setGameName={setGameName}
       />
       <SettingsPanel
         settings={settings}
