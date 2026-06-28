@@ -400,13 +400,29 @@ exec mangohud "$@"
         return {"slug": slug, "name": name, "raw": product_name}
 
     async def get_os_version(self) -> str:
-        """RPC: Read OS version from /etc/os-release."""
+        """RPC: Read OS version from /etc/os-release.
+        SteamOS only puts 'SteamOS' in PRETTY_NAME, so we build a more
+        useful string from VERSION_ID (and BUILD_ID) instead."""
         try:
+            pretty = ""
+            version_id = ""
+            build_id = ""
             with open("/etc/os-release", 'r') as f:
                 for line in f:
                     if line.startswith("PRETTY_NAME="):
-                        return line.split("=", 1)[1].strip().strip('"')
-            return "unknown"
+                        pretty = line.split("=", 1)[1].strip().strip('"')
+                    elif line.startswith("VERSION_ID="):
+                        version_id = line.split("=", 1)[1].strip().strip('"')
+                    elif line.startswith("BUILD_ID="):
+                        build_id = line.split("=", 1)[1].strip().strip('"')
+            # For SteamOS, combine name + version id for a meaningful label
+            if version_id:
+                name = "SteamOS" if (pretty == "SteamOS" or not pretty) else pretty
+                label = f"{name} {version_id}".strip()
+                if build_id:
+                    label += f" (build {build_id})"
+                return label
+            return pretty or "unknown"
         except (IOError, FileNotFoundError):
             return "unknown"
 
@@ -647,3 +663,69 @@ exec mangohud "$@"
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+    async def initiate_pair(self, base_url: str = "https://deckyvault.xyz") -> dict:
+        """RPC: Start a plugin pairing session. Returns {success, token, qrUrl, expiresAt, error?}.
+        The qrUrl should be shown as a QR code in the plugin UI."""
+        import urllib.request
+        import urllib.error
+        try:
+            url = f"{base_url}/api/plugin/pair/initiate"
+            req = urllib.request.Request(
+                url,
+                data=b"{}",
+                headers={
+                    "Content-Type": "application/json",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:136.0) Gecko/20100101 Firefox/136.0",
+                    "Accept": "application/json",
+                },
+                method="POST"
+            )
+            context = _get_ssl_context()
+            with urllib.request.urlopen(req, timeout=10, context=context) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                return {
+                    "success": True,
+                    "token": result.get("token", ""),
+                    "qrUrl": result.get("qrUrl", ""),
+                    "expiresAt": result.get("expiresAt", ""),
+                }
+        except urllib.error.HTTPError as e:
+            return {"success": False, "error": f"Server returned status {e.code}"}
+        except urllib.error.URLError as e:
+            return {"success": False, "error": f"Network error: {str(e.reason)}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    async def check_pair_status(self, token: str, base_url: str = "https://deckyvault.xyz") -> dict:
+        """RPC: Poll pairing status. Returns {status: 'pending'|'confirmed'|'expired'|'invalid', apiKey?, error?}."""
+        import urllib.request
+        import urllib.error
+        try:
+            url = f"{base_url}/api/plugin/pair/status/{token}"
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:136.0) Gecko/20100101 Firefox/136.0",
+                    "Accept": "application/json",
+                },
+                method="GET"
+            )
+            context = _get_ssl_context()
+            with urllib.request.urlopen(req, timeout=10, context=context) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                return {
+                    "status": result.get("status", "pending"),
+                    "apiKey": result.get("apiKey"),
+                    "keyName": result.get("keyName"),
+                }
+        except urllib.error.HTTPError as e:
+            try:
+                err = json.loads(e.read().decode('utf-8'))
+                return {"status": err.get("status", "invalid"), "error": err.get("error", f"status {e.code}")}
+            except Exception:
+                return {"status": "invalid", "error": f"Server returned status {e.code}"}
+        except urllib.error.URLError as e:
+            return {"status": "invalid", "error": f"Network error: {str(e.reason)}"}
+        except Exception as e:
+            return {"status": "invalid", "error": str(e)}

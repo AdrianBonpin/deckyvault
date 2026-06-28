@@ -178,3 +178,30 @@ export const apikeyRelations = relations(apikey, ({ one }) => ({
     references: [user.id],
   }),
 }))
+
+// ── Decky plugin pairing ────────────────────────────────────
+// Short-lived pairing sessions that let a Steam Deck link to a
+// user account by scanning a QR code on a logged-in phone.
+export const pluginPairing = pgTable(
+  "plugin_pairings",
+  {
+    token: text("token").primaryKey(),
+    userId: text("user_id"),
+    apiKeyId: text("api_key_id"),
+    // Plaintext API key, only present between confirm and the plugin
+    // retrieving it. Cleared once the plugin has fetched it.
+    apiKey: text("api_key"),
+    status: text("status").default("pending").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    confirmedAt: timestamp("confirmed_at"),
+    expiresAt: timestamp("expires_at").notNull(),
+  },
+  (table) => [index("plugin_pairings_userId_idx").on(table.userId)],
+)
+
+export const pluginPairingRelations = relations(pluginPairing, ({ one }) => ({
+  user: one(user, {
+    fields: [pluginPairing.userId],
+    references: [user.id],
+  }),
+}))

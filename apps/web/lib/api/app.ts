@@ -52,6 +52,7 @@ import { eq } from "drizzle-orm"
 import { mobileRoutes } from "@/lib/api/mobile"
 import { gamesLookupRoutes } from "@/lib/api/games-lookup"
 import { performanceImportRoutes } from "@/lib/api/performance-import"
+import { pluginPairingRoutes } from "@/lib/api/plugin-pairing"
 
 const betterAuth = new Elysia({ name: "better-auth" })
   .mount(auth.handler)
@@ -245,6 +246,7 @@ export const app = new Elysia({ prefix: "/api" })
       .use(screenshotRoutes)
       .use(gamesLookupRoutes)
       .use(mobileRoutes)
+      .use(pluginPairingRoutes)
   )
   // ── Write routes ───────────────────────────────────────────
   .group("", (app) =>
