@@ -155,26 +155,26 @@ class Plugin:
         return self._settings
 
     async def check_mangohud(self) -> dict:
-        """RPC: Check if MangoHud is installed. Returns {installed: bool, path: str, version: str}."""
-        import subprocess as sp
+        """RPC: Check if MangoHud is installed."""
         import os
         try:
-            # Use the full path to avoid PATH issues
-            mangohud_path = "/usr/bin/mangohud"
-            if not os.path.exists(mangohud_path):
-                # Fall back to which
-                r = sp.run(["which", "mangohud"], capture_output=True, text=True, timeout=5)
-                if r.returncode != 0:
-                    return {"installed": False, "path": "", "version": ""}
-                mangohud_path = r.stdout.strip()
+            path = "/usr/bin/mangohud"
+            exists = os.path.exists(path)
+            if not exists:
+                return {"installed": False, "path": "", "version": ""}
 
-            # Get version using the full path
-            v = sp.run([mangohud_path, "--version"], capture_output=True, text=True, timeout=5)
-            version = v.stdout.strip() if v.returncode == 0 else ""
-            if version and "-" in version:
-                version = version.split("-")[0]
+            # Get version using os.popen (more reliable than subprocess in some envs)
+            version = ""
+            try:
+                with os.popen(f"{path} --version 2>/dev/null") as pipe:
+                    v = pipe.read().strip()
+                    if v and "-" in v:
+                        v = v.split("-")[0]
+                    version = v
+            except:
+                pass
 
-            return {"installed": True, "path": mangohud_path, "version": version or ""}
+            return {"installed": True, "path": path, "version": version}
         except Exception as e:
             return {"installed": False, "path": "", "version": "", "error": str(e)}
 
