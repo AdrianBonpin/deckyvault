@@ -403,9 +403,9 @@ export const performanceVerifyRoutes = new Elysia({
         .returning()
 
       // ── Remove screenshots marked for deletion ────────────────────────
-      const removedIds: string[] = Array.isArray(payload.removedScreenshotIds)
-        ? payload.removedScreenshotIds
-        : []
+      const removedIds: string[] = (Array.isArray(payload.removedScreenshotIds)
+        ? payload.removedScreenshotIds.filter((id: unknown) => typeof id === "string" && id.length > 0)
+        : [])
 
       if (removedIds.length > 0) {
         // Fetch storage keys before deleting rows
