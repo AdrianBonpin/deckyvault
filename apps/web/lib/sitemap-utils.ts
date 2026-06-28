@@ -79,6 +79,8 @@ export const STATIC_PAGES: StaticPageDef[] = [
   // Core browse pages
   { urlPath: "/games", changeFrequency: "daily", priority: 0.9 },
   { urlPath: "/devices", changeFrequency: "weekly", priority: 0.7 },
+  // Plugin landing page
+  { urlPath: "/plugin", changeFrequency: "monthly", priority: 0.7 },
   { urlPath: "/updates", changeFrequency: "weekly", priority: 0.6 },
   // Utility pages
   { urlPath: "/compare", changeFrequency: "weekly", priority: 0.5 },

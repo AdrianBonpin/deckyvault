@@ -90,7 +90,7 @@ export default function RootLayout({
     return (
         <html
             lang='en'
-            className={`${font.variable} bg-background text-text antialiased overscroll-none`}
+            className={`${font.variable} bg-background text-text antialiased overscroll-none scroll-smooth`}
         >
             <head>
                 {/* DNS prefetch + preconnect for external image CDNs */}

@@ -18,6 +18,7 @@ import {
     GaugeIcon,
     ChevronDownIcon,
     PencilIcon,
+    X as XIcon,
 } from "lucide-react"
 import Link from "next/link"
 import { useSession } from "@/lib/auth-client"
@@ -640,6 +641,23 @@ export function GamePageClient({
         new Set(),
     )
     const presetsRef = useRef<HTMLDivElement>(null)
+
+    // DeckyVault plugin CTA dismissal (persisted across games in localStorage)
+    const [showPluginCta, setShowPluginCta] = useState(false)
+    useEffect(() => {
+        if (typeof window === "undefined") return
+        if (localStorage.getItem("dv-plugin-cta-dismissed") !== "1") {
+            setShowPluginCta(true)
+        }
+    }, [])
+    const dismissPluginCta = () => {
+        setShowPluginCta(false)
+        try {
+            localStorage.setItem("dv-plugin-cta-dismissed", "1")
+        } catch {
+            // ignore
+        }
+    }
 
     // On mount, auto-open preset from URL
     useEffect(() => {
@@ -1425,6 +1443,39 @@ export function GamePageClient({
                     className='px-4 md:px-[10svw]'
                 >
                     <div className='max-w-7xl mx-auto flex flex-col gap-4'>
+                        {showPluginCta && (
+                            <div
+                                data-gamepad-focusable
+                                className='flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:pr-2 rounded-xl border border-primary/20 bg-primary/5'
+                            >
+                                <div className='flex items-center gap-3 flex-1 min-w-0'>
+                                    <div className='shrink-0 w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center'>
+                                        <Gamepad2Icon className='h-5 w-5 text-primary' />
+                                    </div>
+                                    <div className='min-w-0 flex-1'>
+                                        <p className='text-sm text-text leading-snug'>
+                                            Have a Steam Deck? Record benchmarks automatically with the DeckyVault Decky plugin — one tap, no manual screenshots.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className='flex items-center gap-2 shrink-0'>
+                                    <Link
+                                        href='/plugin'
+                                        className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors'
+                                    >
+                                        Get the plugin
+                                        <ExternalLinkIcon className='h-3 w-3' />
+                                    </Link>
+                                    <button
+                                        onClick={dismissPluginCta}
+                                        className='p-1.5 rounded-md text-text/40 hover:text-text hover:bg-text/5 transition-colors'
+                                        aria-label='Dismiss'
+                                    >
+                                        <XIcon className='h-4 w-4' />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                         <div className='flex items-center justify-between'>
                             <h2 className='text-lg font-semibold'>
                                 Performance Entries

@@ -81,6 +81,23 @@ export const uploadToDeckyvault = callable<[
   status?: number
 }>("upload_to_deckyvault")
 
+export const listScreenshots = callable<[limit?: number], {
+  screenshots: Array<{ path: string; name: string; mtime: number; size: number }>
+  error?: string
+}>("list_screenshots")
+
+export const uploadScreenshots = callable<[
+  entryId: string,
+  screenshotPaths: string[],
+  apiKey: string,
+  baseUrl?: string
+], {
+  success: boolean
+  uploaded?: number
+  error?: string
+  status?: number
+}>("upload_screenshots")
+
 export const testApiKey = callable<[apiKey: string, baseUrl?: string], {
   valid: boolean
   error?: string

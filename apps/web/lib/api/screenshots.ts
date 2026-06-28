@@ -2,12 +2,28 @@ import { Elysia, t } from "elysia"
 import { db } from "@/lib/db/index"
 import { performanceEntries, entryScreenshots, storageObjects } from "@/lib/db/schema"
 import { eq, sql } from "drizzle-orm"
-import { requireRole } from "@/lib/auth/guard"
+import { requireAuthWithApiKeyFallback } from "@/lib/auth/api-key-guard"
 import { uploadObject, deleteObject, getR2PublicUrl, isR2Configured } from "@/lib/storage"
 import { processScreenshot, isAllowedMimeType } from "@/lib/image-processing"
 
 const MAX_SCREENSHOTS_PER_ENTRY = 2
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024 // 10 MB raw
+
+/** Auth that accepts either a session cookie or an x-api-key header,
+ * then enforces a role. Used so the Decky plugin (API key) and the web
+ * app (session) can both upload screenshots. */
+async function requireRoleWithApiKeyFallback(
+  headers: Headers,
+  roles: string[],
+) {
+  const guard = await requireAuthWithApiKeyFallback(headers)
+  if (!guard.ok) return guard
+  const userRole = guard.user.role ?? "user"
+  if (!roles.includes(userRole)) {
+    return { ok: false as const, error: "Forbidden", status: 403 }
+  }
+  return guard
+}
 
 export const screenshotRoutes = new Elysia({ prefix: "/performance", detail: { tags: ["Performance"] } })
 
@@ -15,7 +31,7 @@ export const screenshotRoutes = new Elysia({ prefix: "/performance", detail: { t
   .post(
     "/:id/screenshots",
     async ({ params, request, set }) => {
-      const guard = await requireRole(request.headers, ["user", "contributor", "admin"])
+      const guard = await requireRoleWithApiKeyFallback(request.headers, ["user", "contributor", "admin"])
       if (!guard.ok) {
         set.status = guard.status
         return { error: guard.error }
@@ -202,7 +218,7 @@ export const screenshotRoutes = new Elysia({ prefix: "/performance", detail: { t
   .delete(
     "/:id/screenshots/:sid",
     async ({ params, request, set }) => {
-      const guard = await requireRole(request.headers, ["user", "contributor", "admin"])
+      const guard = await requireRoleWithApiKeyFallback(request.headers, ["user", "contributor", "admin"])
       if (!guard.ok) {
         set.status = guard.status
         return { error: guard.error }
