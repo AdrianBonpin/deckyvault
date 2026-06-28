@@ -4,6 +4,7 @@ import { db } from "@/lib/db/index"
 import { pluginPairing } from "@/lib/db/schema"
 import { eq, and, lt } from "drizzle-orm"
 import { auth } from "@/lib/auth"
+import { authenticateWithApiKey } from "@/lib/auth/api-key-guard"
 
 const PAIRING_TTL_MS = 10 * 60 * 1000 // 10 minutes
 
@@ -26,6 +27,28 @@ export const pluginPairingRoutes = new Elysia({
   prefix: "/plugin",
   detail: { tags: ["Plugin"] },
 })
+  // ── Verify API key: plugin checks if its key is still valid ──
+  .get(
+    "/verify-key",
+    async ({ request, set }) => {
+      const guard = await authenticateWithApiKey(request.headers)
+      if (!guard.ok) {
+        set.status = guard.status
+        return { valid: false, error: guard.error }
+      }
+      return {
+        valid: true,
+        user: { name: guard.user.name, image: guard.user.image },
+      }
+    },
+    {
+      detail: {
+        summary: "Verify a Decky plugin API key",
+        description:
+          "Checks whether the x-api-key header contains a valid, enabled API key. Used by the plugin to test its saved key.",
+      },
+    },
+  )
   // ── Initiate: plugin requests a pairing token (no auth) ──────
   .post(
     "/pair/initiate",
