@@ -157,29 +157,30 @@ class Plugin:
     async def check_mangohud(self) -> dict:
         """RPC: Check if MangoHud is installed."""
         import os
+        import re
         try:
             path = "/usr/bin/mangohud"
             exists = os.path.exists(path)
             if not exists:
-                return {"installed": False, "path": "", "version": "", "debug": "file not found"}
+                return {"installed": False, "path": "", "version": ""}
 
-            # Get version using os.popen
+            # Read version from the shell script itself
             version = ""
-            debug = ""
             try:
-                with os.popen(f"{path} --version 2>&1") as pipe:
-                    v = pipe.read().strip()
-                    debug = f"popen got: {repr(v)}"
-                    if v:
-                        if "-" in v:
-                            v = v.split("-")[0]
-                        version = v
-            except Exception as e:
-                debug = f"popen error: {str(e)}"
+                with open(path, 'r') as f:
+                    content = f.read()
+                # Look for the version line: echo v0.8.3-rc1-24-g33c2c7dd+
+                m = re.search(r'echo\s+(v?[\d.]+[^\s]*)', content)
+                if m:
+                    version = m.group(1)
+                    if "-" in version:
+                        version = version.split("-")[0]
+            except:
+                pass
 
-            return {"installed": True, "path": path, "version": version, "debug": debug}
+            return {"installed": True, "path": path, "version": version}
         except Exception as e:
-            return {"installed": False, "path": "", "version": "", "error": str(e), "debug": "outer error"}
+            return {"installed": False, "path": "", "version": "", "error": str(e)}
 
     async def write_mangohud_config(self) -> dict:
         """RPC: Write the MangoHud logging config to ~/.config/MangoHud/MangoHud.conf.
