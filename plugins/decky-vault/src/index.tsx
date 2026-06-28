@@ -14,6 +14,7 @@ import {
   readAndParseMangohudLog,
   clearMangohudLog,
   writeMangohudConfig,
+  stopMangohudLogging,
   getHardwareInfo,
   getOsVersion,
   getProtonVersion,
@@ -80,6 +81,8 @@ function Content() {
   // ── Handle stop recording: parse log + read system info ────────
   async function handleStop() {
     try {
+      // Try to stop MangoHud logging (best-effort, may fail if game already closed)
+      await stopMangohudLogging()
       stopRecording()
 
       // Parse the MangoHud log
