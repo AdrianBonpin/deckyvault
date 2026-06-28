@@ -599,31 +599,40 @@ exec mangohud "$@"
             return {"success": False, "error": str(e), "status": 0}
 
     async def test_api_key(self, api_key: str, base_url: str = "https://deckyvault.xyz") -> dict:
-        """RPC: Test if an API key is valid by calling the games lookup endpoint.
-        Returns {valid: bool, error: str?}."""
+        """RPC: Test if an API key is valid by calling the dedicated verify endpoint.
+        Returns {valid: bool, error: str?, userName?: str, userImage?: str}."""
         import urllib.request
         import urllib.error
 
+        if not api_key:
+            return {"valid": False, "error": "No API key provided"}
+
         try:
-            url = f"{base_url}/api/games/lookup?steamAppId=0"
+            url = f"{base_url}/api/plugin/verify-key"
             req = urllib.request.Request(
                 url,
                 headers={
                     "x-api-key": api_key,
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:136.0) Gecko/20100101 Firefox/136.0",
+                    "Accept": "application/json",
                 },
                 method="GET"
             )
             context = _get_ssl_context()
             with urllib.request.urlopen(req, timeout=10, context=context) as response:
-                # A 404 (game not found) still means the API key is valid
-                return {"valid": True}
+                result = json.loads(response.read().decode('utf-8'))
+                return {
+                    "valid": True,
+                    "userName": result.get("user", {}).get("name"),
+                    "userImage": result.get("user", {}).get("image"),
+                }
         except urllib.error.HTTPError as e:
             if e.code == 401:
-                return {"valid": False, "error": "Invalid API key"}
-            elif e.code in (400, 404):
-                return {"valid": True}  # Key works, just bad request or no game with ID 0
-            else:
+                return {"valid": False, "error": "Invalid or revoked API key"}
+            try:
+                err = json.loads(e.read().decode('utf-8'))
+                return {"valid": False, "error": err.get("error", f"Server returned status {e.code}")}
+            except Exception:
                 return {"valid": False, "error": f"Server returned status {e.code}"}
         except urllib.error.URLError as e:
             return {"valid": False, "error": f"Network error: {str(e.reason)}"}
