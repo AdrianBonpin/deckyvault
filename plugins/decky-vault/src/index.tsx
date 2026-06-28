@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react"
 import {
   PanelSection,
   PanelSectionRow,
@@ -9,7 +8,7 @@ import {
 } from "@decky/api"
 import { FaChartLine } from "react-icons/fa"
 import MainPanel from "./components/main-panel"
-import { useSettings, useSession } from "./lib/store"
+import { useSettings, useSession, useGameDetection } from "./lib/store"
 import {
   readAndParseMangohudLog,
   clearMangohudLog,
@@ -39,46 +38,9 @@ function Content() {
     onGameStop,
     setGameName,
   } = useSession()
-  const gameStartedUnregRef = useRef<{ unregister: () => void } | null>(null)
 
-  // ── Register SteamClient game events ──────────────────────────
-  useEffect(() => {
-    try {
-      // Use RegisterForAppLifetimeNotifications — the correct API for
-      // detecting when games start/stop on Steam Deck.
-      const reg = SteamClient.GameSessions.RegisterForAppLifetimeNotifications(
-        (notification: AppLifetimeNotification) => {
-          if (notification.bRunning) {
-            // Game started — try to get the display name from appStore
-            let gameName = `App ${notification.unAppID}`
-            try {
-              const overview = window.appStore?.GetAppOverviewByAppID(notification.unAppID)
-              if (overview?.display_name) {
-                gameName = overview.display_name
-              }
-            } catch {
-              // fallback
-            }
-            onGameStart(notification.unAppID, gameName)
-          } else {
-            // Game stopped
-            onGameStop()
-          }
-        },
-      )
-      gameStartedUnregRef.current = reg
-    } catch (e) {
-      console.warn("[DeckyVault] SteamClient event registration failed:", e)
-    }
-
-    return () => {
-      try {
-        gameStartedUnregRef.current?.unregister()
-      } catch {
-        // ignore
-      }
-    }
-  }, [onGameStart, onGameStop])
+  // ── Game detection via polling ────────────────────────────────
+  useGameDetection(setGameName, recordingState)
 
   // ── Handle start recording ────────────────────────────────────
   async function handleStart() {

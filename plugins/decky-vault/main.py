@@ -430,39 +430,59 @@ exec mangohud "$@"
             return ""
 
     async def detect_current_game(self) -> dict:
-        """RPC: Detect the currently running game by checking active window and processes.
+        """RPC: Detect the currently running game by checking processes.
         Returns {appId: int?, name: str}."""
         import subprocess
         import re
 
-        # Method 1: Try xdotool to get active window title
+        # Method 1: Check for Steam game processes by looking at cmdline
+        # Steam games run under Proton, so we look for the game's .exe in cmdline
         try:
             r = subprocess.run(
-                ["xdotool", "getactivewindow", "getwindowname"],
+                ["ps", "-eo", "pid,args", "--no-headers"],
                 capture_output=True, text=True, timeout=3
             )
             if r.returncode == 0:
-                title = r.stdout.strip()
-                if title and title != "Steam" and "Steam" not in title:
-                    return {"appId": None, "name": title}
+                for line in r.stdout.split('\n'):
+                    # Look for Proton game processes (contain .exe)
+                    if '.exe' in line.lower() and 'proton' in line.lower():
+                        # Extract game name from path
+                        m = re.search(r'/([^/]+)\.exe', line, re.IGNORECASE)
+                        if m:
+                            return {"appId": None, "name": m.group(1)}
+                    # Also check for native Linux games
+                    if 'gameoverlayrenderer' in line and 'steamapps/common' in line:
+                        m = re.search(r'steamapps/common/([^/]+)', line)
+                        if m:
+                            return {"appId": None, "name": m.group(1)}
         except:
             pass
 
-        # Method 2: Check for Steam game processes
+        # Method 2: Check Steam's running game state via appmanifest
         try:
-            r = subprocess.run(
-                ["ps", "-eo", "comm", "--no-headers"],
-                capture_output=True, text=True, timeout=3
-            )
-            if r.returncode == 0:
-                # Common game-related processes
-                game_procs = [p for p in r.stdout.split('\n') if p and p not in (
-                    'steam', 'steamwebhelper', 'steamservice', 'steamclient',
-                    'bash', 'python3', 'mangohud', 'gamescope', 'Xorg',
-                    'kwin_wayland', 'plasmashell', 'konsole', 'dolphin'
-                )]
-                if game_procs:
-                    return {"appId": None, "name": game_procs[0]}
+            home = os.path.expanduser("~")
+            steam_path = os.path.join(home, ".steam", "steam")
+            # Check if any compatdata directories have active processes
+            compat_dir = os.path.join(steam_path, "steamapps", "compatdata")
+            if os.path.exists(compat_dir):
+                for app_id_str in os.listdir(compat_dir):
+                    if not app_id_str.isdigit():
+                        continue
+                    # Check if this app has a running process
+                    r = subprocess.run(
+                        ["pgrep", "-f", app_id_str],
+                        capture_output=True, timeout=2
+                    )
+                    if r.returncode == 0:
+                        # Found a running game! Get its name from appmanifest
+                        manifest_path = os.path.join(steam_path, "steamapps", f"appmanifest_{app_id_str}.acf")
+                        if os.path.exists(manifest_path):
+                            with open(manifest_path, 'r') as f:
+                                content = f.read()
+                            m = re.search(r'"name"\s+"([^"]+)"', content)
+                            if m:
+                                return {"appId": int(app_id_str), "name": m.group(1)}
+                        return {"appId": int(app_id_str), "name": f"App {app_id_str}"}
         except:
             pass
 
