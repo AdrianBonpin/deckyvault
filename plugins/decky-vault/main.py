@@ -217,11 +217,42 @@ benchmark_percentiles=97,AVG,1,0.1
                 return {"exists": True, "content": f.read(), "path": config_path}
         return {"exists": False, "content": "", "path": config_path}
 
-    async def read_and_parse_mangohud_log(self, log_path: str = "/tmp/deckyvault-mangohud.log") -> dict:
+    async def _find_mangohud_log(self) -> str | None:
+        """Find the most recent MangoHud log file in /tmp/.
+        MangoHud creates log files with the game name and timestamp."""
+        import glob
+        # Look for any CSV or log files in /tmp that might be MangoHud logs
+        candidates = []
+        for pattern in ["/tmp/*.csv", "/tmp/*.log", "/tmp/MangoHud*"]:
+            for f in glob.glob(pattern):
+                # Skip our own known file
+                if "deckyvault" in f:
+                    candidates.append(f)
+                    continue
+                # Check if the file starts with a MangoHud header
+                try:
+                    with open(f, 'r') as fh:
+                        first_line = fh.readline()
+                        if 'MangoHud' in first_line or 'fps' in first_line.lower():
+                            candidates.append(f)
+                except (IOError, UnicodeDecodeError):
+                    pass
+        if not candidates:
+            return None
+        # Return the most recently modified file
+        candidates.sort(key=lambda f: os.path.getmtime(f), reverse=True)
+        return candidates[0]
+
+    async def read_and_parse_mangohud_log(self, log_path: str | None = None) -> dict:
         """RPC: Read the MangoHud log file and return parsed FPS stats.
+        If no log_path given, searches /tmp/ for the most recent MangoHud log.
         Returns parsed stats dict or {error: str}."""
+        if log_path is None:
+            log_path = await self._find_mangohud_log()
+            if log_path is None:
+                return {"error": "No MangoHud log found in /tmp/. Make sure MangoHud is enabled and logging."}
         if not os.path.exists(log_path):
-            return {"error": f"MangoHud log not found at {log_path}. Make sure MangoHud is enabled and logging."}
+            return {"error": f"MangoHud log not found at {log_path}."}
         try:
             with open(log_path, 'r') as f:
                 content = f.read()
@@ -231,11 +262,16 @@ benchmark_percentiles=97,AVG,1,0.1
         except Exception as e:
             return {"error": f"Failed to read log: {str(e)}"}
 
-    async def clear_mangohud_log(self, log_path: str = "/tmp/deckyvault-mangohud.log") -> dict:
-        """RPC: Delete the MangoHud log file so the next recording starts fresh."""
+    async def clear_mangohud_log(self) -> dict:
+        """RPC: Delete all MangoHud log files in /tmp/ so the next recording starts fresh."""
+        import glob
         try:
-            if os.path.exists(log_path):
-                os.remove(log_path)
+            for pattern in ["/tmp/*.csv", "/tmp/*.log", "/tmp/MangoHud*"]:
+                for f in glob.glob(pattern):
+                    try:
+                        os.remove(f)
+                    except (IOError, PermissionError):
+                        pass
             return {"success": True}
         except Exception as e:
             return {"success": False, "error": str(e)}
