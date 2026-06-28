@@ -117,3 +117,19 @@ export const importConfig = callable<[], {
   }
   error?: string
 }>("import_config")
+
+// ── Plugin Pairing ──────────────────────────────────────────
+export const initiatePair = callable<[baseUrl?: string], {
+  success: boolean
+  token?: string
+  qrUrl?: string
+  expiresAt?: string
+  error?: string
+}>("initiate_pair")
+
+export const checkPairStatus = callable<[token: string, baseUrl?: string], {
+  status: "pending" | "confirmed" | "expired" | "invalid"
+  apiKey?: string
+  keyName?: string
+  error?: string
+}>("check_pair_status")

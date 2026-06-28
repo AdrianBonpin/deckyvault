@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import {
   ButtonItem,
   PanelSection,
@@ -19,6 +19,8 @@ import {
   FaFileExport,
   FaFileImport,
   FaSearch,
+  FaQrcode,
+  FaLink,
 } from "react-icons/fa"
 import type { RecordingState, SessionData, RecentSession, PluginSettings } from "../lib/store"
 import { KNOWN_HARDWARE_SLUGS } from "@deckyvault/shared"
@@ -29,7 +31,10 @@ import {
   getMangohudConfig,
   exportConfig,
   importConfig,
+  initiatePair,
+  checkPairStatus,
 } from "../lib/api"
+import { QRCodeSVG } from "qrcode.react"
 import SessionForm from "./session-form"
 
 interface MainPanelProps {
@@ -52,6 +57,34 @@ const HARDWARE_OPTIONS = [
   { label: "Auto-detect", data: "" },
   ...KNOWN_HARDWARE_SLUGS.map((slug) => ({ label: slug, data: slug })),
 ]
+
+function SetupStep({ number, title, body }: { number: number; title: string; body: string }) {
+  return (
+    <PanelSectionRow>
+      <div style={{ display: "flex", gap: "10px", padding: "6px 0", alignItems: "flex-start" }}>
+        <div style={{
+          flexShrink: 0,
+          width: "22px",
+          height: "22px",
+          borderRadius: "50%",
+          background: "#1b9bf3",
+          color: "white",
+          fontSize: "12px",
+          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}>
+          {number}
+        </div>
+        <div className={staticClasses.Text} style={{ fontSize: "12px", lineHeight: "1.45", flex: 1 }}>
+          <div style={{ fontWeight: 600, marginBottom: "2px" }}>{title}</div>
+          <div style={{ opacity: 0.7 }}>{body}</div>
+        </div>
+      </div>
+    </PanelSectionRow>
+  )
+}
 
 export default function MainPanel({
   recordingState,
@@ -85,6 +118,15 @@ export default function MainPanel({
     message: string
   }>({ checked: false, valid: false, message: "" })
   const [configStatus, setConfigStatus] = useState<{ message: string; isError: boolean } | null>(null)
+
+  // ── Pairing state ───────────────────────────────────────
+  const [pairState, setPairState] = useState<{
+    status: "idle" | "starting" | "showing-qr" | "polling" | "linked" | "error"
+    qrUrl: string
+    token: string
+    error: string
+  }>({ status: "idle", qrUrl: "", token: "", error: "" })
+  const pairPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Timer for recording state
   useEffect(() => {
@@ -197,6 +239,69 @@ export default function MainPanel({
       setConfigStatus({ message: result.error || "No config file found in Downloads", isError: true })
     }
   }
+
+  // ── Pairing handlers ────────────────────────────────────
+  function stopPairPolling() {
+    if (pairPollRef.current) {
+      clearInterval(pairPollRef.current)
+      pairPollRef.current = null
+    }
+  }
+
+  async function handleStartPairing() {
+    setPairState({ status: "starting", qrUrl: "", token: "", error: "" })
+    const result = await initiatePair(settings.baseUrl)
+    if (!result.success || !result.token || !result.qrUrl) {
+      setPairState({
+        status: "error",
+        qrUrl: "",
+        token: "",
+        error: result.error || "Could not start pairing.",
+      })
+      return
+    }
+    setPairState({
+      status: "showing-qr",
+      qrUrl: result.qrUrl || "",
+      token: result.token || "",
+      error: "",
+    })
+
+    // Begin polling for confirmation
+    const token = result.token
+    const baseUrl = settings.baseUrl || "https://deckyvault.xyz"
+    stopPairPolling()
+    pairPollRef.current = setInterval(async () => {
+      const status = await checkPairStatus(token, baseUrl)
+      if (status.status === "confirmed" && status.apiKey) {
+        stopPairPolling()
+        onUpdateSetting("apiKey", status.apiKey)
+        setPairState({
+          status: "linked",
+          qrUrl: result.qrUrl || "",
+          token,
+          error: "",
+        })
+      } else if (status.status === "expired" || status.status === "invalid") {
+        stopPairPolling()
+        setPairState((prev) => ({
+          ...prev,
+          status: "error",
+          error: status.error || "Pairing session expired. Try again.",
+        }))
+      }
+    }, 3000)
+  }
+
+  function handleCancelPairing() {
+    stopPairPolling()
+    setPairState({ status: "idle", qrUrl: "", token: "", error: "" })
+  }
+
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => stopPairPolling()
+  }, [])
 
   // ── Stopped state: show the session form ──────────────────────
   if (recordingState === "stopped") {
@@ -330,6 +435,111 @@ export default function MainPanel({
         )}
       </PanelSection>
 
+      {/* ── Account ─────────────────────────────────────────── */}
+      <PanelSection title="Account">
+        {pairState.status === "idle" && (
+          <>
+            <PanelSectionRow>
+              <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "4px 0", lineHeight: "1.5", opacity: 0.7 }}>
+                Link this plugin to your DeckyVault account by scanning a QR code with your phone — no manual key entry needed.
+              </div>
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <ButtonItem layout="below" onClick={handleStartPairing}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
+                  <FaQrcode />
+                  Pair with Phone
+                </div>
+              </ButtonItem>
+            </PanelSectionRow>
+          </>
+        )}
+
+        {pairState.status === "starting" && (
+          <PanelSectionRow>
+            <div className={staticClasses.Text} style={{ padding: "12px 0", textAlign: "center", fontSize: "13px", opacity: 0.7 }}>
+              Starting pairing session…
+            </div>
+          </PanelSectionRow>
+        )}
+
+        {(pairState.status === "showing-qr" || pairState.status === "polling") && (
+          <>
+            <PanelSectionRow>
+              <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "4px 0", lineHeight: "1.5", opacity: 0.8 }}>
+                Scan this code with your phone's camera, then confirm on the page that opens.
+              </div>
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <div style={{ display: "flex", justifyContent: "center", padding: "12px 0", background: "#fff", borderRadius: "12px" }}>
+                <QRCodeSVG value={pairState.qrUrl} size={180} level="M" />
+              </div>
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "4px 0", textAlign: "center", opacity: 0.6 }}>
+                Waiting for confirmation…
+              </div>
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <ButtonItem layout="below" onClick={handleCancelPairing}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
+                  <FaTimes />
+                  Cancel
+                </div>
+              </ButtonItem>
+            </PanelSectionRow>
+          </>
+        )}
+
+        {pairState.status === "linked" && (
+          <>
+            <PanelSectionRow>
+              <div className={staticClasses.Text} style={{ fontSize: "13px", color: "#2ecc71", padding: "4px 0", textAlign: "center" }}>
+                <FaCheck /> Plugin linked to your account!
+              </div>
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <div className={staticClasses.Text} style={{ fontSize: "11px", opacity: 0.6, padding: "4px 0", textAlign: "center" }}>
+                API key saved. You can now upload performance entries.
+              </div>
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <ButtonItem layout="below" onClick={handleCancelPairing}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
+                  <FaLink />
+                  Done
+                </div>
+              </ButtonItem>
+            </PanelSectionRow>
+          </>
+        )}
+
+        {pairState.status === "error" && (
+          <>
+            <PanelSectionRow>
+              <div className={staticClasses.Text} style={{ fontSize: "12px", color: "#e74c3c", padding: "4px 0" }}>
+                <FaTimes /> {pairState.error}
+              </div>
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <ButtonItem layout="below" onClick={handleStartPairing}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
+                  <FaQrcode />
+                  Try Again
+                </div>
+              </ButtonItem>
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <ButtonItem layout="below" onClick={handleCancelPairing}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
+                  Dismiss
+                </div>
+              </ButtonItem>
+            </PanelSectionRow>
+          </>
+        )}
+      </PanelSection>
+
       {/* ── Usage Instructions ──────────────────────────────────── */}
       <PanelSection title="Usage Instructions">
         <PanelSectionRow>
@@ -458,22 +668,22 @@ export default function MainPanel({
         )}
       </PanelSection>
 
-      {/* ── MangoHud Setup Guide ────────────────────────────────── */}
+      {/* ── MangoHud Setup Guide ────────────────────────────── */}
       <PanelSection title="MangoHud Setup Guide">
         <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px", lineHeight: "1.6" }}>
-            <strong>Steam Deck (SteamOS):</strong> MangoHud is pre-installed. Add <code>mangohud %command%</code> to your game's Steam launch options (right-click → Properties → Launch Options).
+          <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "4px 0 8px 0", lineHeight: "1.5", opacity: 0.7 }}>
+            Follow these steps once to enable performance logging.
           </div>
         </PanelSectionRow>
+
+        <SetupStep number={1} title="Write MangoHud Config" body="Tap 'Write Config' above. This creates the logging config and a wrapper script automatically." />
+        <SetupStep number={2} title="Add the Launch Option" body="Right-click your game in Steam → Properties → Launch Options, and paste the launch option above." />
+        <SetupStep number={3} title="Launch the Game" body="Start the game from Steam. MangoHud loads automatically using the wrapper script." />
+        <SetupStep number={4} title="Record While Playing" body="Once in-game, open this panel and press Start Recording. Press Stop when done." />
+
         <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px", lineHeight: "1.6" }}>
-            <strong>Other Linux:</strong> Install via <code>sudo apt install mangohud</code> or <code>flatpak install ...VulkanLayer.MangoHud</code>. See{" "}
-            <a href="https://github.com/flightlessmango/MangoHud" style={{ color: "#66c0f4" }}>github.com/flightlessmango/MangoHud</a>.
-          </div>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px", lineHeight: "1.6" }}>
-            <strong>Troubleshooting:</strong> Log empty? Check MangoHud is enabled. Not attaching? Add <code>mangohud %command%</code> to launch options explicitly.
+          <div className={staticClasses.Text} style={{ fontSize: "11px", padding: "10px 0 0 0", lineHeight: "1.5", opacity: 0.5, borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "8px" }}>
+            Steam Deck ships with MangoHud pre-installed. On other Linux distros, install it with <span style={{ fontFamily: "monospace", opacity: 0.8 }}>sudo apt install mangohud</span> or via Flatpak.
           </div>
         </PanelSectionRow>
       </PanelSection>
