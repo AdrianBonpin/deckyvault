@@ -14,10 +14,12 @@ import {
   FaCog,
   FaFileExport,
   FaFileImport,
+  FaCopy,
+  FaSearch,
 } from "react-icons/fa"
 import type { PluginSettings } from "../lib/store"
 import { KNOWN_HARDWARE_SLUGS } from "@deckyvault/shared"
-import { testApiKey, checkMangohud, writeMangohudConfig, exportConfig, importConfig } from "../lib/api"
+import { testApiKey, checkMangohud, writeMangohudConfig, getMangohudConfig, exportConfig, importConfig } from "../lib/api"
 
 interface SettingsPanelProps {
   settings: PluginSettings
@@ -46,6 +48,12 @@ export default function SettingsPanel({
   }>({ checked: false, installed: false, path: "", version: "" })
   const [configWritten, setConfigWritten] = useState(false)
   const [configStatus, setConfigStatus] = useState<{ message: string; isError: boolean } | null>(null)
+  const [configVerified, setConfigVerified] = useState<{
+    checked: boolean
+    valid: boolean
+    message: string
+  }>({ checked: false, valid: false, message: "" })
+  const [copiedLaunchOpt, setCopiedLaunchOpt] = useState(false)
 
   async function handleTestKey() {
     if (!settings.apiKey) {
@@ -78,6 +86,62 @@ export default function SettingsPanel({
   async function handleWriteConfig() {
     const result = await writeMangohudConfig()
     setConfigWritten(result.success)
+  }
+
+  async function handleVerifyConfig() {
+    const result = await getMangohudConfig()
+    if (!result.exists) {
+      setConfigVerified({
+        checked: true,
+        valid: false,
+        message: "No MangoHud config found. Write one first.",
+      })
+      return
+    }
+    const content = result.content
+    const hasOutputFolder = content.includes("output_folder=/tmp")
+    const hasOutputFile = content.includes("output_file=deckyvault-mangohud.log")
+    const hasFps = content.includes("fps")
+    const hasFrameTiming = content.includes("frame_timing")
+    const hasGpuPower = content.includes("gpu_power")
+
+    if (hasOutputFolder && hasOutputFile && hasFps) {
+      setConfigVerified({
+        checked: true,
+        valid: true,
+        message: "Config looks good — logging to /tmp/deckyvault-mangohud.log",
+      })
+    } else {
+      const missing: string[] = []
+      if (!hasOutputFolder) missing.push("output_folder=/tmp")
+      if (!hasOutputFile) missing.push("output_file=deckyvault-mangohud.log")
+      if (!hasFps) missing.push("fps")
+      if (!hasFrameTiming) missing.push("frame_timing")
+      if (!hasGpuPower) missing.push("gpu_power")
+      setConfigVerified({
+        checked: true,
+        valid: false,
+        message: `Missing: ${missing.join(", ")}. Write config again.`,
+      })
+    }
+  }
+
+  async function handleCopyLaunchOption() {
+    try {
+      await navigator.clipboard.writeText("mangohud %command%")
+      setCopiedLaunchOpt(true)
+      setTimeout(() => setCopiedLaunchOpt(false), 2000)
+    } catch {
+      // Fallback
+      const ta = document.createElement("textarea")
+      ta.value = "mangohud %command%"
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand("copy")
+      document.body.removeChild(ta)
+      setCopiedLaunchOpt(true)
+      setTimeout(() => setCopiedLaunchOpt(false), 2000)
+    }
   }
 
   async function handleExportConfig() {
@@ -252,6 +316,39 @@ export default function SettingsPanel({
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <FaDownload />
               Write MangoHud Config
+            </div>
+          </ButtonItem>
+        </PanelSectionRow>
+
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={handleVerifyConfig}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <FaSearch />
+              Verify Config
+            </div>
+          </ButtonItem>
+        </PanelSectionRow>
+
+        {configVerified.checked && (
+          <PanelSectionRow>
+            <div
+              className={staticClasses.Text}
+              style={{
+                fontSize: "12px",
+                padding: "4px 0",
+                color: configVerified.valid ? "#2ecc71" : "#e74c3c",
+              }}
+            >
+              {configVerified.valid ? <FaCheck /> : <FaTimes />} {configVerified.message}
+            </div>
+          </PanelSectionRow>
+        )}
+
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={handleCopyLaunchOption}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <FaCopy />
+              {copiedLaunchOpt ? "Copied!" : "Copy Launch Option"}
             </div>
           </ButtonItem>
         </PanelSectionRow>
