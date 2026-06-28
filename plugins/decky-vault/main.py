@@ -605,6 +605,115 @@ exec mangohud "$@"
         except Exception as e:
             return {"success": False, "error": str(e), "status": 0}
 
+    async def list_screenshots(self, limit: int = 12) -> dict:
+        """RPC: List recent Steam Deck screenshots from ~/Pictures/Screenshots/.
+        Returns {screenshots: [{path, name, mtime, size}], error?}.
+        Steam saves timestamped JPGs in a 'Steam Client' subfolder and keeps
+        a 'most_recent.jpg' symlink-like copy at the top level."""
+        import glob
+        import time
+        try:
+            home = os.path.expanduser("~")
+            base = os.path.join(home, "Pictures", "Screenshots")
+            patterns = [
+                os.path.join(base, "*.jpg"),
+                os.path.join(base, "*.png"),
+                os.path.join(base, "Steam Client", "*.jpg"),
+                os.path.join(base, "Steam Client", "*.png"),
+            ]
+            seen = set()
+            files = []
+            for pat in patterns:
+                for f in glob.glob(pat):
+                    if not os.path.isfile(f) or f in seen:
+                        continue
+                    # Skip the most_recent.jpg duplicate if a real timestamped
+                    # copy exists — it's just a pointer to the latest one.
+                    if os.path.basename(f) == "most_recent.jpg":
+                        continue
+                    seen.add(f)
+                    try:
+                        files.append({
+                            "path": f,
+                            "name": os.path.basename(f),
+                            "mtime": os.path.getmtime(f),
+                            "size": os.path.getsize(f),
+                        })
+                    except OSError:
+                        continue
+            files.sort(key=lambda x: x["mtime"], reverse=True)
+            return {"screenshots": files[:limit]}
+        except Exception as e:
+            return {"screenshots": [], "error": str(e)}
+
+    async def upload_screenshots(self, entry_id: str, screenshot_paths: list, api_key: str, base_url: str = "https://deckyvault.xyz") -> dict:
+        """RPC: Upload up to 2 screenshots to a performance entry as multipart/form-data.
+        Returns {success: bool, uploaded: int, error?: str, status?: int}.
+        The server enforces the 2-screenshot limit per entry."""
+        import urllib.request
+        import urllib.error
+        import uuid
+
+        # Hard cap at 2 — matches the website limit
+        paths = [p for p in screenshot_paths if p][:2]
+        if not paths:
+            return {"success": False, "error": "No screenshots selected"}
+
+        try:
+            url = f"{base_url}/api/performance/{entry_id}/screenshots"
+
+            # Build a multipart/form-data body manually (urllib has no helper)
+            boundary = "----DeckyVaultBoundary" + uuid.uuid4().hex
+            encoded = b""
+            valid_paths = []
+            for p in paths:
+                if not os.path.exists(p):
+                    continue
+                valid_paths.append(p)
+                with open(p, "rb") as fh:
+                    file_bytes = fh.read()
+                fname = os.path.basename(p)
+                ext = os.path.splitext(fname)[1].lower()
+                mime = "image/png" if ext == ".png" else ("image/webp" if ext == ".webp" else "image/jpeg")
+                encoded += (
+                    f"--{boundary}\r\n"
+                    f'Content-Disposition: form-data; name="screenshots"; filename="{fname}"\r\n'
+                    f"Content-Type: {mime}\r\n\r\n"
+                ).encode("utf-8")
+                encoded += file_bytes
+                encoded += b"\r\n"
+            encoded += f"--{boundary}--\r\n".encode("utf-8")
+
+            if not valid_paths:
+                return {"success": False, "error": "No readable screenshot files"}
+
+            req = urllib.request.Request(
+                url,
+                data=encoded,
+                headers={
+                    "Content-Type": f"multipart/form-data; boundary={boundary}",
+                    "x-api-key": api_key,
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:136.0) Gecko/20100101 Firefox/136.0",
+                    "Accept": "application/json",
+                },
+                method="POST",
+            )
+            context = _get_ssl_context()
+            with urllib.request.urlopen(req, timeout=30, context=context) as response:
+                result = json.loads(response.read().decode("utf-8"))
+                uploaded = len(result.get("data", [])) if isinstance(result.get("data"), list) else 0
+                return {"success": True, "uploaded": uploaded}
+        except urllib.error.HTTPError as e:
+            try:
+                err = json.loads(e.read().decode("utf-8"))
+                return {"success": False, "error": err.get("error", f"Server returned status {e.code}"), "status": e.code}
+            except Exception:
+                return {"success": False, "error": f"Server returned status {e.code}", "status": e.code}
+        except urllib.error.URLError as e:
+            return {"success": False, "error": f"Network error: {str(e.reason)}", "status": 0}
+        except Exception as e:
+            return {"success": False, "error": str(e), "status": 0}
+
     async def test_api_key(self, api_key: str, base_url: str = "https://deckyvault.xyz") -> dict:
         """RPC: Test if an API key is valid by calling the dedicated verify endpoint.
         Returns {valid: bool, error: str?, userName?: str, userImage?: str}."""
