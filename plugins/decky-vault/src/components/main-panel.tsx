@@ -212,77 +212,6 @@ export default function MainPanel({
 
   return (
     <>
-      {/* ── Status ──────────────────────────────────────────────── */}
-      <PanelSection title="Status">
-        <PanelSectionRow>
-          <ButtonItem layout="below" onClick={handleCheckMangohud}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <FaCog />
-              Check MangoHud Status
-            </div>
-          </ButtonItem>
-        </PanelSectionRow>
-        {mangohudStatus.checked && (
-          <PanelSectionRow>
-            <div className={staticClasses.Text} style={{ fontSize: "13px", padding: "4px 0" }}>
-              {mangohudStatus.installed ? (
-                <><FaCheck style={{ color: "#2ecc71" }} /> MangoHud {mangohudStatus.version}</>
-              ) : (
-                <><FaTimes style={{ color: "#e74c3c" }} /> MangoHud not found</>
-              )}
-            </div>
-          </PanelSectionRow>
-        )}
-        <PanelSectionRow>
-          <ButtonItem layout="below" onClick={handleTestKey} disabled={keyTestStatus === "testing"}>
-            {keyTestStatus === "testing" ? "Testing..." : "Test API Key"}
-            {keyTestStatus === "valid" && <FaCheck style={{ color: "#2ecc71", marginLeft: "8px" }} />}
-            {keyTestStatus === "invalid" && <FaTimes style={{ color: "#e74c3c", marginLeft: "8px" }} />}
-          </ButtonItem>
-        </PanelSectionRow>
-        {keyTestMessage && (
-          <PanelSectionRow>
-            <div className={staticClasses.Text} style={{ fontSize: "12px", color: keyTestStatus === "valid" ? "#2ecc71" : "#e74c3c", padding: "4px 0" }}>
-              {keyTestMessage}
-            </div>
-          </PanelSectionRow>
-        )}
-      </PanelSection>
-
-      {/* ── Usage Instructions ──────────────────────────────────── */}
-      <PanelSection title="Usage Instructions">
-        <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "4px 0", lineHeight: "1.5" }}>
-            Add this to your game's Steam launch options, then press Start Recording before launching.
-          </div>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <div style={{
-            background: "rgba(255,255,255,0.1)",
-            borderRadius: "8px",
-            padding: "10px 14px",
-            fontFamily: "monospace",
-            fontSize: "14px",
-            textAlign: "center",
-          }}>
-            mangohud %command%
-          </div>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <ButtonItem layout="below" onClick={handleCopyLaunchOption}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
-              <FaCopy />
-              {copiedLaunchOpt ? "Copied to clipboard" : "Copy Launch Option"}
-            </div>
-          </ButtonItem>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ fontSize: "11px", opacity: 0.6, padding: "4px 0" }}>
-            The MangoHud config is stored in ~/.config/MangoHud/MangoHud.conf
-          </div>
-        </PanelSectionRow>
-      </PanelSection>
-
       {/* ── Recording ──────────────────────────────────────────── */}
       <PanelSection title="Recording">
         {error && (
@@ -351,6 +280,77 @@ export default function MainPanel({
             ))}
           </PanelSection>
         )}
+      </PanelSection>
+
+      {/* ── Status ──────────────────────────────────────────────── */}
+      <PanelSection title="Status">
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={handleCheckMangohud}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <FaCog />
+              Check MangoHud Status
+            </div>
+          </ButtonItem>
+        </PanelSectionRow>
+        {mangohudStatus.checked && (
+          <PanelSectionRow>
+            <div className={staticClasses.Text} style={{ fontSize: "13px", padding: "4px 0" }}>
+              {mangohudStatus.installed ? (
+                <><FaCheck style={{ color: "#2ecc71" }} /> MangoHud {mangohudStatus.version}</>
+              ) : (
+                <><FaTimes style={{ color: "#e74c3c" }} /> MangoHud not found</>
+              )}
+            </div>
+          </PanelSectionRow>
+        )}
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={handleTestKey} disabled={keyTestStatus === "testing"}>
+            {keyTestStatus === "testing" ? "Testing..." : "Test API Key"}
+            {keyTestStatus === "valid" && <FaCheck style={{ color: "#2ecc71", marginLeft: "8px" }} />}
+            {keyTestStatus === "invalid" && <FaTimes style={{ color: "#e74c3c", marginLeft: "8px" }} />}
+          </ButtonItem>
+        </PanelSectionRow>
+        {keyTestMessage && (
+          <PanelSectionRow>
+            <div className={staticClasses.Text} style={{ fontSize: "12px", color: keyTestStatus === "valid" ? "#2ecc71" : "#e74c3c", padding: "4px 0" }}>
+              {keyTestMessage}
+            </div>
+          </PanelSectionRow>
+        )}
+      </PanelSection>
+
+      {/* ── Usage Instructions ──────────────────────────────────── */}
+      <PanelSection title="Usage Instructions">
+        <PanelSectionRow>
+          <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "4px 0", lineHeight: "1.5" }}>
+            Add this to your game's Steam launch options, then press Start Recording before launching.
+          </div>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <div style={{
+            background: "rgba(255,255,255,0.1)",
+            borderRadius: "8px",
+            padding: "10px 14px",
+            fontFamily: "monospace",
+            fontSize: "14px",
+            textAlign: "center",
+          }}>
+            mangohud %command%
+          </div>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={handleCopyLaunchOption}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
+              <FaCopy />
+              {copiedLaunchOpt ? "Copied to clipboard" : "Copy Launch Option"}
+            </div>
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <div className={staticClasses.Text} style={{ fontSize: "11px", opacity: 0.6, padding: "4px 0" }}>
+            Config stored in ~/.config/MangoHud/MangoHud.conf
+          </div>
+        </PanelSectionRow>
       </PanelSection>
 
       {/* ── MangoHud Config ────────────────────────────────────── */}
@@ -451,28 +451,18 @@ export default function MainPanel({
       <PanelSection title="MangoHud Setup Guide">
         <PanelSectionRow>
           <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px", lineHeight: "1.6" }}>
-            <strong>Steam Deck (SteamOS):</strong><br />
-            MangoHud is pre-installed. Enable it per-game by adding<br />
-            <code style={{ display: "block", margin: "4px 0", padding: "4px", background: "rgba(255,255,255,0.1)" }}>
-              mangohud %command%
-            </code>
-            to the game's Steam launch options (right-click game → Properties → Launch Options).
-
-            <br /><br />
-            <strong>Other Linux handhelds</strong> (ROG Ally, Legion Go):<br />
-            Install via package manager:
-            <code style={{ display: "block", margin: "4px 0", padding: "4px", background: "rgba(255,255,255,0.1)" }}>
-              sudo apt install mangohud
-            </code>
-            or Flatpak:
-            <code style={{ display: "block", margin: "4px 0", padding: "4px", background: "rgba(255,255,255,0.1)" }}>
-              flatpak install flathub org.freedesktop.Platform.VulkanLayer.MangoHud
-            </code>
-
-            <br /><br />
-            <strong>Troubleshooting:</strong><br />
-            • Log file empty? Check MangoHud is enabled for the game and the config was written.<br />
-            • Not attaching? Try adding <code>mangohud %command%</code> to Steam launch options explicitly.
+            <strong>Steam Deck (SteamOS):</strong> MangoHud is pre-installed. Add <code>mangohud %command%</code> to your game's Steam launch options (right-click → Properties → Launch Options).
+          </div>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px", lineHeight: "1.6" }}>
+            <strong>Other Linux:</strong> Install via <code>sudo apt install mangohud</code> or <code>flatpak install ...VulkanLayer.MangoHud</code>. See{" "}
+            <a href="https://github.com/flightlessmango/MangoHud" style={{ color: "#66c0f4" }}>github.com/flightlessmango/MangoHud</a>.
+          </div>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px", lineHeight: "1.6" }}>
+            <strong>Troubleshooting:</strong> Log empty? Check MangoHud is enabled. Not attaching? Add <code>mangohud %command%</code> to launch options explicitly.
           </div>
         </PanelSectionRow>
       </PanelSection>
