@@ -40,21 +40,21 @@ const SCREENSHOTS: Shot[] = [
         title: "The plugin panel",
         caption:
             "The full DeckyVault panel in the Quick Access Menu — recording, account, and setup sections all in one scrollable view.",
-        file: "panel-overview.png",
+        file: "panel-overview.jpg",
     },
     {
         id: "pair-qr",
         title: "Pair with your phone",
         caption:
             "Tap 'Pair with Phone' and a QR code appears. Scan it with your phone, confirm on deckyvault.xyz, and your account links automatically — no copy-pasting API keys.",
-        file: "pair-qr.png",
+        file: "pair-qr.jpg",
     },
     {
         id: "launch-option",
         title: "Add the launch option",
         caption:
             "In Steam, right-click your game → Properties → Launch Options, and paste the MangoHud wrapper command. Copy it straight from the plugin.",
-        file: "launch-option.png",
+        file: "launch-option.jpg",
     },
     {
         id: "recording",
@@ -77,19 +77,19 @@ const SCREENSHOTS: Shot[] = [
         title: "See it on DeckyVault",
         caption:
             "Your submission appears on the game's page instantly — FPS averages, frame-time consistency, and TDP, all tied to your account.",
-        file: "entry-live.png",
+        file: "entry-live.jpg",
     },
 ]
 
 // Screenshot files that actually exist in /public/plugin/ — flip these
-// to true once you've captured and saved the corresponding PNG.
+// to true once you've captured and saved the corresponding file.
 const HAS_SCREENSHOT: Record<string, boolean> = {
-    "panel-overview": false,
-    "pair-qr": false,
-    "launch-option": false,
+    "panel-overview": true,
+    "pair-qr": true,
+    "launch-option": true,
     recording: false,
     "session-form": false,
-    "entry-live": false,
+    "entry-live": true,
 }
 
 const LAUNCH_COMMAND = "~/deckyvault-mangohud.sh %command%"
