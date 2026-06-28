@@ -379,7 +379,7 @@ export function PluginPageClient() {
                                 transition={{ delay: i * 0.05 }}
                                 className="rounded-xl border border-border bg-text/2 overflow-hidden flex flex-col"
                             >
-                                <div className="relative aspect-video bg-gradient-to-br from-text/5 to-text/10 flex items-center justify-center">
+                                <div className="relative aspect-[16/10] bg-gradient-to-br from-text/5 to-text/10 flex items-center justify-center">
                                     {HAS_SCREENSHOT[shot.id] ? (
                                         // eslint-disable-next-line @next/next/no-img-element
                                         <img
