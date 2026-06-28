@@ -13,6 +13,7 @@ import {
   EyeOff,
   Clock,
   AlertCircle,
+  Download,
 } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 
@@ -187,6 +188,27 @@ export function SettingsApiKeysTab() {
     }
   }
 
+  const handleDownloadConfig = () => {
+    if (!createdKey?.key) return
+    const config = {
+      apiKey: createdKey.key,
+      exportPath: "/home/deck/Downloads",
+      baseUrl: "https://deckyvault.xyz",
+      hardwareSlug: null,
+    }
+    const blob = new Blob([JSON.stringify(config, null, 2)], {
+      type: "application/json",
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "deckyvault-config.json"
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   
 
   // Show the created key modal
@@ -260,6 +282,14 @@ export function SettingsApiKeysTab() {
             className='mt-4 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors cursor-pointer'
           >
             Done
+          </button>
+
+          <button
+            onClick={handleDownloadConfig}
+            className='mt-2 px-4 py-2 rounded-lg border border-border text-text/70 text-sm font-medium hover:border-primary/40 hover:text-primary transition-colors cursor-pointer flex items-center justify-center gap-2 w-full'
+          >
+            <Download className='h-4 w-4' />
+            Download Plugin Config
           </button>
         </div>
       </motion.div>

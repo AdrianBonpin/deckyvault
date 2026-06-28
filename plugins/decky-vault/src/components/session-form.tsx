@@ -29,20 +29,20 @@ interface SessionFormProps {
 }
 
 const UPSCALER_OPTIONS = [
-  { label: "None", value: "none" },
-  { label: "FSR", value: "fsr" },
-  { label: "DLSS", value: "dlss" },
-  { label: "XeSS", value: "xess" },
-  { label: "LSFG", value: "lsfg" },
-  { label: "Other", value: "other" },
+  { label: "None", data: "none" },
+  { label: "FSR", data: "fsr" },
+  { label: "DLSS", data: "dlss" },
+  { label: "XeSS", data: "xess" },
+  { label: "LSFG", data: "lsfg" },
+  { label: "Other", data: "other" },
 ]
 
 const FRAME_GEN_OPTIONS = [
-  { label: "None", value: "none" },
-  { label: "FSR FG", value: "fsr_fg" },
-  { label: "DLSS FG", value: "dlss_fg" },
-  { label: "LSFG", value: "lsfg" },
-  { label: "Other", value: "other" },
+  { label: "None", data: "none" },
+  { label: "FSR FG", data: "fsr_fg" },
+  { label: "DLSS FG", data: "dlss_fg" },
+  { label: "LSFG", data: "lsfg" },
+  { label: "Other", data: "other" },
 ]
 
 export default function SessionForm({

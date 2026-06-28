@@ -12,10 +12,14 @@ import {
   FaTimes,
   FaDownload,
   FaCog,
+  FaFileExport,
+  FaFileImport,
+  FaCopy,
+  FaSearch,
 } from "react-icons/fa"
 import type { PluginSettings } from "../lib/store"
 import { KNOWN_HARDWARE_SLUGS } from "@deckyvault/shared"
-import { testApiKey, checkMangohud, writeMangohudConfig, getMangohudConfig } from "../lib/api"
+import { testApiKey, checkMangohud, writeMangohudConfig, getMangohudConfig, exportConfig, importConfig } from "../lib/api"
 
 interface SettingsPanelProps {
   settings: PluginSettings
@@ -26,8 +30,8 @@ interface SettingsPanelProps {
 }
 
 const HARDWARE_OPTIONS = [
-  { label: "Auto-detect", value: "" },
-  ...KNOWN_HARDWARE_SLUGS.map((slug) => ({ label: slug, value: slug })),
+  { label: "Auto-detect", data: "" },
+  ...KNOWN_HARDWARE_SLUGS.map((slug) => ({ label: slug, data: slug })),
 ]
 
 export default function SettingsPanel({
@@ -42,8 +46,14 @@ export default function SettingsPanel({
     path: string
     version: string
   }>({ checked: false, installed: false, path: "", version: "" })
-  const [showMangohudGuide, setShowMangohudGuide] = useState(false)
   const [configWritten, setConfigWritten] = useState(false)
+  const [configStatus, setConfigStatus] = useState<{ message: string; isError: boolean } | null>(null)
+  const [configVerified, setConfigVerified] = useState<{
+    checked: boolean
+    valid: boolean
+    message: string
+  }>({ checked: false, valid: false, message: "" })
+  const [copiedLaunchOpt, setCopiedLaunchOpt] = useState(false)
 
   async function handleTestKey() {
     if (!settings.apiKey) {
@@ -76,6 +86,86 @@ export default function SettingsPanel({
   async function handleWriteConfig() {
     const result = await writeMangohudConfig()
     setConfigWritten(result.success)
+  }
+
+  async function handleVerifyConfig() {
+    const result = await getMangohudConfig()
+    if (!result.exists) {
+      setConfigVerified({
+        checked: true,
+        valid: false,
+        message: "No MangoHud config found. Write one first.",
+      })
+      return
+    }
+    const content = result.content
+    const hasOutputFolder = content.includes("output_folder=/tmp")
+    const hasOutputFile = content.includes("output_file=deckyvault-mangohud.log")
+    const hasFps = content.includes("fps")
+    const hasFrameTiming = content.includes("frame_timing")
+    const hasGpuPower = content.includes("gpu_power")
+
+    if (hasOutputFolder && hasOutputFile && hasFps) {
+      setConfigVerified({
+        checked: true,
+        valid: true,
+        message: "Config looks good — logging to /tmp/deckyvault-mangohud.log",
+      })
+    } else {
+      const missing: string[] = []
+      if (!hasOutputFolder) missing.push("output_folder=/tmp")
+      if (!hasOutputFile) missing.push("output_file=deckyvault-mangohud.log")
+      if (!hasFps) missing.push("fps")
+      if (!hasFrameTiming) missing.push("frame_timing")
+      if (!hasGpuPower) missing.push("gpu_power")
+      setConfigVerified({
+        checked: true,
+        valid: false,
+        message: `Missing: ${missing.join(", ")}. Write config again.`,
+      })
+    }
+  }
+
+  async function handleCopyLaunchOption() {
+    try {
+      await navigator.clipboard.writeText("mangohud %command%")
+      setCopiedLaunchOpt(true)
+      setTimeout(() => setCopiedLaunchOpt(false), 2000)
+    } catch {
+      // Fallback
+      const ta = document.createElement("textarea")
+      ta.value = "mangohud %command%"
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand("copy")
+      document.body.removeChild(ta)
+      setCopiedLaunchOpt(true)
+      setTimeout(() => setCopiedLaunchOpt(false), 2000)
+    }
+  }
+
+  async function handleExportConfig() {
+    setConfigStatus(null)
+    const result = await exportConfig(settings)
+    if (result.success) {
+      setConfigStatus({ message: `Config saved to ${result.path}`, isError: false })
+    } else {
+      setConfigStatus({ message: result.error || "Export failed", isError: true })
+    }
+  }
+
+  async function handleImportConfig() {
+    setConfigStatus(null)
+    const result = await importConfig()
+    if (result.success && result.settings) {
+      onUpdateSetting("apiKey", result.settings.apiKey || "")
+      onUpdateSetting("exportPath", result.settings.exportPath || "/home/deck/Downloads")
+      onUpdateSetting("baseUrl", result.settings.baseUrl || "https://deckyvault.xyz")
+      onUpdateSetting("hardwareSlug", result.settings.hardwareSlug || null)
+      setConfigStatus({ message: "Config imported from Downloads", isError: false })
+    } else {
+      setConfigStatus({ message: result.error || "No config file found in Downloads", isError: true })
+    }
   }
 
   return (
@@ -152,6 +242,40 @@ export default function SettingsPanel({
         </PanelSectionRow>
       </PanelSection>
 
+      {/* ── Config Export/Import ────────────────────────────────── */}
+      <PanelSection title="Configuration">
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={handleExportConfig}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <FaFileExport />
+              Export Config to Downloads
+            </div>
+          </ButtonItem>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={handleImportConfig}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <FaFileImport />
+              Import Config from Downloads
+            </div>
+          </ButtonItem>
+        </PanelSectionRow>
+        {configStatus && (
+          <PanelSectionRow>
+            <div
+              className={staticClasses.Text}
+              style={{
+                fontSize: "12px",
+                padding: "4px 0",
+                color: configStatus.isError ? "#e74c3c" : "#2ecc71",
+              }}
+            >
+              {configStatus.isError ? <FaTimes /> : <FaCheck />} {configStatus.message}
+            </div>
+          </PanelSectionRow>
+        )}
+      </PanelSection>
+
       {/* ── MangoHud Setup ──────────────────────────────────────── */}
       <PanelSection title="MangoHud Setup">
         <PanelSectionRow>
@@ -196,6 +320,39 @@ export default function SettingsPanel({
           </ButtonItem>
         </PanelSectionRow>
 
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={handleVerifyConfig}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <FaSearch />
+              Verify Config
+            </div>
+          </ButtonItem>
+        </PanelSectionRow>
+
+        {configVerified.checked && (
+          <PanelSectionRow>
+            <div
+              className={staticClasses.Text}
+              style={{
+                fontSize: "12px",
+                padding: "4px 0",
+                color: configVerified.valid ? "#2ecc71" : "#e74c3c",
+              }}
+            >
+              {configVerified.valid ? <FaCheck /> : <FaTimes />} {configVerified.message}
+            </div>
+          </PanelSectionRow>
+        )}
+
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={handleCopyLaunchOption}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <FaCopy />
+              {copiedLaunchOpt ? "Copied!" : "Copy Launch Option"}
+            </div>
+          </ButtonItem>
+        </PanelSectionRow>
+
         {configWritten && (
           <PanelSectionRow>
             <div className={staticClasses.Text} style={{ fontSize: "12px", color: "#2ecc71", padding: "4px 0" }}>
@@ -205,53 +362,45 @@ export default function SettingsPanel({
         )}
 
         <PanelSectionRow>
-          <ButtonItem layout="below" onClick={() => setShowMangohudGuide(!showMangohudGuide)}>
-            {showMangohudGuide ? "Hide Guide" : "Show Installation Guide"}
-          </ButtonItem>
+          <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px", lineHeight: "1.6" }}>
+            <strong>Steam Deck (SteamOS):</strong>
+            <br />
+            MangoHud is pre-installed. Enable it per-game by adding
+            <code style={{ display: "block", margin: "4px 0", padding: "4px", background: "rgba(255,255,255,0.1)" }}>
+              mangohud %command%
+            </code>
+            to the game's Steam launch options (right-click game → Properties → Launch Options).
+
+            <br /><br />
+            <strong>Other Linux handhelds</strong> (ROG Ally, Legion Go):
+            <br />
+            Install via package manager:
+            <code style={{ display: "block", margin: "4px 0", padding: "4px", background: "rgba(255,255,255,0.1)" }}>
+              sudo apt install mangohud
+            </code>
+            or Flatpak:
+            <code style={{ display: "block", margin: "4px 0", padding: "4px", background: "rgba(255,255,255,0.1)" }}>
+              flatpak install flathub org.freedesktop.Platform.VulkanLayer.MangoHud
+            </code>
+
+            <br /><br />
+            <strong>Manual build:</strong>
+            <br />
+            See{" "}
+            <a href="https://github.com/flightlessmango/MangoHud" style={{ color: "#66c0f4" }}>
+              github.com/flightlessmango/MangoHud
+            </a>
+
+            <br /><br />
+            <strong>Troubleshooting:</strong>
+            <br />
+            • Log file empty? Check MangoHud is enabled for the game and the config was written.
+            <br />
+            • Wrong path? Ensure the plugin can write to /tmp/.
+            <br />
+            • Not attaching? Try adding <code>mangohud %command%</code> to Steam launch options explicitly.
+          </div>
         </PanelSectionRow>
-
-        {showMangohudGuide && (
-          <PanelSectionRow>
-            <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px", lineHeight: "1.6" }}>
-              <strong>Steam Deck (SteamOS):</strong>
-              <br />
-              MangoHud is pre-installed. Enable it per-game by adding
-              <code style={{ display: "block", margin: "4px 0", padding: "4px", background: "rgba(255,255,255,0.1)" }}>
-                mangohud %command%
-              </code>
-              to the game's Steam launch options (right-click game → Properties → Launch Options).
-
-              <br /><br />
-              <strong>Other Linux handhelds</strong> (ROG Ally, Legion Go):
-              <br />
-              Install via package manager:
-              <code style={{ display: "block", margin: "4px 0", padding: "4px", background: "rgba(255,255,255,0.1)" }}>
-                sudo apt install mangohud
-              </code>
-              or Flatpak:
-              <code style={{ display: "block", margin: "4px 0", padding: "4px", background: "rgba(255,255,255,0.1)" }}>
-                flatpak install flathub org.freedesktop.Platform.VulkanLayer.MangoHud
-              </code>
-
-              <br /><br />
-              <strong>Manual build:</strong>
-              <br />
-              See{" "}
-              <a href="https://github.com/flightlessmango/MangoHud" style={{ color: "#66c0f4" }}>
-                github.com/flightlessmango/MangoHud
-              </a>
-
-              <br /><br />
-              <strong>Troubleshooting:</strong>
-              <br />
-              • Log file empty? Check MangoHud is enabled for the game and the config was written.
-              <br />
-              • Wrong path? Ensure the plugin can write to /tmp/.
-              <br />
-              • Not attaching? Try adding <code>mangohud %command%</code> to Steam launch options explicitly.
-            </div>
-          </PanelSectionRow>
-        )}
       </PanelSection>
     </>
   )
