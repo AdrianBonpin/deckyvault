@@ -159,12 +159,12 @@ describe("Sitemap Generator (app/sitemap.ts)", () => {
   // ── sitemap({ id: 'static' }) ──────────────────────────────────────
 
   describe("sitemap({ id: 'static' })", () => {
-    it("returns 7 static page entries", async () => {
+    it("returns 8 static page entries", async () => {
       const mod = await import("@/app/sitemap")
       const result = await mod.default({ id: Promise.resolve("static") })
 
       expect(Array.isArray(result)).toBe(true)
-      expect(result).toHaveLength(7)
+      expect(result).toHaveLength(8)
     })
 
     it("first entry is homepage with priority 1.0", async () => {
@@ -182,6 +182,7 @@ describe("Sitemap Generator (app/sitemap.ts)", () => {
       const urls = result.map((e: { url: string }) => e.url)
       expect(urls).toContain("https://deckyvault.xyz/games")
       expect(urls).toContain("https://deckyvault.xyz/compare")
+      expect(urls).toContain("https://deckyvault.xyz/plugin")
     })
 
     it("includes lastModified on all entries", async () => {
@@ -360,7 +361,7 @@ describe("Sitemap Generator (app/sitemap.ts)", () => {
       const mod = await import("@/app/sitemap")
       const result = await mod.default({ id: Promise.resolve("static") })
 
-      expect(result).toHaveLength(7)
+      expect(result).toHaveLength(8)
     })
 
     it("unknown id returns empty array", async () => {
