@@ -170,7 +170,7 @@ function PairContent() {
                     was created. You can close this page and return to your Steam Deck.
                 </p>
                 <Link
-                    href="/profile/settings?tab=api-keys"
+                    href="/profile?tab=settings&subtab=api-keys"
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
                 >
                     Manage API Keys
