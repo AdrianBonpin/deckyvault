@@ -295,7 +295,8 @@ export function ReviewStep({
         totalScreenshots < 2 &&
         submitPhase !== "uploading" &&
         submitPhase !== "saving"
-    const showExistingRemove = totalScreenshots >= 2
+    const showExistingRemove = totalScreenshots >= 1
+    // Allow removing any existing screenshot, not only when at capacity
 
     return (
         <div className='space-y-6'>
