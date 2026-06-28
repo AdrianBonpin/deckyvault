@@ -16,6 +16,8 @@ import {
     CopyIcon,
     CheckIcon,
     CodeIcon,
+    SettingsIcon,
+    FolderArchiveIcon,
 } from "lucide-react"
 
 // ── Screenshot slots ────────────────────────────────────────────
@@ -35,6 +37,20 @@ interface Shot {
 }
 
 const SCREENSHOTS: Shot[] = [
+    {
+        id: "developer-mode",
+        title: "Enable Developer mode",
+        caption:
+            "In the Decky menu → General, toggle on Developer mode. This unlocks the 'Install Plugin from ZIP File' option in the Developer tab.",
+        file: "developer-mode.jpg",
+    },
+    {
+        id: "zip-file",
+        title: "Install from the ZIP",
+        caption:
+            "Switch to the Developer tab, tap Browse under 'Install Plugin from ZIP File', and pick the DeckyVault ZIP you just downloaded.",
+        file: "zip-file.jpg",
+    },
     {
         id: "panel-overview",
         title: "The plugin panel",
@@ -84,6 +100,8 @@ const SCREENSHOTS: Shot[] = [
 // Screenshot files that actually exist in /public/plugin/ — flip these
 // to true once you've captured and saved the corresponding file.
 const HAS_SCREENSHOT: Record<string, boolean> = {
+    "developer-mode": true,
+    "zip-file": true,
     "panel-overview": true,
     "pair-qr": true,
     "launch-option": true,
@@ -142,8 +160,42 @@ const STEPS = [
                 >
                     Decky Loader
                 </a>{" "}
-                on your Steam Deck. Then install the DeckyVault plugin from the
-                Plugin Browser, or from the ZIP below.
+                on your Steam Deck — it&apos;s a one-time prerequisite that adds
+                the Quick Access Menu plugin browser.
+            </>
+        ),
+    },
+    {
+        icon: SettingsIcon,
+        title: "Enable Developer mode",
+        body: (
+            <>
+                In the QAM, open the <strong>Decky</strong> settings →
+                <strong> General</strong>, and flip on{" "}
+                <strong>Developer mode</strong>. This unlocks the
+                &quot;Install Plugin from ZIP File&quot; option in the Developer
+                tab.
+            </>
+        ),
+    },
+    {
+        icon: FolderArchiveIcon,
+        title: "Install from the ZIP",
+        body: (
+            <>
+                Download{" "}
+                <a
+                    href="https://github.com/AdrianBonpin/deckyvault/releases"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                >
+                    the latest plugin ZIP
+                </a>{" "}
+                from GitHub Releases. Then in QAM → <strong>Decky</strong> →
+                <strong> Developer</strong> → <strong>Install Plugin from ZIP
+                File</strong> → <strong>Browse</strong>, pick the ZIP and let
+                Decky Loader do the rest.
             </>
         ),
     },
@@ -185,9 +237,9 @@ const STEPS = [
 ]
 
 // ── Screenshot acts ────────────────────────────────────
-// The "See it in action" gallery is structured as a 3-act narrative so the
-// story flows: Set up → Capture → Share. Each act has a heading + a list of
-// shots. The last act's shot is rendered larger as a visual payoff.
+// The "See it in action" gallery is structured as a 4-act narrative so the
+// story flows: Install → Set up → Capture → Share. Each act has a heading +
+// a list of shots. The last act's shot is rendered larger as a visual payoff.
 const ACTS: {
     number: string
     title: string
@@ -197,20 +249,27 @@ const ACTS: {
 }[] = [
     {
         number: "1",
+        title: "Install the plugin",
+        subtitle: "Enable Developer mode and load the ZIP from the Decky menu.",
+        shotIds: ["developer-mode", "zip-file"],
+        layout: "grid-2",
+    },
+    {
+        number: "2",
         title: "Get set up",
-        subtitle: "Three quick steps before your first benchmark.",
+        subtitle: "Pair your account and add the MangoHud launch option.",
         shotIds: ["panel-overview", "pair-qr", "launch-option"],
         layout: "grid-3",
     },
     {
-        number: "2",
+        number: "3",
         title: "Capture performance",
         subtitle: "Hit record, play, then review your stats.",
         shotIds: ["recording", "session-form"],
         layout: "grid-2",
     },
     {
-        number: "3",
+        number: "4",
         title: "Share & compare",
         subtitle: "Your entry appears on the game's page for the community.",
         shotIds: ["entry-live"],
@@ -345,7 +404,7 @@ export function PluginPageClient() {
                         How it works
                     </h2>
                     <p className="text-text/50 text-center mb-12 max-w-xl mx-auto">
-                        Four steps from install to your first uploaded benchmark.
+                        Six steps from install to your first uploaded benchmark.
                     </p>
 
                     <div className="flex flex-col gap-6">
