@@ -14,6 +14,7 @@ import { useSettings, useSession } from "./lib/store"
 import {
   readAndParseMangohudLog,
   clearMangohudLog,
+  writeMangohudConfig,
   getHardwareInfo,
   getOsVersion,
   getProtonVersion,
@@ -69,6 +70,8 @@ function Content() {
 
   // ── Handle start recording ────────────────────────────────────
   async function handleStart() {
+    // Write MangoHud config with autostart_log so logging begins immediately
+    await writeMangohudConfig()
     // Clear any previous log file
     await clearMangohudLog()
     startRecording()

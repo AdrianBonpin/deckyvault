@@ -192,7 +192,7 @@ class Plugin:
 # DeckyVault MangoHud logging config
 output_folder=/tmp
 output_file=deckyvault-mangohud.log
-log_duration=0
+autostart_log=0
 fps
 frame_timing
 cpu_power
