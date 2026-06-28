@@ -406,8 +406,8 @@ benchmark_percentiles=97,AVG,1,0.1
         except urllib.error.HTTPError as e:
             if e.code == 401:
                 return {"valid": False, "error": "Invalid API key"}
-            elif e.code == 404:
-                return {"valid": True}  # Key works, just no game with ID 0
+            elif e.code in (400, 404):
+                return {"valid": True}  # Key works, just bad request or no game with ID 0
             else:
                 return {"valid": False, "error": f"Server returned status {e.code}"}
         except urllib.error.URLError as e:

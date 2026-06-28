@@ -11,7 +11,7 @@ export const gamesLookupRoutes = new Elysia({
   async ({ query, set }) => {
     const { steamAppId } = query
 
-    if (!steamAppId) {
+    if (steamAppId === undefined || steamAppId === null) {
       set.status = 400
       return { error: "steamAppId query parameter is required" }
     }
