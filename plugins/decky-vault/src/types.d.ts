@@ -4,13 +4,12 @@
 
 declare global {
   const SteamClient: {
+    GameSessions: {
+      RegisterForAppLifetimeNotifications: (
+        callback: (notification: AppLifetimeNotification) => void,
+      ) => { unregister: () => void }
+    }
     Apps: {
-      RegisterForGameStarted: (
-        callback: (appId: number) => void,
-      ) => { unregister: () => void }
-      RegisterForGameStopped: (
-        callback: (appId: number) => void,
-      ) => { unregister: () => void }
       RegisterForGameActionStart: (
         callback: (gameActionId: number, appId: string, action: string, source: number) => void,
       ) => { unregister: () => void }
@@ -24,6 +23,23 @@ declare global {
     UI: {
       GetUIMode: () => Promise<number>
     }
+  }
+
+  interface AppLifetimeNotification {
+    unAppID: number
+    nInstanceID: number
+    bRunning: boolean
+  }
+
+  interface Window {
+    appStore: {
+      GetAppOverviewByAppID: (appId: number) => SteamAppOverview | null
+    }
+  }
+
+  interface SteamAppOverview {
+    appid: number
+    display_name: string
   }
 }
 

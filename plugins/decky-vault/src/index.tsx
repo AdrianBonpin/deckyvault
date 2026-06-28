@@ -40,22 +40,33 @@ function Content() {
     setGameName,
   } = useSession()
   const gameStartedUnregRef = useRef<{ unregister: () => void } | null>(null)
-  const gameStoppedUnregRef = useRef<{ unregister: () => void } | null>(null)
 
   // ── Register SteamClient game events ──────────────────────────
   useEffect(() => {
     try {
-      // Use RegisterForGameStarted/Stopped — these are the most widely used
-      // APIs in Decky plugins despite TypeScript type warnings.
-      const startedReg = SteamClient.Apps.RegisterForGameStarted((appId: number) => {
-        onGameStart(appId, `App ${appId}`)
-      })
-      gameStartedUnregRef.current = startedReg
-
-      const stoppedReg = SteamClient.Apps.RegisterForGameStopped((_appId: number) => {
-        onGameStop()
-      })
-      gameStoppedUnregRef.current = stoppedReg
+      // Use RegisterForAppLifetimeNotifications — the correct API for
+      // detecting when games start/stop on Steam Deck.
+      const reg = SteamClient.GameSessions.RegisterForAppLifetimeNotifications(
+        (notification: AppLifetimeNotification) => {
+          if (notification.bRunning) {
+            // Game started — try to get the display name from appStore
+            let gameName = `App ${notification.unAppID}`
+            try {
+              const overview = window.appStore?.GetAppOverviewByAppID(notification.unAppID)
+              if (overview?.display_name) {
+                gameName = overview.display_name
+              }
+            } catch {
+              // fallback
+            }
+            onGameStart(notification.unAppID, gameName)
+          } else {
+            // Game stopped
+            onGameStop()
+          }
+        },
+      )
+      gameStartedUnregRef.current = reg
     } catch (e) {
       console.warn("[DeckyVault] SteamClient event registration failed:", e)
     }
@@ -63,7 +74,6 @@ function Content() {
     return () => {
       try {
         gameStartedUnregRef.current?.unregister()
-        gameStoppedUnregRef.current?.unregister()
       } catch {
         // ignore
       }
