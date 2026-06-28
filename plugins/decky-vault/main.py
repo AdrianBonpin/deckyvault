@@ -273,29 +273,49 @@ benchmark_percentiles=97,AVG,1,0.1
             return {"success": False, "error": str(e)}
 
     async def _find_mangohud_log(self) -> str | None:
-        """Find the most recent MangoHud log file in /tmp/.
-        MangoHud creates log files with the game name and timestamp."""
+        """Find the most recent MangoHud log file in /tmp/."""
         import glob
+        import time
         candidates = []
-        # MangoHud log files are typically .csv or have MangoHud in the name
+        now = time.time()
         for pattern in ["/tmp/*MangoHud*", "/tmp/*.csv", "/tmp/*.log"]:
             for f in glob.glob(pattern):
-                # Skip directories
                 if os.path.isdir(f):
                     continue
-                # Check if it looks like a MangoHud log (has fps/frametime header)
+                # Only consider files modified in the last hour
+                try:
+                    mtime = os.path.getmtime(f)
+                    if now - mtime > 3600:
+                        continue
+                except:
+                    pass
+                # Check if it looks like a MangoHud log
                 try:
                     with open(f, 'r') as fh:
                         first_lines = "".join(fh.readline() for _ in range(5))
                         if 'fps' in first_lines.lower() or 'MangoHud' in first_lines:
                             candidates.append(f)
-                except (IOError, UnicodeDecodeError, PermissionError):
-                    pass
+                except:
+                    candidates.append(f)  # Add anyway if we can't read it
         if not candidates:
             return None
-        # Return the most recently modified file
         candidates.sort(key=lambda f: os.path.getmtime(f), reverse=True)
         return candidates[0]
+
+    async def debug_list_tmp(self) -> dict:
+        """RPC: List all files in /tmp/ for debugging."""
+        import glob
+        files = []
+        for f in glob.glob("/tmp/*"):
+            if os.path.isfile(f):
+                try:
+                    mtime = os.path.getmtime(f)
+                    size = os.path.getsize(f)
+                    files.append({"name": os.path.basename(f), "size": size, "mtime": mtime})
+                except:
+                    pass
+        files.sort(key=lambda x: x["mtime"], reverse=True)
+        return {"files": files[:30]}
 
     async def read_and_parse_mangohud_log(self, log_path: str | None = None) -> dict:
         """RPC: Read the MangoHud log file and return parsed FPS stats.

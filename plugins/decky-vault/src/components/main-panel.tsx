@@ -165,9 +165,9 @@ export default function MainPanel({
     }
     const content = result.content
     const hasOutputFolder = content.includes("output_folder=/tmp")
-    const hasOutputFile = content.includes("output_file=deckyvault-mangohud.log")
     const hasFps = content.includes("fps")
-    if (hasOutputFolder && hasOutputFile && hasFps) {
+    const hasFrameTiming = content.includes("frame_timing")
+    if (hasOutputFolder && hasFps) {
       setConfigVerified({ checked: true, valid: true, message: "Config looks good" })
     } else {
       setConfigVerified({ checked: true, valid: false, message: "Config is missing required settings. Write it again." })

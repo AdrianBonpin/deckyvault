@@ -86,6 +86,10 @@ export const testApiKey = callable<[apiKey: string, baseUrl?: string], {
   error?: string
 }>("test_api_key")
 
+export const debugListTmp = callable<[], {
+  files: Array<{ name: string; size: number; mtime: number }>
+}>("debug_list_tmp")
+
 // ── Config Export/Import ────────────────────────────────────────
 export const exportConfig = callable<[settings: {
   apiKey: string
