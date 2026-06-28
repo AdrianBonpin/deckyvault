@@ -21,6 +21,10 @@ import {
   FaSearch,
   FaQrcode,
   FaLink,
+  FaMicrochip,
+  FaGamepad,
+  FaServer,
+  FaWrench,
 } from "react-icons/fa"
 import type { RecordingState, SessionData, RecentSession, PluginSettings } from "../lib/store"
 import { KNOWN_HARDWARE_SLUGS } from "@deckyvault/shared"
@@ -58,16 +62,85 @@ const HARDWARE_OPTIONS = [
   ...KNOWN_HARDWARE_SLUGS.map((slug) => ({ label: slug, data: slug })),
 ]
 
+// ── Reusable layout helpers ─────────────────────────────────────
+// Small, consistent building blocks so every section looks uniform.
+
+const COLORS = {
+  ok: "#2ecc71",
+  err: "#e74c3c",
+  accent: "#1b9bf3",
+  muted: "rgba(255,255,255,0.55)",
+  panel: "rgba(255,255,255,0.06)",
+  border: "rgba(255,255,255,0.10)",
+}
+
+/** Muted intro line shown directly under a PanelSection title. */
+function SectionHint({ children }: { children: React.ReactNode }) {
+  return (
+    <PanelSectionRow>
+      <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "2px 0 6px 0", lineHeight: "1.45", opacity: 0.6 }}>
+        {children}
+      </div>
+    </PanelSectionRow>
+  )
+}
+
+/** A labelled status row with a colored icon: ✓/✗ + label + value. */
+function StatusRow({
+  ok,
+  label,
+  value,
+}: {
+  ok: boolean | null
+  label: string
+  value?: string
+}) {
+  const icon = ok === null ? null : ok ? <FaCheck style={{ color: COLORS.ok }} /> : <FaTimes style={{ color: COLORS.err }} />
+  return (
+    <PanelSectionRow>
+      <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", padding: "3px 0" }}>
+        {icon}
+        <span style={{ opacity: 0.7 }}>{label}</span>
+        {value && <span style={{ fontWeight: 600 }}>{value}</span>}
+      </div>
+    </PanelSectionRow>
+  )
+}
+
+/** A labelled key/value row used for system info (Game, App ID, etc). */
+function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
+  return (
+    <PanelSectionRow>
+      <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", padding: "3px 0" }}>
+        <span style={{ opacity: 0.55, display: "flex", alignItems: "center" }}>{icon}</span>
+        <span style={{ opacity: 0.7, flexShrink: 0 }}>{label}</span>
+        <span style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</span>
+      </div>
+    </PanelSectionRow>
+  )
+}
+
+/** Standard centered icon+label content for ButtonItem. */
+function BtnContent({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
+      {icon}
+      {label}
+    </div>
+  )
+}
+
+/** A numbered setup step with a circular badge. */
 function SetupStep({ number, title, body }: { number: number; title: string; body: string }) {
   return (
     <PanelSectionRow>
-      <div style={{ display: "flex", gap: "10px", padding: "6px 0", alignItems: "flex-start" }}>
+      <div style={{ display: "flex", gap: "10px", padding: "5px 0", alignItems: "flex-start" }}>
         <div style={{
           flexShrink: 0,
           width: "22px",
           height: "22px",
           borderRadius: "50%",
-          background: "#1b9bf3",
+          background: COLORS.accent,
           color: "white",
           fontSize: "12px",
           fontWeight: 700,
@@ -83,6 +156,33 @@ function SetupStep({ number, title, body }: { number: number; title: string; bod
         </div>
       </div>
     </PanelSectionRow>
+  )
+}
+
+/** Monospace code block with optional copy button. */
+function CodeBlock({ value, copied, onCopy }: { value: string; copied: boolean; onCopy: () => void }) {
+  return (
+    <>
+      <PanelSectionRow>
+        <div style={{
+          background: COLORS.panel,
+          borderRadius: "8px",
+          padding: "10px 14px",
+          fontFamily: "monospace",
+          fontSize: "13px",
+          textAlign: "center",
+          wordBreak: "break-all",
+          border: `1px solid ${COLORS.border}`,
+        }}>
+          {value}
+        </div>
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <ButtonItem layout="below" onClick={onCopy}>
+          <BtnContent icon={<FaCopy />} label={copied ? "Copied to clipboard" : "Copy"} />
+        </ButtonItem>
+      </PanelSectionRow>
+    </>
   )
 }
 
@@ -197,6 +297,10 @@ export default function MainPanel({
   async function handleWriteConfig() {
     const result = await writeMangohudConfig()
     setConfigWritten(result.success)
+    if (result.success) {
+      // Reset verify state since config changed
+      setConfigVerified({ checked: false, valid: false, message: "" })
+    }
   }
 
   async function handleVerifyConfig() {
@@ -208,7 +312,6 @@ export default function MainPanel({
     const content = result.content
     const hasOutputFolder = content.includes("output_folder=/tmp")
     const hasFps = content.includes("fps")
-    const hasFrameTiming = content.includes("frame_timing")
     if (hasOutputFolder && hasFps) {
       setConfigVerified({ checked: true, valid: true, message: "Config looks good" })
     } else {
@@ -303,6 +406,10 @@ export default function MainPanel({
     return () => stopPairPolling()
   }, [])
 
+  // ── Derived readiness flags ─────────────────────────────
+  const hasApiKey = !!settings.apiKey
+  const isLinked = pairState.status === "linked" || hasApiKey
+
   // ── Stopped state: show the session form ──────────────────────
   if (recordingState === "stopped") {
     return (
@@ -320,16 +427,30 @@ export default function MainPanel({
 
   return (
     <>
-      {/* ── Recording ──────────────────────────────────────────── */}
+      {/* ════════════════════════════════════════════════════════
+          1. RECORDING — the primary action, always first
+          ════════════════════════════════════════════════════════ */}
       <PanelSection title="Recording">
         {error && (
           <PanelSectionRow>
-            <div className={staticClasses.Text} style={{ color: "#e74c3c", padding: "8px" }}>{error}</div>
+            <div className={staticClasses.Text} style={{
+              color: COLORS.err,
+              padding: "8px 10px",
+              fontSize: "12px",
+              background: "rgba(231,76,60,0.10)",
+              borderRadius: "6px",
+              border: `1px solid rgba(231,76,60,0.25)`,
+            }}>
+              {error}
+            </div>
           </PanelSectionRow>
         )}
 
         {recordingState === "idle" && (
           <>
+            <SectionHint>
+              Enter the game name (or let it auto-detect), then start recording once you're in-game.
+            </SectionHint>
             <PanelSectionRow>
               <TextField
                 label="Game Name"
@@ -340,10 +461,7 @@ export default function MainPanel({
             </PanelSectionRow>
             <PanelSectionRow>
               <ButtonItem layout="below" onClick={onStart}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
-                  <FaPlay />
-                  Start Recording
-                </div>
+                <BtnContent icon={<FaPlay />} label="Start Recording" />
               </ButtonItem>
             </PanelSectionRow>
           </>
@@ -352,112 +470,109 @@ export default function MainPanel({
         {recordingState === "recording" && (
           <>
             <PanelSectionRow>
-              <div className={staticClasses.Text} style={{ padding: "8px 0", textAlign: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", marginBottom: "4px" }}>
-                  <FaClock />
-                  <strong>{formatTime(elapsed)}</strong>
+              <div className={staticClasses.Text} style={{
+                padding: "14px 0",
+                textAlign: "center",
+                background: `radial-gradient(circle at center, ${COLORS.err}22 0%, transparent 70%)`,
+                borderRadius: "10px",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "4px" }}>
+                  <FaClock style={{ color: COLORS.err }} />
+                  <strong style={{ fontSize: "22px", fontFamily: "monospace" }}>{formatTime(elapsed)}</strong>
                 </div>
                 <div style={{ fontSize: "13px", opacity: 0.7 }}>
-                  {session.gameName ? `Recording: ${session.gameName}` : "Recording..."}
+                  {session.gameName ? session.gameName : "Recording…"}
                 </div>
               </div>
             </PanelSectionRow>
             <PanelSectionRow>
               <ButtonItem layout="below" onClick={onStop}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
-                  <FaStop />
-                  Stop Recording
-                </div>
+                <BtnContent icon={<FaStop />} label="Stop Recording" />
               </ButtonItem>
             </PanelSectionRow>
           </>
         )}
 
         {recentSessions.length > 0 && recordingState === "idle" && (
-          <PanelSection title="Recent Recordings">
+          <>
+            <PanelSectionRow>
+              <div className={staticClasses.Text} style={{ fontSize: "11px", opacity: 0.5, padding: "10px 0 4px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Recent
+              </div>
+            </PanelSectionRow>
             {recentSessions.map((rs, i) => (
               <PanelSectionRow key={i}>
-                <div className={staticClasses.Text} style={{ padding: "4px 0", fontSize: "13px" }}>
-                  <strong>{rs.gameName || "Unknown game"}</strong>
-                  <br />
-                  <span style={{ opacity: 0.6 }}>
+                <div className={staticClasses.Text} style={{
+                  padding: "6px 10px",
+                  fontSize: "13px",
+                  background: COLORS.panel,
+                  borderRadius: "6px",
+                  border: `1px solid ${COLORS.border}`,
+                }}>
+                  <div style={{ fontWeight: 600 }}>{rs.gameName || "Unknown game"}</div>
+                  <div style={{ fontSize: "11px", opacity: 0.6, marginTop: "2px" }}>
                     {rs.fpsAvg ? `${rs.fpsAvg} FPS avg` : "No data"} · {new Date(rs.date).toLocaleDateString()}
-                  </span>
+                  </div>
                 </div>
               </PanelSectionRow>
             ))}
-          </PanelSection>
+          </>
         )}
       </PanelSection>
 
-      {/* ── Status ──────────────────────────────────────────────── */}
-      <PanelSection title="Status">
-        <PanelSectionRow>
-          <ButtonItem layout="below" onClick={handleCheckMangohud}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <FaCog />
-              Check MangoHud Status
-            </div>
-          </ButtonItem>
-        </PanelSectionRow>
-        {mangohudStatus.checked && (
-          <PanelSectionRow>
-            <div className={staticClasses.Text} style={{ fontSize: "13px", padding: "4px 0" }}>
-              {mangohudStatus.installed ? (
-                <><FaCheck style={{ color: "#2ecc71" }} /> MangoHud {mangohudStatus.version}</>
-              ) : (
-                <><FaTimes style={{ color: "#e74c3c" }} /> MangoHud not found</>
-              )}
-            </div>
-          </PanelSectionRow>
-        )}
-        {session.gameName && (
-          <PanelSectionRow>
-            <div className={staticClasses.Text} style={{ fontSize: "13px", padding: "4px 0" }}>
-              <strong>Game:</strong> {session.gameName}
-              {session.appId && <> <strong>App ID:</strong> {session.appId}</>}
-            </div>
-          </PanelSectionRow>
-        )}
-        <PanelSectionRow>
-          <ButtonItem layout="below" onClick={handleTestKey} disabled={keyTestStatus === "testing"}>
-            {keyTestStatus === "testing" ? "Testing..." : "Test API Key"}
-            {keyTestStatus === "valid" && <FaCheck style={{ color: "#2ecc71", marginLeft: "8px" }} />}
-            {keyTestStatus === "invalid" && <FaTimes style={{ color: "#e74c3c", marginLeft: "8px" }} />}
-          </ButtonItem>
-        </PanelSectionRow>
-        {keyTestMessage && (
-          <PanelSectionRow>
-            <div className={staticClasses.Text} style={{ fontSize: "12px", color: keyTestStatus === "valid" ? "#2ecc71" : "#e74c3c", padding: "4px 0" }}>
-              {keyTestMessage}
-            </div>
-          </PanelSectionRow>
-        )}
-      </PanelSection>
-
-      {/* ── Account ─────────────────────────────────────────── */}
+      {/* ════════════════════════════════════════════════════════
+          2. ACCOUNT — pairing + API key (prerequisite for upload)
+          ════════════════════════════════════════════════════════ */}
       <PanelSection title="Account">
+        {/* Readiness indicator */}
+        <StatusRow ok={isLinked ? true : null} label="Plugin" value={isLinked ? "Linked" : "Not linked"} />
+
         {pairState.status === "idle" && (
           <>
+            <SectionHint>
+              Scan a QR code with your phone to link your DeckyVault account — no manual key entry needed.
+            </SectionHint>
             <PanelSectionRow>
-              <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "4px 0", lineHeight: "1.5", opacity: 0.7 }}>
-                Link this plugin to your DeckyVault account by scanning a QR code with your phone — no manual key entry needed.
+              <ButtonItem layout="below" onClick={handleStartPairing}>
+                <BtnContent icon={<FaQrcode />} label="Pair with Phone" />
+              </ButtonItem>
+            </PanelSectionRow>
+            {/* Manual key entry + test */}
+            <PanelSectionRow>
+              <div className={staticClasses.Text} style={{ fontSize: "11px", opacity: 0.5, padding: "8px 0 2px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Or paste a key manually
               </div>
             </PanelSectionRow>
             <PanelSectionRow>
-              <ButtonItem layout="below" onClick={handleStartPairing}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
-                  <FaQrcode />
-                  Pair with Phone
-                </div>
+              <TextField
+                label="API Key"
+                value={settings.apiKey}
+                onChange={(e) => onUpdateSetting("apiKey", e.target.value)}
+                placeholder="dv_..."
+                bIsPassword
+              />
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <ButtonItem layout="below" onClick={handleTestKey} disabled={keyTestStatus === "testing"}>
+                <BtnContent
+                  icon={keyTestStatus === "testing" ? <FaClock /> : keyTestStatus === "valid" ? <FaCheck /> : keyTestStatus === "invalid" ? <FaTimes /> : <FaLink />}
+                  label={keyTestStatus === "testing" ? "Testing…" : "Test API Key"}
+                />
               </ButtonItem>
             </PanelSectionRow>
+            {keyTestMessage && (
+              <PanelSectionRow>
+                <div className={staticClasses.Text} style={{ fontSize: "12px", color: keyTestStatus === "valid" ? COLORS.ok : COLORS.err, padding: "3px 0" }}>
+                  {keyTestMessage}
+                </div>
+              </PanelSectionRow>
+            )}
           </>
         )}
 
         {pairState.status === "starting" && (
           <PanelSectionRow>
-            <div className={staticClasses.Text} style={{ padding: "12px 0", textAlign: "center", fontSize: "13px", opacity: 0.7 }}>
+            <div className={staticClasses.Text} style={{ padding: "16px 0", textAlign: "center", fontSize: "13px", opacity: 0.7 }}>
               Starting pairing session…
             </div>
           </PanelSectionRow>
@@ -465,13 +580,9 @@ export default function MainPanel({
 
         {(pairState.status === "showing-qr" || pairState.status === "polling") && (
           <>
+            <SectionHint>Scan with your phone camera, then tap Confirm on the page.</SectionHint>
             <PanelSectionRow>
-              <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "4px 0", lineHeight: "1.5", opacity: 0.8 }}>
-                Scan this code with your phone's camera, then confirm on the page that opens.
-              </div>
-            </PanelSectionRow>
-            <PanelSectionRow>
-              <div style={{ display: "flex", justifyContent: "center", padding: "12px 0", background: "#fff", borderRadius: "12px" }}>
+              <div style={{ display: "flex", justifyContent: "center", padding: "12px", background: "#fff", borderRadius: "12px" }}>
                 <QRCodeSVG value={pairState.qrUrl} size={180} level="M" />
               </div>
             </PanelSectionRow>
@@ -482,10 +593,7 @@ export default function MainPanel({
             </PanelSectionRow>
             <PanelSectionRow>
               <ButtonItem layout="below" onClick={handleCancelPairing}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
-                  <FaTimes />
-                  Cancel
-                </div>
+                <BtnContent icon={<FaTimes />} label="Cancel" />
               </ButtonItem>
             </PanelSectionRow>
           </>
@@ -494,21 +602,26 @@ export default function MainPanel({
         {pairState.status === "linked" && (
           <>
             <PanelSectionRow>
-              <div className={staticClasses.Text} style={{ fontSize: "13px", color: "#2ecc71", padding: "4px 0", textAlign: "center" }}>
-                <FaCheck /> Plugin linked to your account!
+              <div className={staticClasses.Text} style={{
+                fontSize: "13px",
+                color: COLORS.ok,
+                padding: "10px",
+                textAlign: "center",
+                background: "rgba(46,204,113,0.10)",
+                borderRadius: "8px",
+                border: "1px solid rgba(46,204,113,0.25)",
+              }}>
+                <FaCheck /> Linked to your account
               </div>
             </PanelSectionRow>
             <PanelSectionRow>
-              <div className={staticClasses.Text} style={{ fontSize: "11px", opacity: 0.6, padding: "4px 0", textAlign: "center" }}>
-                API key saved. You can now upload performance entries.
+              <div className={staticClasses.Text} style={{ fontSize: "11px", opacity: 0.6, padding: "2px 0", textAlign: "center" }}>
+                API key saved. You can now upload entries.
               </div>
             </PanelSectionRow>
             <PanelSectionRow>
               <ButtonItem layout="below" onClick={handleCancelPairing}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
-                  <FaLink />
-                  Done
-                </div>
+                <BtnContent icon={<FaLink />} label="Done" />
               </ButtonItem>
             </PanelSectionRow>
           </>
@@ -517,106 +630,122 @@ export default function MainPanel({
         {pairState.status === "error" && (
           <>
             <PanelSectionRow>
-              <div className={staticClasses.Text} style={{ fontSize: "12px", color: "#e74c3c", padding: "4px 0" }}>
-                <FaTimes /> {pairState.error}
+              <div className={staticClasses.Text} style={{
+                fontSize: "12px",
+                color: COLORS.err,
+                padding: "8px 10px",
+                background: "rgba(231,76,60,0.10)",
+                borderRadius: "6px",
+                border: "1px solid rgba(231,76,60,0.25)",
+              }}>
+                {pairState.error}
               </div>
             </PanelSectionRow>
             <PanelSectionRow>
               <ButtonItem layout="below" onClick={handleStartPairing}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
-                  <FaQrcode />
-                  Try Again
-                </div>
+                <BtnContent icon={<FaQrcode />} label="Try Again" />
               </ButtonItem>
             </PanelSectionRow>
             <PanelSectionRow>
               <ButtonItem layout="below" onClick={handleCancelPairing}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
-                  Dismiss
-                </div>
+                <BtnContent icon={<FaTimes />} label="Dismiss" />
               </ButtonItem>
             </PanelSectionRow>
           </>
         )}
       </PanelSection>
 
-      {/* ── Usage Instructions ──────────────────────────────────── */}
-      <PanelSection title="Usage Instructions">
-        <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "4px 0", lineHeight: "1.5" }}>
-            Add this to your game's Steam launch options, then launch the game. Press Start Recording once you're in-game and ready to benchmark.
-          </div>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <div style={{
-            background: "rgba(255,255,255,0.1)",
-            borderRadius: "8px",
-            padding: "10px 14px",
-            fontFamily: "monospace",
-            fontSize: "14px",
-            textAlign: "center",
-          }}>
-            ~/deckyvault-mangohud.sh %command%
-          </div>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <ButtonItem layout="below" onClick={handleCopyLaunchOption}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
-              <FaCopy />
-              {copiedLaunchOpt ? "Copied to clipboard" : "Copy Launch Option"}
-            </div>
-          </ButtonItem>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ fontSize: "11px", opacity: 0.6, padding: "4px 0" }}>
-            Config stored in ~/.config/MangoHud/MangoHud.conf
-          </div>
-        </PanelSectionRow>
-      </PanelSection>
+      {/* ════════════════════════════════════════════════════════
+          3. MANGOHUD SETUP — config + launch option + guide,
+          all in one coherent section
+          ════════════════════════════════════════════════════════ */}
+      <PanelSection title="MangoHud Setup">
+        <SectionHint>Follow these steps once to enable performance logging.</SectionHint>
 
-      {/* ── MangoHud Config ────────────────────────────────────── */}
-      <PanelSection title="MangoHud Config">
+        <SetupStep number={1} title="Write the Config" body="Creates the logging config and wrapper script automatically." />
         <PanelSectionRow>
           <ButtonItem layout="below" onClick={handleWriteConfig}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <FaDownload />
-              Write Config
-            </div>
+            <BtnContent icon={<FaDownload />} label="Write Config" />
           </ButtonItem>
         </PanelSectionRow>
         {configWritten && (
-          <PanelSectionRow>
-            <div className={staticClasses.Text} style={{ fontSize: "12px", color: "#2ecc71", padding: "4px 0" }}>
-              <FaCheck /> Config written
-            </div>
-          </PanelSectionRow>
+          <StatusRow ok={true} label="Config" value="written" />
         )}
+
+        <SetupStep number={2} title="Add the Launch Option" body="Steam → right-click game → Properties → Launch Options, then paste:" />
+        <CodeBlock value="~/deckyvault-mangohud.sh %command%" copied={copiedLaunchOpt} onCopy={handleCopyLaunchOption} />
+
+        <SetupStep number={3} title="Launch & Record" body="Start the game from Steam, then press Start Recording once in-game." />
+
+        {/* Verify + config details */}
+        <PanelSectionRow>
+          <div className={staticClasses.Text} style={{ fontSize: "11px", opacity: 0.5, padding: "10px 0 2px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Verify
+          </div>
+        </PanelSectionRow>
         <PanelSectionRow>
           <ButtonItem layout="below" onClick={handleVerifyConfig}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <FaSearch />
-              Verify Config
-            </div>
+            <BtnContent icon={<FaSearch />} label="Verify Config" />
           </ButtonItem>
         </PanelSectionRow>
         {configVerified.checked && (
-          <PanelSectionRow>
-            <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "4px 0", color: configVerified.valid ? "#2ecc71" : "#e74c3c" }}>
-              {configVerified.valid ? <FaCheck /> : <FaTimes />} {configVerified.message}
-            </div>
-          </PanelSectionRow>
+          <StatusRow ok={configVerified.valid} label="" value={configVerified.message} />
+        )}
+
+        <PanelSectionRow>
+          <div className={staticClasses.Text} style={{
+            fontSize: "11px",
+            padding: "10px 0 0 0",
+            lineHeight: "1.5",
+            opacity: 0.5,
+            borderTop: `1px solid ${COLORS.border}`,
+            marginTop: "8px",
+          }}>
+            Config stored in <span style={{ fontFamily: "monospace", opacity: 0.8 }}>~/.config/MangoHud/MangoHud.conf</span>.
+            Steam Deck has MangoHud pre-installed; on other Linux, install via <span style={{ fontFamily: "monospace", opacity: 0.8 }}>apt</span> or Flatpak.
+          </div>
+        </PanelSectionRow>
+      </PanelSection>
+
+      {/* ════════════════════════════════════════════════════════
+          4. SYSTEM — environment / detection status
+          ════════════════════════════════════════════════════════ */}
+      <PanelSection title="System">
+        <SectionHint>Detect your hardware, OS, and the currently running game.</SectionHint>
+
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={handleCheckMangohud}>
+            <BtnContent icon={<FaCog />} label="Check MangoHud" />
+          </ButtonItem>
+        </PanelSectionRow>
+        {mangohudStatus.checked && (
+          <StatusRow
+            ok={mangohudStatus.installed}
+            label="MangoHud"
+            value={mangohudStatus.installed ? mangohudStatus.version : "not found"}
+          />
+        )}
+
+        {session.gameName && (
+          <InfoRow icon={<FaGamepad />} label="Game" value={session.gameName} />
+        )}
+        {session.appId && (
+          <InfoRow icon={<FaMicrochip />} label="App ID" value={String(session.appId)} />
         )}
       </PanelSection>
 
-      {/* ── Configuration ────────────────────────────────────────── */}
-      <PanelSection title="Configuration">
+      {/* ════════════════════════════════════════════════════════
+          5. ADVANCED — server, paths, hardware, config portability
+          ════════════════════════════════════════════════════════ */}
+      <PanelSection title="Advanced">
+        <SectionHint>Change these only if you need a custom server or export location.</SectionHint>
+
         <PanelSectionRow>
           <TextField
-            label="API Key"
-            value={settings.apiKey}
-            onChange={(e) => onUpdateSetting("apiKey", e.target.value)}
-            placeholder="dv_..."
-            bIsPassword
+            label="Server URL"
+            value={settings.baseUrl}
+            onChange={(e) => onUpdateSetting("baseUrl", e.target.value)}
+            placeholder="https://deckyvault.xyz"
           />
         </PanelSectionRow>
         <PanelSectionRow>
@@ -628,14 +757,6 @@ export default function MainPanel({
           />
         </PanelSectionRow>
         <PanelSectionRow>
-          <TextField
-            label="Server URL"
-            value={settings.baseUrl}
-            onChange={(e) => onUpdateSetting("baseUrl", e.target.value)}
-            placeholder="https://deckyvault.xyz"
-          />
-        </PanelSectionRow>
-        <PanelSectionRow>
           <DropdownItem
             label="Default Hardware"
             rgOptions={HARDWARE_OPTIONS}
@@ -643,47 +764,52 @@ export default function MainPanel({
             onChange={(opt) => onUpdateSetting("hardwareSlug", opt.data as string || null)}
           />
         </PanelSectionRow>
+
+        <PanelSectionRow>
+          <div className={staticClasses.Text} style={{ fontSize: "11px", opacity: 0.5, padding: "10px 0 2px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            <FaServer style={{ marginRight: "6px" }} />
+            Config Backup
+          </div>
+        </PanelSectionRow>
         <PanelSectionRow>
           <ButtonItem layout="below" onClick={handleExportConfig}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <FaFileExport />
-              Export Config to Downloads
-            </div>
+            <BtnContent icon={<FaFileExport />} label="Export to Downloads" />
           </ButtonItem>
         </PanelSectionRow>
         <PanelSectionRow>
           <ButtonItem layout="below" onClick={handleImportConfig}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <FaFileImport />
-              Import Config from Downloads
-            </div>
+            <BtnContent icon={<FaFileImport />} label="Import from Downloads" />
           </ButtonItem>
         </PanelSectionRow>
         {configStatus && (
           <PanelSectionRow>
-            <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "4px 0", color: configStatus.isError ? "#e74c3c" : "#2ecc71" }}>
+            <div className={staticClasses.Text} style={{
+              fontSize: "12px",
+              padding: "6px 10px",
+              borderRadius: "6px",
+              color: configStatus.isError ? COLORS.err : COLORS.ok,
+              background: configStatus.isError ? "rgba(231,76,60,0.10)" : "rgba(46,204,113,0.10)",
+              border: `1px solid ${configStatus.isError ? "rgba(231,76,60,0.25)" : "rgba(46,204,113,0.25)"}`,
+            }}>
               {configStatus.isError ? <FaTimes /> : <FaCheck />} {configStatus.message}
             </div>
           </PanelSectionRow>
         )}
-      </PanelSection>
-
-      {/* ── MangoHud Setup Guide ────────────────────────────── */}
-      <PanelSection title="MangoHud Setup Guide">
-        <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "4px 0 8px 0", lineHeight: "1.5", opacity: 0.7 }}>
-            Follow these steps once to enable performance logging.
-          </div>
-        </PanelSectionRow>
-
-        <SetupStep number={1} title="Write MangoHud Config" body="Tap 'Write Config' above. This creates the logging config and a wrapper script automatically." />
-        <SetupStep number={2} title="Add the Launch Option" body="Right-click your game in Steam → Properties → Launch Options, and paste the launch option above." />
-        <SetupStep number={3} title="Launch the Game" body="Start the game from Steam. MangoHud loads automatically using the wrapper script." />
-        <SetupStep number={4} title="Record While Playing" body="Once in-game, open this panel and press Start Recording. Press Stop when done." />
 
         <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ fontSize: "11px", padding: "10px 0 0 0", lineHeight: "1.5", opacity: 0.5, borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "8px" }}>
-            Steam Deck ships with MangoHud pre-installed. On other Linux distros, install it with <span style={{ fontFamily: "monospace", opacity: 0.8 }}>sudo apt install mangohud</span> or via Flatpak.
+          <div className={staticClasses.Text} style={{
+            fontSize: "11px",
+            padding: "10px 0 0 0",
+            lineHeight: "1.5",
+            opacity: 0.45,
+            borderTop: `1px solid ${COLORS.border}`,
+            marginTop: "8px",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "6px",
+          }}>
+            <FaWrench style={{ marginTop: "2px", flexShrink: 0 }} />
+            <span>Export saves your settings (including API key) as a JSON file you can move between devices.</span>
           </div>
         </PanelSectionRow>
       </PanelSection>
