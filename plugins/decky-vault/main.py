@@ -646,6 +646,39 @@ exec mangohud "$@"
         except Exception as e:
             return {"screenshots": [], "error": str(e)}
 
+    async def read_screenshot(self, path: str, max_width: int = 320) -> dict:
+        """RPC: Read a screenshot file and return it as a base64 data URL,
+        downscaled to a thumbnail for preview display in the plugin UI.
+        Returns {dataUrl: str, error?: str}."""
+        import base64
+        try:
+            if not os.path.exists(path):
+                return {"dataUrl": "", "error": "File not found"}
+            with open(path, "rb") as f:
+                raw = f.read()
+            # Downscale via Pillow if available, else return raw bytes as-is
+            try:
+                from PIL import Image
+                import io
+                img = Image.open(io.BytesIO(raw))
+                if img.mode not in ("RGB", "RGBA"):
+                    img = img.convert("RGB")
+                if img.width > max_width:
+                    ratio = max_width / float(img.width)
+                    img = img.resize((max_width, int(img.height * ratio)))
+                buf = io.BytesIO()
+                img.save(buf, format="JPEG", quality=70)
+                b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+                return {"dataUrl": f"data:image/jpeg;base64,{b64}"}
+            except ImportError:
+                # No Pillow — return the raw file as a data URL
+                ext = os.path.splitext(path)[1].lower()
+                mime = "image/png" if ext == ".png" else ("image/webp" if ext == ".webp" else "image/jpeg")
+                b64 = base64.b64encode(raw).decode("ascii")
+                return {"dataUrl": f"data:{mime};base64,{b64}"}
+        except Exception as e:
+            return {"dataUrl": "", "error": str(e)}
+
     async def upload_screenshots(self, entry_id: str, screenshot_paths: list, api_key: str, base_url: str = "https://deckyvault.xyz") -> dict:
         """RPC: Upload up to 2 screenshots to a performance entry as multipart/form-data.
         Returns {success: bool, uploaded: int, error?: str, status?: int}.

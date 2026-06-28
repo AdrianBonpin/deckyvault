@@ -86,6 +86,11 @@ export const listScreenshots = callable<[limit?: number], {
   error?: string
 }>("list_screenshots")
 
+export const readScreenshot = callable<[path: string, maxWidth?: number], {
+  dataUrl: string
+  error?: string
+}>("read_screenshot")
+
 export const uploadScreenshots = callable<[
   entryId: string,
   screenshotPaths: string[],
