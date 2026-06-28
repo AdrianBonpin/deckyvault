@@ -3,6 +3,19 @@ import json
 import os
 import ssl
 
+def _get_ssl_context():
+    """Create an SSL context, trying verification first, falling back to unverified.
+    This handles systems where the CA bundle is missing or outdated (e.g., Steam Deck)."""
+    try:
+        ctx = ssl.create_default_context()
+        # Test that the context can actually verify by checking it has CAs
+        if ctx.get_ca_certs():
+            return ctx
+    except Exception:
+        pass
+    # Fall back to unverified if default context fails
+    return ssl._create_unverified_context()
+
 try:
     import decky
 except ImportError:
@@ -350,7 +363,7 @@ benchmark_percentiles=97,AVG,1,0.1
                 method="POST"
             )
 
-            context = ssl._create_unverified_context()
+            context = _get_ssl_context()
             with urllib.request.urlopen(req, timeout=30, context=context) as response:
                 status = response.status
                 body = response.read().decode('utf-8')
@@ -386,7 +399,7 @@ benchmark_percentiles=97,AVG,1,0.1
                 headers={"x-api-key": api_key},
                 method="GET"
             )
-            context = ssl._create_unverified_context()
+            context = _get_ssl_context()
             with urllib.request.urlopen(req, timeout=10, context=context) as response:
                 # A 404 (game not found) still means the API key is valid
                 return {"valid": True}
