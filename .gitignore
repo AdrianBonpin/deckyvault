@@ -49,3 +49,4 @@ yarn-error.log*
 
 # stray
 post.md
+plugins/decky-vault/dist/
