@@ -605,7 +605,7 @@ exec mangohud "$@"
         except Exception as e:
             return {"success": False, "error": str(e), "status": 0}
 
-    async def list_screenshots(self, limit: int = 12) -> dict:
+    async def list_screenshots(self, limit: int = 50) -> dict:
         """RPC: List recent Steam Deck screenshots from ~/Pictures/Screenshots/.
         Returns {screenshots: [{path, name, mtime, size}], error?}.
         Steam saves timestamped JPGs in a 'Steam Client' subfolder and keeps

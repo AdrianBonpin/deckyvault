@@ -169,6 +169,9 @@ export function PresetDetailModal({
     const [activeTab, setActiveTab] = useState<TabKey>("media")
     const [lightboxOpen, setLightboxOpen] = useState(false)
     const [lightboxIndex, setLightboxIndex] = useState(0)
+    const [deletingScreenshotId, setDeletingScreenshotId] = useState<
+        string | null
+    >(null)
 
     const isOwner = session?.user?.id === preset.userId
     const isAdmin = session?.user?.role === "admin"
@@ -256,6 +259,23 @@ export function PresetDetailModal({
             }
         } catch (err) {
             console.error("Failed to toggle pin:", err)
+        }
+    }
+
+    async function handleDeleteScreenshot(screenshotId: string) {
+        setDeletingScreenshotId(screenshotId)
+        try {
+            const res = await fetch(
+                `/api/performance/${preset.id}/screenshots/${screenshotId}`,
+                { method: "DELETE" },
+            )
+            if (res.ok) {
+                router.refresh()
+            }
+        } catch (err) {
+            console.error("Failed to delete screenshot:", err)
+        } finally {
+            setDeletingScreenshotId(null)
         }
     }
 
@@ -854,31 +874,42 @@ export function PresetDetailModal({
                                                         <div className='flex flex-col gap-3'>
                                                             {preset.screenshots.map(
                                                                 (ss, i) => (
-                                                                    <button
-                                                                        key={
-                                                                            ss.id
-                                                                        }
-                                                                        onClick={() => {
-                                                                            setLightboxIndex(
-                                                                                i,
-                                                                            )
-                                                                            setLightboxOpen(
-                                                                                true,
-                                                                            )
-                                                                        }}
-                                                                        className='block cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-lg overflow-hidden w-full'
-                                                                        aria-label={`View screenshot ${i + 1}`}
-                                                                    >
-                                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                                        <img
-                                                                            src={
-                                                                                ss.url
-                                                                            }
-                                                                            alt={`Screenshot ${i + 1}`}
-                                                                            className='w-full h-auto object-cover border border-border hover:border-primary/50 transition-colors rounded-lg'
-                                                                            loading='lazy'
-                                                                        />
-                                                                    </button>
+                                                                    <div key={ss.id} className='relative group'>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setLightboxIndex(
+                                                                                    i,
+                                                                                )
+                                                                                setLightboxOpen(
+                                                                                    true,
+                                                                                )
+                                                                            }}
+                                                                            className='block w-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-lg overflow-hidden'
+                                                                            aria-label={`View screenshot ${i + 1}`}
+                                                                        >
+                                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                            <img
+                                                                                src={ss.url}
+                                                                                alt={`Screenshot ${i + 1}`}
+                                                                                className='w-full h-auto object-cover border border-border hover:border-primary/50 transition-colors rounded-lg'
+                                                                                loading='lazy'
+                                                                            />
+                                                                        </button>
+                                                                        {(isOwner || isAdmin) && (
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation()
+                                                                                    handleDeleteScreenshot(ss.id)
+                                                                                }}
+                                                                                disabled={deletingScreenshotId === ss.id}
+                                                                                className='absolute top-2 right-2 p-1.5 rounded-md bg-black/50 text-white/60 hover:text-red-400 hover:bg-red-500/20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-not-allowed'
+                                                                                aria-label={`Delete screenshot ${i + 1}`}
+                                                                                title='Delete screenshot'
+                                                                            >
+                                                                                <TrashIcon className='h-3.5 w-3.5' />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
                                                                 ),
                                                             )}
                                                         </div>

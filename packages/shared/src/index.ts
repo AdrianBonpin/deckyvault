@@ -38,6 +38,8 @@ export interface DeckyVaultImportV1 {
   settingsJson?: unknown[] | null
   userNotes?: string | null
   customSystem?: boolean
+  versionString?: string | null
+  buildId?: string | null
   antiCheatRelevant?: boolean
   antiCheatName?: string | null
   antiCheatStatus?: string

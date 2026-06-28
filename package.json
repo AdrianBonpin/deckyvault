@@ -14,7 +14,11 @@
     "db:migrate": "bun run --filter @deckyvault/web db:migrate",
     "db:push": "bun run --filter @deckyvault/web db:push",
     "db:studio": "bun run --filter @deckyvault/web db:studio",
-    "db:seed": "bun run --filter @deckyvault/web db:seed"
+    "db:seed": "bun run --filter @deckyvault/web db:seed",
+    "plugin:build": "bun run --filter @deckyvault/plugin build",
+    "plugin:zip": "bun run --filter @deckyvault/plugin zip",
+    "plugin:release": "bun run --filter @deckyvault/plugin release",
+    "plugin:deploy": "bun run --filter @deckyvault/plugin build && bash plugins/decky-vault/scripts/deploy.sh"
   },
   "trustedDependencies": ["sharp", "unrs-resolver"],
   "overrides": {
