@@ -112,6 +112,9 @@ export default function MainPanel({
       path: result.path,
       version: result.version,
     })
+    if (result.debug) {
+      console.log("[DeckyVault] MangoHud debug:", result.debug)
+    }
   }
 
   async function handleTestKey() {

@@ -10,6 +10,7 @@ export const checkMangohud = callable<[], {
   path: string
   version: string
   error?: string
+  debug?: string
 }>("check_mangohud")
 
 export const writeMangohudConfig = callable<[], {

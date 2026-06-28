@@ -161,22 +161,25 @@ class Plugin:
             path = "/usr/bin/mangohud"
             exists = os.path.exists(path)
             if not exists:
-                return {"installed": False, "path": "", "version": ""}
+                return {"installed": False, "path": "", "version": "", "debug": "file not found"}
 
-            # Get version using os.popen (more reliable than subprocess in some envs)
+            # Get version using os.popen
             version = ""
+            debug = ""
             try:
-                with os.popen(f"{path} --version 2>/dev/null") as pipe:
+                with os.popen(f"{path} --version 2>&1") as pipe:
                     v = pipe.read().strip()
-                    if v and "-" in v:
-                        v = v.split("-")[0]
-                    version = v
-            except:
-                pass
+                    debug = f"popen got: {repr(v)}"
+                    if v:
+                        if "-" in v:
+                            v = v.split("-")[0]
+                        version = v
+            except Exception as e:
+                debug = f"popen error: {str(e)}"
 
-            return {"installed": True, "path": path, "version": version}
+            return {"installed": True, "path": path, "version": version, "debug": debug}
         except Exception as e:
-            return {"installed": False, "path": "", "version": "", "error": str(e)}
+            return {"installed": False, "path": "", "version": "", "error": str(e), "debug": "outer error"}
 
     async def write_mangohud_config(self) -> dict:
         """RPC: Write the MangoHud logging config to ~/.config/MangoHud/MangoHud.conf.
