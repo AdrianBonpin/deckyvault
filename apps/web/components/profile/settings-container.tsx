@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { User, Shield, Link as LinkIcon, Key } from "lucide-react"
 import { SettingsProfileTab } from "@/components/profile/settings-profile-tab"
 import { SettingsSecurityTab } from "@/components/profile/settings-security-tab"
@@ -15,6 +16,8 @@ interface AuthMethods {
 }
 
 type SettingsSubTab = "profile" | "security" | "accounts" | "api-keys"
+
+const VALID_SUBTABS: SettingsSubTab[] = ["profile", "security", "accounts", "api-keys"]
 
 const subTabs: { id: SettingsSubTab; label: string; icon: typeof User }[] = [
     { id: "profile", label: "Profile", icon: User },
@@ -42,7 +45,12 @@ export function SettingsContainer({
     userId,
     onImageChange,
 }: SettingsContainerProps) {
-    const [activeSubTab, setActiveSubTab] = useState<SettingsSubTab>("profile")
+    const [activeSubTab, setActiveSubTab] = useState<SettingsSubTab>(() => {
+        if (typeof window === "undefined") return "profile"
+        const params = new URLSearchParams(window.location.search)
+        const sub = params.get("subtab")
+        return sub && VALID_SUBTABS.includes(sub as SettingsSubTab) ? (sub as SettingsSubTab) : "profile"
+    })
     const [authMethods, setAuthMethods] = useState<AuthMethods | null>(null)
     const [isLoadingAuthMethods, setIsLoadingAuthMethods] = useState(true)
 

@@ -17,7 +17,12 @@ type Tab = "overview" | "saved" | "settings"
 export default function ProfilePage() {
     const router = useRouter()
     const { data: session, isPending: isSessionLoading } = useSession()
-    const [activeTab, setActiveTab] = useState<Tab>("overview")
+    const [activeTab, setActiveTab] = useState<Tab>(() => {
+        if (typeof window === "undefined") return "overview"
+        const params = new URLSearchParams(window.location.search)
+        const t = params.get("tab")
+        return t === "settings" || t === "saved" ? (t as Tab) : "overview"
+    })
     const [profile, setProfile] = useState<{
         id: string
         name: string
