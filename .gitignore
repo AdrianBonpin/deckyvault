@@ -50,3 +50,6 @@ yarn-error.log*
 # stray
 post.md
 plugins/decky-vault/dist/
+
+# Decky plugin release zips
+plugins/decky-vault/releases/

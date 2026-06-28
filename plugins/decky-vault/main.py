@@ -112,7 +112,14 @@ def parse_mangohud_log(log_content: str) -> dict:
     elif cpu_power_values:
         total_power_values = cpu_power_values
     if total_power_values:
-        tdp_watts = round(sum(total_power_values) / len(total_power_values), 1)
+        # MangoHud's cpu_power + gpu_power is the APU draw only. Add a fixed
+        # overhead for the Steam Deck's screen, fan, speakers, and other
+        # peripherals to get a closer estimate of total system power draw.
+        SYSTEM_OVERHEAD_W = 3.0
+        tdp_watts = round(
+            sum(total_power_values) / len(total_power_values) + SYSTEM_OVERHEAD_W,
+            1,
+        )
 
     return {
         "fpsAvg": fps_avg,
