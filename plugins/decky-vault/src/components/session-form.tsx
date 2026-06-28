@@ -157,18 +157,6 @@ export default function SessionForm({
         </PanelSectionRow>
 
         <PanelSectionRow>
-          <Field label="In-game Settings" bottomSeparator="none">
-            <textarea
-              value={session.settingsJson}
-              onChange={(e) => onUpdateSession({ settingsJson: e.target.value })}
-              placeholder="e.g. High preset, 1280x800, TAA"
-              rows={3}
-              style={{ width: "100%", padding: "4px 8px", resize: "vertical" }}
-            />
-          </Field>
-        </PanelSectionRow>
-
-        <PanelSectionRow>
           <TextField
             label="Load Time - SSD (seconds)"
             value={session.loadTimeSsd}

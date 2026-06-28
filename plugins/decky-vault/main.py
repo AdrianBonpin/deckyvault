@@ -34,6 +34,7 @@ def parse_mangohud_log(log_content: str) -> dict:
     fps_col = 0
     frametime_col = None
     gpu_power_col = None
+    cpu_power_col = None
 
     for i, line in enumerate(lines):
         stripped = line.strip()
@@ -47,6 +48,8 @@ def parse_mangohud_log(log_content: str) -> dict:
                     frametime_col = columns.index('frametime')
                 if 'gpu_power' in columns:
                     gpu_power_col = columns.index('gpu_power')
+                if 'cpu_power' in columns:
+                    cpu_power_col = columns.index('cpu_power')
                 header_idx = i
                 break
 
@@ -56,6 +59,7 @@ def parse_mangohud_log(log_content: str) -> dict:
     fps_values = []
     frametime_values = []
     gpu_power_values = []
+    cpu_power_values = []
 
     for line in lines[header_idx + 1:]:
         stripped = line.strip()
@@ -71,6 +75,8 @@ def parse_mangohud_log(log_content: str) -> dict:
                 frametime_values.append(float(parts[frametime_col]))
             if gpu_power_col is not None and gpu_power_col < len(parts):
                 gpu_power_values.append(float(parts[gpu_power_col]))
+            if cpu_power_col is not None and cpu_power_col < len(parts):
+                cpu_power_values.append(float(parts[cpu_power_col]))
         except (ValueError, IndexError):
             continue
 
@@ -96,8 +102,17 @@ def parse_mangohud_log(log_content: str) -> dict:
         fps_one_percent_low = round(sorted_fps[one_percent_idx], 1)
 
     tdp_watts = None
-    if gpu_power_values:
-        tdp_watts = round(sum(gpu_power_values) / len(gpu_power_values), 1)
+    total_power_values = []
+    if gpu_power_values and cpu_power_values:
+        # Sum GPU and CPU power for total APU power
+        for gp, cp in zip(gpu_power_values, cpu_power_values):
+            total_power_values.append(gp + cp)
+    elif gpu_power_values:
+        total_power_values = gpu_power_values
+    elif cpu_power_values:
+        total_power_values = cpu_power_values
+    if total_power_values:
+        tdp_watts = round(sum(total_power_values) / len(total_power_values), 1)
 
     return {
         "fpsAvg": fps_avg,
