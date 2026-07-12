@@ -842,6 +842,42 @@ exec mangohud "$@"
         except Exception as e:
             return {"valid": False, "error": str(e)}
 
+    async def plugin_get(self, path: str, base_url: str = "https://deckyvault.xyz") -> dict:
+        """RPC: Public read proxy for the DeckyVault API (used by the library panel).
+        Performs a GET to {base_url}/api{path} and returns parsed JSON or {error, status}.
+        Keeps network in the Python backend to avoid CEF CORS issues."""
+        import urllib.request
+        import urllib.error
+        try:
+            if not path.startswith("/"):
+                path = "/" + path
+            url = f"{base_url}/api{path}"
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:136.0) Gecko/20100101 Firefox/136.0",
+                    "Accept": "application/json",
+                },
+                method="GET",
+            )
+            context = _get_ssl_context()
+            with urllib.request.urlopen(req, timeout=10, context=context) as response:
+                body = response.read().decode("utf-8")
+                try:
+                    return json.loads(body)
+                except json.JSONDecodeError:
+                    return {"error": "Invalid JSON", "status": response.status}
+        except urllib.error.HTTPError as e:
+            try:
+                err = json.loads(e.read().decode("utf-8"))
+                return {**err, "status": e.code}
+            except Exception:
+                return {"error": f"Server returned status {e.code}", "status": e.code}
+        except urllib.error.URLError as e:
+            return {"error": f"Network error: {str(e.reason)}", "status": 0}
+        except Exception as e:
+            return {"error": str(e), "status": 0}
+
     async def export_config(self, settings: dict) -> dict:
         """RPC: Export current settings to Downloads/deckyvault-config.json.
         Returns {success: bool, path?: str, error?: str}."""

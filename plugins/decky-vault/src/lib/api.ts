@@ -167,3 +167,6 @@ export const checkPairStatus = callable<[token: string, baseUrl?: string], {
   keyName?: string
   error?: string
 }>("check_pair_status")
+
+// ── Plugin API Proxy ────────────────────────────────────────────
+export const pluginGet = callable<[path: string, baseUrl?: string], Record<string, unknown> & { status?: number; error?: string }>("plugin_get")
