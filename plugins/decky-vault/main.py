@@ -641,42 +641,50 @@ exec mangohud "$@"
         except Exception as e:
             return {"success": False, "error": str(e), "status": 0}
 
-    async def list_screenshots(self, limit: int = 50) -> dict:
-        """RPC: List recent Steam Deck screenshots from ~/Pictures/Screenshots/.
-        Returns {screenshots: [{path, name, mtime, size}], error?}.
-        Steam saves timestamped JPGs in a 'Steam Client' subfolder and keeps
-        a 'most_recent.jpg' symlink-like copy at the top level."""
+    async def list_screenshots(self, limit: int = 50, app_id: int | None = None) -> dict:
+        """RPC: List recent Steam screenshots from both Game Mode (userdata/760/remote)
+        and Desktop Mode (~/Pictures/Screenshots). Returns newest first.
+        When app_id is given, keeps all Desktop exports + that app's userdata shots."""
         import glob
-        import time
         try:
             home = os.path.expanduser("~")
             base = os.path.join(home, "Pictures", "Screenshots")
+            userdata = os.path.join(home, ".local", "share", "Steam", "userdata")
             patterns = [
                 os.path.join(base, "*.jpg"),
                 os.path.join(base, "*.png"),
                 os.path.join(base, "Steam Client", "*.jpg"),
                 os.path.join(base, "Steam Client", "*.png"),
+                os.path.join(userdata, "*", "760", "remote", "*", "screenshots", "*.jpg"),
+                os.path.join(userdata, "*", "760", "remote", "*", "screenshots", "*.png"),
             ]
-            seen = set()
-            files = []
+            seen, files = set(), []
             for pat in patterns:
                 for f in glob.glob(pat):
                     if not os.path.isfile(f) or f in seen:
                         continue
-                    # Skip the most_recent.jpg duplicate if a real timestamped
-                    # copy exists — it's just a pointer to the latest one.
                     if os.path.basename(f) == "most_recent.jpg":
                         continue
                     seen.add(f)
+                    f_app_id = None
+                    parts = f.split(os.sep)
+                    if "760" in parts:
+                        idx = parts.index("760")
+                        if idx >= 2:
+                            try:
+                                f_app_id = int(parts[idx + 2])
+                            except (ValueError, IndexError):
+                                pass
                     try:
                         files.append({
-                            "path": f,
-                            "name": os.path.basename(f),
-                            "mtime": os.path.getmtime(f),
-                            "size": os.path.getsize(f),
+                            "path": f, "name": os.path.basename(f),
+                            "mtime": os.path.getmtime(f), "size": os.path.getsize(f),
+                            "appId": f_app_id,
                         })
                     except OSError:
                         continue
+            if app_id is not None:
+                files = [x for x in files if x["appId"] is None or x["appId"] == app_id]
             files.sort(key=lambda x: x["mtime"], reverse=True)
             return {"screenshots": files[:limit]}
         except Exception as e:
@@ -707,9 +715,11 @@ exec mangohud "$@"
                 b64 = base64.b64encode(buf.getvalue()).decode("ascii")
                 return {"dataUrl": f"data:image/jpeg;base64,{b64}"}
             except ImportError:
-                # No Pillow — return the raw file as a data URL
+                # No Pillow — only return raw if small enough for CEF; else skip preview.
                 ext = os.path.splitext(path)[1].lower()
                 mime = "image/png" if ext == ".png" else ("image/webp" if ext == ".webp" else "image/jpeg")
+                if len(raw) > 1_000_000:
+                    return {"dataUrl": "", "error": "Preview unavailable (too large, no Pillow)"}
                 b64 = base64.b64encode(raw).decode("ascii")
                 return {"dataUrl": f"data:{mime};base64,{b64}"}
         except Exception as e:

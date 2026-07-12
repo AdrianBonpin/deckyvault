@@ -93,8 +93,8 @@ export const uploadToDeckyvault = callable<[
   status?: number
 }>("upload_to_deckyvault")
 
-export const listScreenshots = callable<[limit?: number], {
-  screenshots: Array<{ path: string; name: string; mtime: number; size: number }>
+export const listScreenshots = callable<[limit?: number, appId?: number], {
+  screenshots: Array<{ path: string; name: string; mtime: number; size: number; appId: number | null }>
   error?: string
 }>("list_screenshots")
 
