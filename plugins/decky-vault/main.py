@@ -872,8 +872,12 @@ exec mangohud "$@"
                     return {"error": "Invalid JSON", "status": response.status}
         except urllib.error.HTTPError as e:
             try:
-                err = json.loads(e.read().decode("utf-8"))
-                return {**err, "status": e.code}
+                raw_body = e.read().decode("utf-8")
+                try:
+                    err = json.loads(raw_body)
+                    return {**err, "status": e.code}
+                except json.JSONDecodeError:
+                    return {"error": f"Server returned status {e.code} (non-JSON response)", "status": e.code, "body": raw_body[:200]}
             except Exception:
                 return {"error": f"Server returned status {e.code}", "status": e.code}
         except urllib.error.URLError as e:

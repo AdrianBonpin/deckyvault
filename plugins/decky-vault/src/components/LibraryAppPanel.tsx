@@ -112,7 +112,7 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
       <PanelSection title="DeckyVault">
         <PanelSectionRow>
           <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "6px 0", opacity: 0.7, color: "#e74c3c" }}>
-            <FaTimes /> Could not load DeckyVault data. Please try again later.
+            <FaTimes /> Could not load DeckyVault data: {fetchError}
           </div>
         </PanelSectionRow>
       </PanelSection>

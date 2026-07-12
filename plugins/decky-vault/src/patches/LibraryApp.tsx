@@ -54,6 +54,8 @@ export function registerLibraryAppPatch() {
             if (!child) return null
             const overview = child.props.children.props.overview
             if (!overview || !isSteamGameType(overview.app_type)) return null
+            // Only inject for valid numeric app IDs
+            if (typeof overview.appid !== 'number' || overview.appid <= 0) return null
             return child.props.children
           },
         ],
