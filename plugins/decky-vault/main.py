@@ -849,6 +849,9 @@ exec mangohud "$@"
         import urllib.request
         import urllib.error
         try:
+            # SSRF guard: only allow http/https schemes
+            if not base_url.startswith(("http://", "https://")):
+                return {"error": "Invalid base_url scheme", "status": 0}
             if not path.startswith("/"):
                 path = "/" + path
             url = f"{base_url}/api{path}"

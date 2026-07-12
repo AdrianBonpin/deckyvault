@@ -56,7 +56,10 @@ export async function fetchPluginGame(
   const path = `/plugin/game/${steamAppId}?limit=${limit}${hardware ? `&hardware=${encodeURIComponent(hardware)}` : ""}`
   const raw = await pluginGet(path, settingsRef.baseUrl)
   const value = raw as unknown as PluginGameResponse
-  cache.set(key, { value, expires: Date.now() + TTL_MS })
+  // Don't cache error responses — transient failures shouldn't poison the cache
+  if (!raw.error) {
+    cache.set(key, { value, expires: Date.now() + TTL_MS })
+  }
   return value
 }
 
