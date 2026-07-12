@@ -113,7 +113,7 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
       <style>{`
         .deckyvault-lib-btn { width: auto !important; min-width: 0 !important; display: inline-block !important; }
       `}</style>
-      <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "4px 0", fontSize: "13px", overflow: "hidden" }}>
+      <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "4px 16px", fontSize: "13px", overflow: "hidden" }}>
         {/* Stats */}
         <span style={{ flex: "1 1 0", minWidth: 0, overflow: "hidden" }}>
           {data.estFps ? (
