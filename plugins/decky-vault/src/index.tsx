@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import {
   PanelSection,
   PanelSectionRow,
@@ -5,14 +6,17 @@ import {
 } from "@decky/ui"
 import {
   definePlugin,
+  routerHook,
 } from "@decky/api"
 import { FaChartLine } from "react-icons/fa"
 import MainPanel from "./components/main-panel"
+import { registerLibraryAppPatch, setLibraryAppPanelProps } from "./patches/LibraryApp"
 import { useSettings, useSession, useGameDetection } from "./lib/store"
 import {
   readAndParseMangohudLog,
   clearMangohudLog,
-  writeMangohudConfig,
+  deleteLogFile,
+  findMangohudLog,
   startMangohudLogging,
   stopMangohudLogging,
   getHardwareInfo,
@@ -23,6 +27,10 @@ import {
 
 function Content() {
   const { settings, updateSetting, loaded } = useSettings()
+  // keep the library panel's props in sync with settings
+  useEffect(() => {
+    setLibraryAppPanelProps({ hardwareSlug: settings.hardwareSlug, baseUrl: settings.baseUrl })
+  }, [settings.hardwareSlug, settings.baseUrl])
   const {
     recordingState,
     session,
@@ -37,6 +45,7 @@ function Content() {
     onGameStart,
     onGameStop,
     setGameName,
+    setLastLogPath,
   } = useSession()
 
   // ── Game detection via polling ────────────────────────────────
@@ -44,10 +53,13 @@ function Content() {
 
   // ── Handle start recording ────────────────────────────────────
   async function handleStart() {
-    // Write MangoHud config with logging settings
-    await writeMangohudConfig()
-    // Clear any previous log file
-    await clearMangohudLog()
+    // Clear the previous session's specific log if we know it; else safe-clear.
+    const prev = session.lastLogPath
+    if (prev) {
+      await deleteLogFile(prev)
+    } else {
+      await clearMangohudLog()
+    }
     // Fire-and-forget: try to start MangoHud logging (retries until game launches)
     startMangohudLogging()
     startRecording()
@@ -60,12 +72,15 @@ function Content() {
       await stopMangohudLogging()
       stopRecording()
 
-      // Parse the MangoHud log
-      const logResult = await readAndParseMangohudLog()
+      // Find the most recent MangoHud log, parse it, remember its path
+      const logPath = await findMangohudLog()
+      const logResult = await readAndParseMangohudLog(logPath.path ?? undefined)
       if (logResult.error) {
         setError(logResult.error)
+        setLastLogPath(null)
         return
       }
+      setLastLogPath(logPath.path ?? null)
 
       // Read system info in parallel
       const [hwInfo, osVersion] = await Promise.all([
@@ -191,6 +206,8 @@ function DeckyVaultIcon() {
 }
 
 export default definePlugin(() => {
+  const libraryAppPatch = registerLibraryAppPatch()
+
   return {
     name: "DeckyVault",
     titleView: <div className={staticClasses.Title}>DeckyVault</div>,
@@ -198,6 +215,7 @@ export default definePlugin(() => {
     icon: <DeckyVaultIcon />,
     alwaysRender: true,
     onDismount() {
+      try { routerHook.removePatch("/library/app/:appid", libraryAppPatch) } catch (e) { console.error("[DeckyVault] removePatch failed:", e) }
       console.log("[DeckyVault] Plugin unloading")
     },
   }

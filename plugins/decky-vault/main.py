@@ -23,6 +23,52 @@ except ImportError:
     decky = None
 
 
+def _collect_screenshots(home: str, app_id: int | None = None, limit: int = 50) -> list[dict]:
+    """Pure helper: collect screenshots from Desktop and Game Mode paths under `home`.
+    Returns list of dicts sorted by mtime desc, limited to `limit` entries.
+    When `app_id` is given, keeps Desktop exports + that app's userdata shots."""
+    import glob
+    base = os.path.join(home, "Pictures", "Screenshots")
+    userdata = os.path.join(home, ".local", "share", "Steam", "userdata")
+    patterns = [
+        os.path.join(base, "*.jpg"),
+        os.path.join(base, "*.png"),
+        os.path.join(base, "Steam Client", "*.jpg"),
+        os.path.join(base, "Steam Client", "*.png"),
+        os.path.join(userdata, "*", "760", "remote", "*", "screenshots", "*.jpg"),
+        os.path.join(userdata, "*", "760", "remote", "*", "screenshots", "*.png"),
+    ]
+    seen, files = set(), []
+    for pat in patterns:
+        for f in glob.glob(pat):
+            if not os.path.isfile(f) or f in seen:
+                continue
+            if os.path.basename(f) == "most_recent.jpg":
+                continue
+            seen.add(f)
+            f_app_id = None
+            parts = f.split(os.sep)
+            if "760" in parts:
+                idx = parts.index("760")
+                if idx + 2 < len(parts):
+                    try:
+                        f_app_id = int(parts[idx + 2])
+                    except ValueError:
+                        pass
+            try:
+                files.append({
+                    "path": f, "name": os.path.basename(f),
+                    "mtime": os.path.getmtime(f), "size": os.path.getsize(f),
+                    "appId": f_app_id,
+                })
+            except OSError:
+                continue
+    if app_id is not None:
+        files = [x for x in files if x["appId"] is None or x["appId"] == app_id]
+    files.sort(key=lambda x: x["mtime"], reverse=True)
+    return files[:limit]
+
+
 def parse_mangohud_log(log_content: str) -> dict:
     """Parse a MangoHud log file's content and return FPS stats.
 
@@ -308,7 +354,7 @@ exec mangohud "$@"
         import time
         candidates = []
         now = time.time()
-        for pattern in ["/tmp/*MangoHud*", "/tmp/*.csv", "/tmp/*.log"]:
+        for pattern in ["/tmp/*MangoHud*"]:
             for f in glob.glob(pattern):
                 if os.path.isdir(f):
                     continue
@@ -367,19 +413,55 @@ exec mangohud "$@"
             return {"error": f"Failed to read log: {str(e)}"}
 
     async def clear_mangohud_log(self) -> dict:
-        """RPC: Delete all MangoHud log files in /tmp/ so the next recording starts fresh."""
+        """RPC: Delete stale MangoHud log files in /tmp/ so the next recording
+        starts fresh. Only touches files whose name contains 'MangoHud'; never
+        bare /tmp/*.log or /tmp/*.csv. Skips files modified in the last 3s
+        (an active session may still have them open)."""
         import glob
+        import time
+        RECENT_WINDOW_S = 3
+        now = time.time()
+        deleted, skipped = [], []
         try:
-            for pattern in ["/tmp/*MangoHud*", "/tmp/*.csv", "/tmp/*.log"]:
+            for pattern in ["/tmp/*MangoHud*"]:
                 for f in glob.glob(pattern):
-                    if os.path.isfile(f):
-                        try:
-                            os.remove(f)
-                        except (IOError, PermissionError):
-                            pass
-            return {"success": True}
+                    if not os.path.isfile(f):
+                        continue
+                    try:
+                        if now - os.path.getmtime(f) < RECENT_WINDOW_S:
+                            skipped.append({"name": os.path.basename(f), "reason": "active"})
+                            continue
+                        os.remove(f)
+                        deleted.append({"name": os.path.basename(f)})
+                    except (IOError, PermissionError):
+                        skipped.append({"name": os.path.basename(f), "reason": "perm"})
+            return {"success": True, "deleted": deleted, "skipped": skipped}
+        except Exception as e:
+            return {"success": False, "error": str(e), "deleted": deleted, "skipped": skipped}
+
+    async def delete_log_file(self, path: str) -> dict:
+        """RPC: Delete a single, specific MangoHud log file. The path must be
+        under /tmp and its basename must contain 'MangoHud'. Defence in depth
+        so a bad/stale path can never delete unrelated files."""
+        try:
+            if not path:
+                return {"success": False, "error": "No path provided"}
+            abs_path = os.path.abspath(path)
+            if not abs_path.startswith("/tmp/"):
+                return {"success": False, "error": "Refusing to delete file outside /tmp"}
+            if "MangoHud" not in os.path.basename(abs_path):
+                return {"success": False, "error": "Refusing to delete non-MangoHud file"}
+            if not os.path.exists(abs_path):
+                return {"success": True, "deleted": False, "note": "already gone"}
+            os.remove(abs_path)
+            return {"success": True, "deleted": True, "path": abs_path}
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+    async def find_mangohud_log(self) -> dict:
+        """RPC: Return the path of the most recent MangoHud log in /tmp/, or null."""
+        path = await self._find_mangohud_log()
+        return {"path": path}
 
     async def get_hardware_info(self) -> dict:
         """RPC: Detect hardware model from DMI. Returns {slug, name, raw}."""
@@ -605,44 +687,14 @@ exec mangohud "$@"
         except Exception as e:
             return {"success": False, "error": str(e), "status": 0}
 
-    async def list_screenshots(self, limit: int = 50) -> dict:
-        """RPC: List recent Steam Deck screenshots from ~/Pictures/Screenshots/.
-        Returns {screenshots: [{path, name, mtime, size}], error?}.
-        Steam saves timestamped JPGs in a 'Steam Client' subfolder and keeps
-        a 'most_recent.jpg' symlink-like copy at the top level."""
-        import glob
-        import time
+    async def list_screenshots(self, limit: int = 50, app_id: int | None = None) -> dict:
+        """RPC: List recent Steam screenshots from both Game Mode (userdata/760/remote)
+        and Desktop Mode (~/Pictures/Screenshots). Returns newest first.
+        When app_id is given, keeps all Desktop exports + that app's userdata shots."""
         try:
             home = os.path.expanduser("~")
-            base = os.path.join(home, "Pictures", "Screenshots")
-            patterns = [
-                os.path.join(base, "*.jpg"),
-                os.path.join(base, "*.png"),
-                os.path.join(base, "Steam Client", "*.jpg"),
-                os.path.join(base, "Steam Client", "*.png"),
-            ]
-            seen = set()
-            files = []
-            for pat in patterns:
-                for f in glob.glob(pat):
-                    if not os.path.isfile(f) or f in seen:
-                        continue
-                    # Skip the most_recent.jpg duplicate if a real timestamped
-                    # copy exists — it's just a pointer to the latest one.
-                    if os.path.basename(f) == "most_recent.jpg":
-                        continue
-                    seen.add(f)
-                    try:
-                        files.append({
-                            "path": f,
-                            "name": os.path.basename(f),
-                            "mtime": os.path.getmtime(f),
-                            "size": os.path.getsize(f),
-                        })
-                    except OSError:
-                        continue
-            files.sort(key=lambda x: x["mtime"], reverse=True)
-            return {"screenshots": files[:limit]}
+            files = _collect_screenshots(home, app_id=app_id, limit=limit)
+            return {"screenshots": files}
         except Exception as e:
             return {"screenshots": [], "error": str(e)}
 
@@ -671,9 +723,11 @@ exec mangohud "$@"
                 b64 = base64.b64encode(buf.getvalue()).decode("ascii")
                 return {"dataUrl": f"data:image/jpeg;base64,{b64}"}
             except ImportError:
-                # No Pillow — return the raw file as a data URL
+                # No Pillow — only return raw if small enough for CEF; else skip preview.
                 ext = os.path.splitext(path)[1].lower()
                 mime = "image/png" if ext == ".png" else ("image/webp" if ext == ".webp" else "image/jpeg")
+                if len(raw) > 1_000_000:
+                    return {"dataUrl": "", "error": "Preview unavailable (too large, no Pillow)"}
                 b64 = base64.b64encode(raw).decode("ascii")
                 return {"dataUrl": f"data:{mime};base64,{b64}"}
         except Exception as e:
@@ -787,6 +841,49 @@ exec mangohud "$@"
             return {"valid": False, "error": f"Network error: {str(e.reason)}"}
         except Exception as e:
             return {"valid": False, "error": str(e)}
+
+    async def plugin_get(self, path: str, base_url: str = "https://deckyvault.xyz") -> dict:
+        """RPC: Public read proxy for the DeckyVault API (used by the library panel).
+        Performs a GET to {base_url}/api{path} and returns parsed JSON or {error, status}.
+        Keeps network in the Python backend to avoid CEF CORS issues."""
+        import urllib.request
+        import urllib.error
+        try:
+            # SSRF guard: only allow http/https schemes
+            if not base_url.startswith(("http://", "https://")):
+                return {"error": "Invalid base_url scheme", "status": 0}
+            if not path.startswith("/"):
+                path = "/" + path
+            url = f"{base_url}/api{path}"
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:136.0) Gecko/20100101 Firefox/136.0",
+                    "Accept": "application/json",
+                },
+                method="GET",
+            )
+            context = _get_ssl_context()
+            with urllib.request.urlopen(req, timeout=10, context=context) as response:
+                body = response.read().decode("utf-8")
+                try:
+                    return json.loads(body)
+                except json.JSONDecodeError:
+                    return {"error": "Invalid JSON", "status": response.status}
+        except urllib.error.HTTPError as e:
+            try:
+                raw_body = e.read().decode("utf-8")
+                try:
+                    err = json.loads(raw_body)
+                    return {**err, "status": e.code}
+                except json.JSONDecodeError:
+                    return {"error": f"Server returned status {e.code} (non-JSON response)", "status": e.code, "body": raw_body[:200]}
+            except Exception:
+                return {"error": f"Server returned status {e.code}", "status": e.code}
+        except urllib.error.URLError as e:
+            return {"error": f"Network error: {str(e.reason)}", "status": 0}
+        except Exception as e:
+            return {"error": str(e), "status": 0}
 
     async def export_config(self, settings: dict) -> dict:
         """RPC: Export current settings to Downloads/deckyvault-config.json.

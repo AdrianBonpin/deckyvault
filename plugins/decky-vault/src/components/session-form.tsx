@@ -211,6 +211,10 @@ export default function SessionForm({
       setError("No API key configured. Set one in the Settings tab.")
       return
     }
+    if (session.fpsAvg == null || !(session.fpsAvg > 0)) {
+      setError("No FPS data captured. Re-record the session, or use Export to File only.")
+      return
+    }
     setError("")
     setUploadStatus("loading")
     setStatusMessage("Uploading entry…")

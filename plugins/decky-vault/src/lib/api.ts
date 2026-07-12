@@ -36,8 +36,20 @@ export const readAndParseMangohudLog = callable<[logPath?: string], {
 
 export const clearMangohudLog = callable<[], {
   success: boolean
+  deleted?: Array<{ name: string }>
+  skipped?: Array<{ name: string; reason: string }>
   error?: string
 }>("clear_mangohud_log")
+
+export const deleteLogFile = callable<[path: string], {
+  success: boolean
+  deleted?: boolean
+  error?: string
+}>("delete_log_file")
+
+export const findMangohudLog = callable<[], {
+  path: string | null
+}>("find_mangohud_log")
 
 export const startMangohudLogging = callable<[], {
   success: boolean
@@ -81,8 +93,8 @@ export const uploadToDeckyvault = callable<[
   status?: number
 }>("upload_to_deckyvault")
 
-export const listScreenshots = callable<[limit?: number], {
-  screenshots: Array<{ path: string; name: string; mtime: number; size: number }>
+export const listScreenshots = callable<[limit?: number, appId?: number], {
+  screenshots: Array<{ path: string; name: string; mtime: number; size: number; appId: number | null }>
   error?: string
 }>("list_screenshots")
 
@@ -155,3 +167,6 @@ export const checkPairStatus = callable<[token: string, baseUrl?: string], {
   keyName?: string
   error?: string
 }>("check_pair_status")
+
+// ── Plugin API Proxy ────────────────────────────────────────────
+export const pluginGet = callable<[path: string, baseUrl?: string], Record<string, unknown> & { status?: number; error?: string }>("plugin_get")
