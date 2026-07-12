@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { PanelSection, PanelSectionRow, DropdownItem, staticClasses } from "@decky/ui"
 import { FaCheck, FaTimes, FaChartLine } from "react-icons/fa"
 import {
@@ -56,16 +56,34 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
   const [devices, setDevices] = useState<PluginDeviceRow[]>([])
   const [loading, setLoading] = useState(true)
   const [device, setDevice] = useState<string>(hardwareSlug ?? "")  // "" = all devices
+  const [fetchError, setFetchError] = useState<string>("")
+  const reqIdRef = useRef(0)
 
   useEffect(() => {
     setPluginApiBaseUrl(baseUrl)
     let cancelled = false
+    const id = ++reqIdRef.current
     async function load() {
       setLoading(true)
-      const d = await fetchPluginGame(appId, device || null, 3)
-      if (!cancelled) { setData(d); setLoading(false) }
-      const devs = await fetchPluginDevices(appId)
-      if (!cancelled) setDevices(devs)
+      try {
+        const d = await fetchPluginGame(appId, device || null, 3)
+        if (cancelled || id !== reqIdRef.current) return
+        if (d.error && !d.game) {
+          setFetchError(d.error)
+        } else {
+          setFetchError("")
+        }
+        setData(d)
+        setLoading(false)
+        const devs = await fetchPluginDevices(appId)
+        if (!cancelled && id === reqIdRef.current) setDevices(devs)
+      } catch (e) {
+        if (!cancelled && id === reqIdRef.current) {
+          setData(null)
+          setFetchError("Request failed")
+          setLoading(false)
+        }
+      }
     }
     load()
     return () => { cancelled = true }
@@ -88,6 +106,18 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
       .filter((d) => d.slug !== hardwareSlug)
       .map((d) => ({ label: `${d.name} (${d.count})`, data: d.slug })),
   ]
+
+  if (fetchError) {
+    return (
+      <PanelSection title="DeckyVault">
+        <PanelSectionRow>
+          <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "6px 0", opacity: 0.7, color: "#e74c3c" }}>
+            <FaTimes /> Could not load DeckyVault data. Please try again later.
+          </div>
+        </PanelSectionRow>
+      </PanelSection>
+    )
+  }
 
   if (!data || !data.game) {
     return (
