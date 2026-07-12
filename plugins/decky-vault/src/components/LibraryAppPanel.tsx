@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react"
-import { PanelSectionRow, ButtonItem, staticClasses } from "@decky/ui"
+import { PanelSectionRow, staticClasses } from "@decky/ui"
 import { Router } from "@decky/ui"
 import {
   fetchPluginGame,
@@ -109,12 +109,12 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
   }
 
   return (
-    <>
-      {/* Stats row */}
-      <PanelSectionRow>
-        <div className={staticClasses.Text} style={{ padding: "4px 16px", fontSize: "13px", textAlign: "center" }}>
+    <PanelSectionRow>
+      <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "4px 16px", fontSize: "13px" }}>
+        {/* Stats */}
+        <span style={{ flex: 1 }}>
           {data.estFps ? (
-            <span style={{ display: "inline-flex", flexWrap: "wrap", gap: "4px 8px", justifyContent: "center" }}>
+            <span style={{ display: "inline-flex", flexWrap: "wrap", gap: "4px 8px" }}>
               <span><strong>{data.estFps.avg}</strong> <span style={{ opacity: 0.4 }}>avg</span></span>
               {data.estFps.onePct != null && <span><strong>{data.estFps.onePct}</strong> <span style={{ opacity: 0.4 }}>1% low</span></span>}
               {data.estFps.low != null && <span><strong>{data.estFps.low}</strong> <span style={{ opacity: 0.4 }}>min</span></span>}
@@ -126,20 +126,27 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
             <span style={{ opacity: 0.4, fontSize: "12px" }}>No data yet</span>
           )}
           {/* Device scope badge */}
-          <div style={{ fontSize: "10px", opacity: 0.4, marginTop: "2px" }}>
-            {detectedSlug ? detectedSlug : <span style={{ color: "#e0a030" }}>⚠ global (device not detected)</span>}
-          </div>
-        </div>
-      </PanelSectionRow>
-
-      {/* Compact View Details button */}
-      <PanelSectionRow>
-        <div style={{ display: "flex", justifyContent: "center", padding: "0 16px" }}>
-          <ButtonItem layout="below" onClick={() => openExternalUrl(gameUrl)} style={{ width: "auto", minWidth: "120px" }}>
-            View Details
-          </ButtonItem>
-        </div>
-      </PanelSectionRow>
-    </>
+          <span style={{ fontSize: "10px", opacity: 0.4, marginLeft: "4px" }}>
+            {detectedSlug ? detectedSlug : <span style={{ color: "#e0a030" }}>⚠ global</span>}
+          </span>
+        </span>
+        {/* View Details — compact inline button */}
+        <button
+          onClick={() => openExternalUrl(gameUrl)}
+          style={{
+            flexShrink: 0,
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            borderRadius: "6px",
+            color: "inherit",
+            fontSize: "12px",
+            padding: "4px 10px",
+            cursor: "pointer",
+          }}
+        >
+          View Details
+        </button>
+      </div>
+    </PanelSectionRow>
   )
 }
