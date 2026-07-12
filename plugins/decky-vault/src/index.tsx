@@ -70,6 +70,7 @@ function Content() {
       const logResult = await readAndParseMangohudLog(logPath.path ?? undefined)
       if (logResult.error) {
         setError(logResult.error)
+        setLastLogPath(null)
         return
       }
       setLastLogPath(logPath.path ?? null)

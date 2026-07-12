@@ -1,8 +1,17 @@
 """Tests for safe MangoHud log clearing (Bug 1 fix)."""
 import os
+import shutil
+import sys
 import tempfile
 import time
+import types
 import pytest
+
+# Note: the helpers above (_safe_clear_mangohud_logs, _validate_log_path) are
+# intentional mirrors of Plugin.clear_mangohud_log / delete_log_file so tests can
+# run without the decky module. The test below (test_delete_log_file_real_plugin)
+# exercises the real Plugin.delete_log_file to guard against the mirrors drifting
+# from the implementation.
 
 
 def _touch(path, mtime_age=10):
@@ -85,3 +94,63 @@ def test_delete_log_file_rejects_non_mangohud():
     with tempfile.TemporaryDirectory() as tmp:
         assert _validate_log_path(os.path.join(tmp, "system.log"), tmp) is False
         assert _validate_log_path(os.path.join(tmp, "MangoHud-1.csv"), tmp) is True
+
+
+@pytest.mark.asyncio
+async def test_delete_log_file_real_plugin():
+    """Exercise the real Plugin.delete_log_file path validation.
+
+    Unlike the mirror tests above, this imports main.Plugin and calls the
+    actual method. A real /tmp subdirectory is used because delete_log_file
+    hardcodes the "/tmp/" prefix check, and tempfile.TemporaryDirectory() on
+    macOS resolves under /var/folders (not /tmp).
+    """
+    # Mock the decky module so main.py imports cleanly even when the real
+    # decky package (only present on the Deck) is unavailable.
+    sys.modules.pop("main", None)
+    if "decky" not in sys.modules:
+        mock_decky = types.ModuleType("decky")
+        mock_logger = types.ModuleType("decky.logger")
+        mock_logger.info = lambda *a, **kw: None
+        mock_logger.error = lambda *a, **kw: None
+        mock_decky.logger = mock_logger
+        mock_decky.DECKY_PLUGIN_NAME = "test"
+        mock_decky.DECKY_PLUGIN_SETTINGS_DIR = "/tmp/decky-test"
+        sys.modules["decky"] = mock_decky
+
+    from main import Plugin
+    plugin = Plugin()
+
+    tmp = "/tmp/deckyvault_test_real_plugin_%d" % os.getpid()
+    shutil.rmtree(tmp, ignore_errors=True)
+    os.makedirs(tmp)
+    try:
+        # Outside /tmp → rejected with the "outside /tmp" reason.
+        r = await plugin.delete_log_file("/etc/passwd")
+        assert r["success"] is False
+        assert "outside /tmp" in r["error"]
+
+        # Under /tmp but basename has no "MangoHud" → rejected as non-MangoHud.
+        r = await plugin.delete_log_file(os.path.join(tmp, "system.log"))
+        assert r["success"] is False
+        assert "non-MangoHud" in r["error"]
+
+        # Valid MangoHud log under /tmp → deleted.
+        mangohud_path = os.path.join(tmp, "MangoHud-test.csv")
+        _touch(mangohud_path, mtime_age=10)
+        r = await plugin.delete_log_file(mangohud_path)
+        assert r["success"] is True
+        assert r["deleted"] is True
+        assert not os.path.exists(mangohud_path)
+
+        # Same path again → already gone, still success but deleted is False.
+        r = await plugin.delete_log_file(mangohud_path)
+        assert r["success"] is True
+        assert r["deleted"] is False
+
+        # Empty path → rejected.
+        r = await plugin.delete_log_file("")
+        assert r["success"] is False
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+        sys.modules.pop("main", None)

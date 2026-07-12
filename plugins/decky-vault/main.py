@@ -308,7 +308,7 @@ exec mangohud "$@"
         import time
         candidates = []
         now = time.time()
-        for pattern in ["/tmp/*MangoHud*", "/tmp/*.csv", "/tmp/*.log"]:
+        for pattern in ["/tmp/*MangoHud*"]:
             for f in glob.glob(pattern):
                 if os.path.isdir(f):
                     continue
