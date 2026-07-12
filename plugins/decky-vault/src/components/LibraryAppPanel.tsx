@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react"
-import { PanelSectionRow, ButtonItem, staticClasses } from "@decky/ui"
+import { PanelSectionRow, Focusable, staticClasses } from "@decky/ui"
 import { Router } from "@decky/ui"
 import {
   fetchPluginGame,
@@ -130,12 +130,20 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
             {detectedSlug ? detectedSlug : <span style={{ color: "#e0a030" }}>⚠ global</span>}
           </span>
         </span>
-        {/* View Details — compact, gamepad-navigable */}
-        <span style={{ flexShrink: 0 }}>
-          <ButtonItem layout="below" onClick={() => openExternalUrl(gameUrl)}>
+        {/* View Details — compact, gamepad-navigable via Focusable */}
+        <Focusable onClick={() => openExternalUrl(gameUrl)} style={{ flexShrink: 0 }}>
+          <span style={{
+            display: "inline-block",
+            fontSize: "12px",
+            padding: "4px 12px",
+            borderRadius: "6px",
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            whiteSpace: "nowrap",
+          }}>
             View Details
-          </ButtonItem>
-        </span>
+          </span>
+        </Focusable>
       </div>
     </PanelSectionRow>
   )
