@@ -36,6 +36,8 @@ export interface SessionData {
   protonVersion: string
   versionString: string
   buildId: string
+  // Path of the MangoHud log captured for this session (for targeted cleanup on restart)
+  lastLogPath: string | null
   // Manual inputs (filled by user in the form)
   upscalerType: string
   upscalerVersion: string
@@ -70,6 +72,7 @@ function createEmptySession(): SessionData {
     protonVersion: "",
     versionString: "",
     buildId: "",
+    lastLogPath: null,
     upscalerType: "none",
     upscalerVersion: "",
     frameGenMethod: "none",
@@ -182,6 +185,10 @@ export function useSession() {
     setSession((prev) => ({ ...prev, gameName: name, appId: appId ?? prev.appId }))
   }, [])
 
+  const setLastLogPath = useCallback((p: string | null) => {
+    setSession((prev) => ({ ...prev, lastLogPath: p }))
+  }, [])
+
   return {
     recordingState,
     session,
@@ -196,6 +203,7 @@ export function useSession() {
     onGameStart,
     onGameStop,
     setGameName,
+    setLastLogPath,
   }
 }
 

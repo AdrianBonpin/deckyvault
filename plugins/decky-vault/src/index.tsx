@@ -12,7 +12,8 @@ import { useSettings, useSession, useGameDetection } from "./lib/store"
 import {
   readAndParseMangohudLog,
   clearMangohudLog,
-  writeMangohudConfig,
+  deleteLogFile,
+  findMangohudLog,
   startMangohudLogging,
   stopMangohudLogging,
   getHardwareInfo,
@@ -37,6 +38,7 @@ function Content() {
     onGameStart,
     onGameStop,
     setGameName,
+    setLastLogPath,
   } = useSession()
 
   // ── Game detection via polling ────────────────────────────────
@@ -44,10 +46,13 @@ function Content() {
 
   // ── Handle start recording ────────────────────────────────────
   async function handleStart() {
-    // Write MangoHud config with logging settings
-    await writeMangohudConfig()
-    // Clear any previous log file
-    await clearMangohudLog()
+    // Clear the previous session's specific log if we know it; else safe-clear.
+    const prev = session.lastLogPath
+    if (prev) {
+      await deleteLogFile(prev)
+    } else {
+      await clearMangohudLog()
+    }
     // Fire-and-forget: try to start MangoHud logging (retries until game launches)
     startMangohudLogging()
     startRecording()
@@ -60,12 +65,14 @@ function Content() {
       await stopMangohudLogging()
       stopRecording()
 
-      // Parse the MangoHud log
-      const logResult = await readAndParseMangohudLog()
+      // Find the most recent MangoHud log, parse it, remember its path
+      const logPath = await findMangohudLog()
+      const logResult = await readAndParseMangohudLog(logPath.path ?? undefined)
       if (logResult.error) {
         setError(logResult.error)
         return
       }
+      setLastLogPath(logPath.path ?? null)
 
       // Read system info in parallel
       const [hwInfo, osVersion] = await Promise.all([

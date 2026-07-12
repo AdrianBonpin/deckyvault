@@ -367,19 +367,55 @@ exec mangohud "$@"
             return {"error": f"Failed to read log: {str(e)}"}
 
     async def clear_mangohud_log(self) -> dict:
-        """RPC: Delete all MangoHud log files in /tmp/ so the next recording starts fresh."""
+        """RPC: Delete stale MangoHud log files in /tmp/ so the next recording
+        starts fresh. Only touches files whose name contains 'MangoHud'; never
+        bare /tmp/*.log or /tmp/*.csv. Skips files modified in the last 3s
+        (an active session may still have them open)."""
         import glob
+        import time
+        RECENT_WINDOW_S = 3
+        now = time.time()
+        deleted, skipped = [], []
         try:
-            for pattern in ["/tmp/*MangoHud*", "/tmp/*.csv", "/tmp/*.log"]:
+            for pattern in ["/tmp/*MangoHud*"]:
                 for f in glob.glob(pattern):
-                    if os.path.isfile(f):
-                        try:
-                            os.remove(f)
-                        except (IOError, PermissionError):
-                            pass
-            return {"success": True}
+                    if not os.path.isfile(f):
+                        continue
+                    try:
+                        if now - os.path.getmtime(f) < RECENT_WINDOW_S:
+                            skipped.append({"name": os.path.basename(f), "reason": "active"})
+                            continue
+                        os.remove(f)
+                        deleted.append({"name": os.path.basename(f)})
+                    except (IOError, PermissionError):
+                        skipped.append({"name": os.path.basename(f), "reason": "perm"})
+            return {"success": True, "deleted": deleted, "skipped": skipped}
+        except Exception as e:
+            return {"success": False, "error": str(e), "deleted": deleted, "skipped": skipped}
+
+    async def delete_log_file(self, path: str) -> dict:
+        """RPC: Delete a single, specific MangoHud log file. The path must be
+        under /tmp and its basename must contain 'MangoHud'. Defence in depth
+        so a bad/stale path can never delete unrelated files."""
+        try:
+            if not path:
+                return {"success": False, "error": "No path provided"}
+            abs_path = os.path.abspath(path)
+            if not abs_path.startswith("/tmp/"):
+                return {"success": False, "error": "Refusing to delete file outside /tmp"}
+            if "MangoHud" not in os.path.basename(abs_path):
+                return {"success": False, "error": "Refusing to delete non-MangoHud file"}
+            if not os.path.exists(abs_path):
+                return {"success": True, "deleted": False, "note": "already gone"}
+            os.remove(abs_path)
+            return {"success": True, "deleted": True, "path": abs_path}
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+    async def find_mangohud_log(self) -> dict:
+        """RPC: Return the path of the most recent MangoHud log in /tmp/, or null."""
+        path = await self._find_mangohud_log()
+        return {"path": path}
 
     async def get_hardware_info(self) -> dict:
         """RPC: Detect hardware model from DMI. Returns {slug, name, raw}."""
