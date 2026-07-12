@@ -1,18 +1,17 @@
 import { useEffect, useState, useRef } from "react"
-import { PanelSectionRow, DropdownItem, ButtonItem, staticClasses } from "@decky/ui"
+import { PanelSectionRow, DialogButtonPrimary, staticClasses } from "@decky/ui"
 import { Router } from "@decky/ui"
 import {
   fetchPluginGame,
-  fetchPluginDevices,
   setPluginApiBaseUrl,
   type PluginGameResponse,
-  type PluginDeviceRow,
 } from "../lib/plugin-api"
+import { getHardwareInfo } from "../lib/api"
 
 interface Props {
   appId: number
   title: string
-  hardwareSlug: string | null      // detected device
+  hardwareSlug: string | null      // detected device (from settings, may be null)
   baseUrl: string
 }
 
@@ -34,10 +33,9 @@ function openExternalUrl(url: string) {
 
 export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }: Props) {
   const [data, setData] = useState<PluginGameResponse | null>(null)
-  const [devices, setDevices] = useState<PluginDeviceRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [device, setDevice] = useState<string>(hardwareSlug ?? "")  // "" = all devices
   const [fetchError, setFetchError] = useState<string>("")
+  const [detectedSlug, setDetectedSlug] = useState<string | null>(hardwareSlug ?? null)
   const reqIdRef = useRef(0)
 
   useEffect(() => {
@@ -47,13 +45,23 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
     async function load() {
       setLoading(true)
       try {
-        const d = await fetchPluginGame(appId, device || null, 3)
+        // Detect hardware if not set in settings
+        let slug = hardwareSlug ?? null
+        if (!slug) {
+          try {
+            const hw = await getHardwareInfo()
+            if (hw.slug && hw.slug !== "unknown") slug = hw.slug
+          } catch {
+            // Fall back to global
+          }
+          if (!cancelled) setDetectedSlug(slug)
+        }
+
+        const d = await fetchPluginGame(appId, slug, 3)
         if (cancelled || id !== reqIdRef.current) return
         setFetchError(d.error && !d.game ? d.error : "")
         setData(d)
         setLoading(false)
-        const devs = await fetchPluginDevices(appId)
-        if (!cancelled && id === reqIdRef.current) setDevices(devs)
       } catch {
         if (!cancelled && id === reqIdRef.current) {
           setData(null)
@@ -64,15 +72,7 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
     }
     load()
     return () => { cancelled = true }
-  }, [appId, device, baseUrl])
-
-  const deviceOptions = [
-    { label: "All devices", data: "" },
-    ...(hardwareSlug ? [{ label: `Your device (${hardwareSlug})`, data: hardwareSlug }] : []),
-    ...devices
-      .filter((d) => d.slug !== hardwareSlug)
-      .map((d) => ({ label: `${d.name} (${d.count})`, data: d.slug })),
-  ]
+  }, [appId, baseUrl])  // re-fetch only when app changes
 
   const gameUrl = data?.game?.steamAppId
     ? `${baseUrl}/game/${data.game.steamAppId}`
@@ -81,7 +81,7 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
   if (loading) {
     return (
       <PanelSectionRow>
-        <div className={staticClasses.Text} style={{ padding: "8px 0", fontSize: "12px", opacity: 0.5, textAlign: "center" }}>
+        <div className={staticClasses.Text} style={{ padding: "8px 16px", fontSize: "12px", opacity: 0.5, textAlign: "center" }}>
           DeckyVault loading…
         </div>
       </PanelSectionRow>
@@ -91,7 +91,7 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
   if (fetchError) {
     return (
       <PanelSectionRow>
-        <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px 0", opacity: 0.5, color: "#e74c3c", textAlign: "center" }}>
+        <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px 16px", opacity: 0.5, color: "#e74c3c", textAlign: "center" }}>
           DeckyVault: {fetchError}
         </div>
       </PanelSectionRow>
@@ -101,7 +101,7 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
   if (!data || !data.game) {
     return (
       <PanelSectionRow>
-        <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px 0", opacity: 0.5, textAlign: "center" }}>
+        <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px 16px", opacity: 0.5, textAlign: "center" }}>
           Not on DeckyVault — <a href={`${baseUrl}/games`}>add it</a>
         </div>
       </PanelSectionRow>
@@ -110,37 +110,34 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
 
   return (
     <>
-      {/* Stats + device dropdown inline */}
-      <PanelSectionRow>
-        <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "2px 0", fontSize: "13px" }}>
-          <span style={{ flex: 1, textAlign: "center" }}>
-            {data.estFps ? (
-              <span style={{ display: "inline-flex", flexWrap: "wrap", gap: "4px 8px", justifyContent: "center" }}>
-                <span><strong>{data.estFps.avg}</strong> <span style={{ opacity: 0.4 }}>avg</span></span>
-                {data.estFps.onePct != null && <span><strong>{data.estFps.onePct}</strong> <span style={{ opacity: 0.4 }}>1% low</span></span>}
-                {data.estFps.low != null && <span><strong>{data.estFps.low}</strong> <span style={{ opacity: 0.4 }}>min</span></span>}
-                {data.estFps.high != null && <span><strong>{data.estFps.high}</strong> <span style={{ opacity: 0.4 }}>max</span></span>}
-                {data.estFps.tdpAvg != null && <span><strong>{data.estFps.tdpAvg}W</strong> <span style={{ opacity: 0.4 }}>TDP</span></span>}
-                <span style={{ opacity: 0.4 }}>({data.estFps.count})</span>
-              </span>
-            ) : (
-              <span style={{ opacity: 0.4, fontSize: "12px" }}>No data yet</span>
-            )}
+      <style>{`
+        .deckyvault-lib-btn { width: auto !important; min-width: 0 !important; display: inline-block !important; }
+      `}</style>
+      <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "4px 16px", fontSize: "13px", overflow: "hidden" }}>
+        {/* Stats */}
+        <span style={{ flex: "1 1 0", minWidth: 0, overflow: "hidden" }}>
+          {data.estFps ? (
+            <span style={{ display: "inline-flex", flexWrap: "wrap", gap: "4px 8px" }}>
+              <span><strong>{data.estFps.avg}</strong> <span style={{ opacity: 0.4 }}>avg</span></span>
+              {data.estFps.onePct != null && <span><strong>{data.estFps.onePct}</strong> <span style={{ opacity: 0.4 }}>1% low</span></span>}
+              {data.estFps.low != null && <span><strong>{data.estFps.low}</strong> <span style={{ opacity: 0.4 }}>min</span></span>}
+              {data.estFps.high != null && <span><strong>{data.estFps.high}</strong> <span style={{ opacity: 0.4 }}>max</span></span>}
+              {data.estFps.tdpAvg != null && <span><strong>{data.estFps.tdpAvg}W</strong> <span style={{ opacity: 0.4 }}>TDP</span></span>}
+              <span style={{ opacity: 0.4 }}>({data.estFps.count})</span>
+            </span>
+          ) : (
+            <span style={{ opacity: 0.4, fontSize: "12px" }}>No data yet</span>
+          )}
+          {/* Device scope badge */}
+          <span style={{ fontSize: "10px", opacity: 0.4, marginLeft: "4px" }}>
+            {detectedSlug ? detectedSlug : <span style={{ color: "#e0a030" }}>⚠ global</span>}
           </span>
-          <DropdownItem
-            rgOptions={deviceOptions}
-            selectedOption={device}
-            onChange={(opt) => setDevice(opt.data as string)}
-          />
-        </div>
-      </PanelSectionRow>
-
-      {/* View Details button */}
-      <PanelSectionRow>
-        <ButtonItem layout="below" onClick={() => openExternalUrl(gameUrl)}>
+        </span>
+        {/* View Details — gamepad-navigable, CSS-constrained width */}
+        <DialogButtonPrimary className="deckyvault-lib-btn" onClick={() => openExternalUrl(gameUrl)}>
           View Details
-        </ButtonItem>
-      </PanelSectionRow>
+        </DialogButtonPrimary>
+      </div>
     </>
   )
 }
