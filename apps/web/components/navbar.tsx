@@ -151,7 +151,7 @@ export default function Navbar() {
                     initial={{ opacity: 0, y: "-100%" }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: "-100%" }}
-                    className='w-full flex flex-row px-4 md:px-[10svw] py-2 items-center gap-4 md:gap-8 justify-between border-b border-border sticky top-0 z-50 backdrop-blur-sm bg-background/80'
+                    className='w-full flex flex-row px-4 lg:px-[10svw] py-2 items-center gap-4 lg:gap-8 justify-between border-b border-border sticky top-0 z-50 backdrop-blur-sm bg-background/80'
                 >
                     <Link
                         href='/'
@@ -164,7 +164,7 @@ export default function Navbar() {
                             loading='eager'
                         />
                         {!isLanding && (
-                            <motion.span className='hidden md:inline-block'>
+                            <motion.span className='hidden lg:inline-block'>
                                 DeckyVault
                             </motion.span>
                         )}
@@ -233,7 +233,7 @@ export default function Navbar() {
                     </AnimatePresence>
 
                     {/* Desktop Navigation Links */}
-                    <ul className='hidden md:flex flex-row items-center gap-6 shrink-0'>
+                    <ul className='hidden lg:flex flex-row items-center gap-6 shrink-0'>
                         {navbarRoutes.map((route) => (
                             <Link
                                 key={route.href}
@@ -352,7 +352,7 @@ export default function Navbar() {
                     {/* Mobile Hamburger Button */}
                     <button
                         onClick={() => setMobileMenuOpen(true)}
-                        className='flex md:hidden flex-row items-center justify-center p-2 -mr-2 rounded-md hover:bg-text/5 transition-colors cursor-pointer'
+                        className='flex lg:hidden flex-row items-center justify-center p-2 -mr-2 rounded-md hover:bg-text/5 transition-colors cursor-pointer'
                         aria-label='Open menu'
                     >
                         <MenuIcon className='h-5 w-5' />
@@ -369,7 +369,7 @@ export default function Navbar() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.2 }}
-                            className='fixed inset-0 bg-black/50 z-60 md:hidden'
+                            className='fixed inset-0 bg-black/50 z-60 lg:hidden'
                             onClick={() => setMobileMenuOpen(false)}
                         />
                         <motion.aside
@@ -381,7 +381,7 @@ export default function Navbar() {
                                 damping: 25,
                                 stiffness: 250,
                             }}
-                            className='fixed top-0 right-0 bottom-0 w-64 bg-background border-l border-border z-70 md:hidden flex flex-col'
+                            className='fixed top-0 right-0 bottom-0 w-64 bg-background border-l border-border z-70 lg:hidden flex flex-col'
                         >
                             <div className='flex flex-row items-center justify-between px-4 py-2 border-b border-border'>
                                 <span className='font-bold text-lg'>Menu</span>
