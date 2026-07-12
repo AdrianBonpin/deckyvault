@@ -130,10 +130,12 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
             {detectedSlug ? detectedSlug : <span style={{ color: "#e0a030" }}>⚠ global</span>}
           </span>
         </span>
-        {/* View Details — compact gamepad button */}
-        <DialogButtonPrimary onClick={() => openExternalUrl(gameUrl)} style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
-          View Details
-        </DialogButtonPrimary>
+        {/* View Details — constrained width */}
+        <div style={{ flexShrink: 0, width: "130px" }}>
+          <DialogButtonPrimary onClick={() => openExternalUrl(gameUrl)}>
+            View Details
+          </DialogButtonPrimary>
+        </div>
       </div>
     </PanelSectionRow>
   )
