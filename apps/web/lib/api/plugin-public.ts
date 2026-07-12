@@ -71,7 +71,7 @@ export async function buildPluginGameResponse(args: {
   game: PluginGameRow | null
   entries?: PluginEntryRow[]
   recent?: PluginEntryRow[]
-  estFps?: { avg: number; low: number | null; onePct: number | null; high: number | null; count: number } | null
+  estFps?: { avg: number; low: number | null; onePct: number | null; high: number | null; count: number; tdpAvg: number | null } | null
 }): Promise<PluginGameResponse> {
   if (!args.game) {
     return { game: null, estFps: null, topEntries: [], recentEntries: [] }
