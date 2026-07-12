@@ -77,4 +77,40 @@ describe("buildPluginGameResponse — shape contract", () => {
     expect(r.topEntries.length).toBe(2)
     expect(r.topEntries[0].id).toBe("e1") // pinned first
   })
+
+  it("handles all-null fps values gracefully", async () => {
+    const entries = [
+      { id: "e1", hardwareSlug: "steamdeck-oled", fpsAvg: 60, fpsLow: null, fpsOnePercentLow: null, fpsHigh: null,
+        upscalerType: "none", frameGenMethod: "none", protonVersion: null, osVersion: null, tdpWatts: null,
+        settingsJson: null, upvotes: 0, isPinned: false, createdAt: new Date("2026-01-01"),
+        userName: null, userImage: null },
+    ]
+    const r = await buildPluginGameResponse({ game: { id: "g1", steamAppId: 123, title: "X", slug: "x" }, entries, recent: entries })
+    expect(r.estFps).not.toBeNull()
+    expect(r.estFps!.avg).toBe(60)
+    expect(r.estFps!.low).toBeNull()
+    expect(r.estFps!.onePct).toBeNull()
+    expect(r.estFps!.high).toBeNull()
+    expect(r.estFps!.count).toBe(1)
+  })
+
+  it("trims recent entries separately from topEntries", async () => {
+    const top = [
+      { id: "e1", hardwareSlug: "steamdeck-oled", fpsAvg: 60, fpsLow: 40, fpsOnePercentLow: 45, fpsHigh: 90,
+        upscalerType: "none", frameGenMethod: "none", protonVersion: "9", osVersion: "SteamOS 3", tdpWatts: 12,
+        settingsJson: null, upvotes: 5, isPinned: true, createdAt: new Date("2026-01-01"),
+        userName: "u", userImage: null },
+    ]
+    const recent = [
+      { id: "e2", hardwareSlug: "steamdeck-oled", fpsAvg: 80, fpsLow: 55, fpsOnePercentLow: 60, fpsHigh: 120,
+        upscalerType: "fsr", frameGenMethod: "none", protonVersion: "9", osVersion: "SteamOS 3", tdpWatts: 15,
+        settingsJson: null, upvotes: 2, isPinned: false, createdAt: new Date("2026-02-01"),
+        userName: "u2", userImage: null },
+    ]
+    const r = await buildPluginGameResponse({ game: { id: "g1", steamAppId: 123, title: "X", slug: "x" }, entries: top, recent })
+    expect(r.topEntries).toHaveLength(1)
+    expect(r.topEntries[0].id).toBe("e1")
+    expect(r.recentEntries).toHaveLength(1)
+    expect(r.recentEntries[0].id).toBe("e2")
+  })
 })

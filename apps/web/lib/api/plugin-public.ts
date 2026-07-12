@@ -207,6 +207,7 @@ export const pluginPublicRoutes = new Elysia({
         .limit(query.limit ?? 3)
 
       set.headers["Cache-Control"] = "public, max-age=60"
+      set.headers["Vary"] = "search-params"
       return await buildPluginGameResponse({
         game,
         entries: topRows as unknown as PluginEntryRow[],
@@ -230,6 +231,10 @@ export const pluginPublicRoutes = new Elysia({
     "/game/:steamAppId/devices",
     async ({ params, set }) => {
       const steamAppId = Number(params.steamAppId)
+      if (!Number.isInteger(steamAppId) || steamAppId <= 0) {
+        set.status = 400
+        return { error: "Invalid steamAppId", devices: [] }
+      }
       const [game] = await db
         .select({ id: games.id })
         .from(games)
@@ -248,10 +253,17 @@ export const pluginPublicRoutes = new Elysia({
         .from(performanceEntries)
         .innerJoin(hardware, eq(performanceEntries.hardwareSlug, hardware.slug))
         .innerJoin(gameVersions, eq(performanceEntries.versionId, gameVersions.id))
-        .where(and(eq(gameVersions.gameId, game.id), eq(performanceEntries.isRemoved, false)))
+        .where(
+          and(
+            eq(gameVersions.gameId, game.id),
+            eq(gameVersions.isLatest, true),
+            eq(performanceEntries.isRemoved, false),
+          ),
+        )
         .groupBy(performanceEntries.hardwareSlug, hardware.name)
         .orderBy(desc(sql`count(*)`))
       set.headers["Cache-Control"] = "public, max-age=60"
+      set.headers["Vary"] = "search-params"
       return { devices: rows }
     },
     {
