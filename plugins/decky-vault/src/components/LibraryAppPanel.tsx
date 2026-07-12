@@ -74,8 +74,8 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
       .map((d) => ({ label: `${d.name} (${d.count})`, data: d.slug })),
   ]
 
-  const gameUrl = data?.game?.slug
-    ? `${baseUrl}/games/${data.game.slug}`
+  const gameUrl = data?.game?.steamAppId
+    ? `${baseUrl}/game/${data.game.steamAppId}`
     : `${baseUrl}/games`
 
   if (loading) {
@@ -110,31 +110,29 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
 
   return (
     <>
-      {/* Centered stats row */}
+      {/* Stats + device dropdown inline */}
       <PanelSectionRow>
-        <div className={staticClasses.Text} style={{ padding: "4px 0", fontSize: "13px", textAlign: "center" }}>
-          {data.estFps ? (
-            <span style={{ display: "inline-flex", flexWrap: "wrap", gap: "4px 10px", justifyContent: "center" }}>
-              <span><strong>{data.estFps.avg}</strong> <span style={{ opacity: 0.4 }}>avg</span></span>
-              {data.estFps.onePct != null && <span><strong>{data.estFps.onePct}</strong> <span style={{ opacity: 0.4 }}>1% low</span></span>}
-              {data.estFps.low != null && <span><strong>{data.estFps.low}</strong> <span style={{ opacity: 0.4 }}>min</span></span>}
-              {data.estFps.high != null && <span><strong>{data.estFps.high}</strong> <span style={{ opacity: 0.4 }}>max</span></span>}
-              {data.estFps.tdpAvg != null && <span><strong>{data.estFps.tdpAvg}W</strong> <span style={{ opacity: 0.4 }}>TDP</span></span>}
-              <span style={{ opacity: 0.4 }}>({data.estFps.count})</span>
-            </span>
-          ) : (
-            <span style={{ opacity: 0.4, fontSize: "12px" }}>No data yet</span>
-          )}
+        <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "2px 0", fontSize: "13px" }}>
+          <span style={{ flex: 1, textAlign: "center" }}>
+            {data.estFps ? (
+              <span style={{ display: "inline-flex", flexWrap: "wrap", gap: "4px 8px", justifyContent: "center" }}>
+                <span><strong>{data.estFps.avg}</strong> <span style={{ opacity: 0.4 }}>avg</span></span>
+                {data.estFps.onePct != null && <span><strong>{data.estFps.onePct}</strong> <span style={{ opacity: 0.4 }}>1% low</span></span>}
+                {data.estFps.low != null && <span><strong>{data.estFps.low}</strong> <span style={{ opacity: 0.4 }}>min</span></span>}
+                {data.estFps.high != null && <span><strong>{data.estFps.high}</strong> <span style={{ opacity: 0.4 }}>max</span></span>}
+                {data.estFps.tdpAvg != null && <span><strong>{data.estFps.tdpAvg}W</strong> <span style={{ opacity: 0.4 }}>TDP</span></span>}
+                <span style={{ opacity: 0.4 }}>({data.estFps.count})</span>
+              </span>
+            ) : (
+              <span style={{ opacity: 0.4, fontSize: "12px" }}>No data yet</span>
+            )}
+          </span>
+          <DropdownItem
+            rgOptions={deviceOptions}
+            selectedOption={device}
+            onChange={(opt) => setDevice(opt.data as string)}
+          />
         </div>
-      </PanelSectionRow>
-
-      {/* Device dropdown */}
-      <PanelSectionRow>
-        <DropdownItem
-          rgOptions={deviceOptions}
-          selectedOption={device}
-          onChange={(opt) => setDevice(opt.data as string)}
-        />
       </PanelSectionRow>
 
       {/* View Details button */}
