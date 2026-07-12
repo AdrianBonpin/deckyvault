@@ -93,7 +93,7 @@ describe("buildPluginGameResponse — shape contract", () => {
     const r = await buildPluginGameResponse({
       game: { id: "g1", steamAppId: 123, title: "X", slug: "x" },
       entries, recent: entries,
-      estFps: { avg: 72.3, low: 35, onePct: 38, high: 140, count: 25 },
+      estFps: { avg: 72.3, low: 35, onePct: 38, high: 140, count: 25, tdpAvg: 13.5 },
     })
     expect(r.estFps).not.toBeNull()
     expect(r.estFps!.avg).toBe(72.3)
