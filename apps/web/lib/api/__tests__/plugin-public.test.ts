@@ -40,10 +40,10 @@ import { buildPluginGameResponse } from "@/lib/api/plugin-public"
 describe("buildPluginGameResponse — shape contract", () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it("returns { game: null, error } shape when game is missing", async () => {
+  it("returns { game: null } shape (no error) when game is missing", async () => {
     const r = await buildPluginGameResponse({ game: null })
     expect(r.game).toBeNull()
-    expect(typeof r.error).toBe("string")
+    expect(r.error).toBeUndefined()
     expect(r.estFps).toBeNull()
     expect(r.topEntries).toEqual([])
     expect(r.recentEntries).toEqual([])
@@ -76,6 +76,33 @@ describe("buildPluginGameResponse — shape contract", () => {
     expect(r.estFps!.low).toBe(40)
     expect(r.topEntries.length).toBe(2)
     expect(r.topEntries[0].id).toBe("e1") // pinned first
+  })
+
+  it("uses provided estFps aggregate over entries-derived computation", async () => {
+    const entries = [
+      { id: "e1", hardwareSlug: "steamdeck-oled", fpsAvg: 60, fpsLow: 40, fpsOnePercentLow: 45, fpsHigh: 90,
+        upscalerType: "none", frameGenMethod: "none", protonVersion: "9", osVersion: "SteamOS 3", tdpWatts: 12,
+        settingsJson: null, upvotes: 5, isPinned: true, createdAt: new Date("2026-01-01"),
+        userName: "u", userImage: null },
+      { id: "e2", hardwareSlug: "steamdeck-oled", fpsAvg: 80, fpsLow: 55, fpsOnePercentLow: 60, fpsHigh: 120,
+        upscalerType: "fsr", frameGenMethod: "none", protonVersion: "9", osVersion: "SteamOS 3", tdpWatts: 15,
+        settingsJson: null, upvotes: 2, isPinned: false, createdAt: new Date("2026-02-01"),
+        userName: "u2", userImage: null },
+    ]
+    // Aggregate says 25 entries averaging 72.3, distinct from the 2-row top-3 avg of 70
+    const r = await buildPluginGameResponse({
+      game: { id: "g1", steamAppId: 123, title: "X", slug: "x" },
+      entries, recent: entries,
+      estFps: { avg: 72.3, low: 35, onePct: 38, high: 140, count: 25 },
+    })
+    expect(r.estFps).not.toBeNull()
+    expect(r.estFps!.avg).toBe(72.3)
+    expect(r.estFps!.count).toBe(25)
+    expect(r.estFps!.high).toBe(140)
+    expect(r.estFps!.low).toBe(35)
+    // Entries are still trimmed/rendered from the provided rows
+    expect(r.topEntries.length).toBe(2)
+    expect(r.recentEntries.length).toBe(2)
   })
 
   it("handles all-null fps values gracefully", async () => {

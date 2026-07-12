@@ -140,23 +140,33 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
         </div>
       </PanelSectionRow>
 
-      {/* Est FPS */}
-      <PanelSectionRow>
-        <div className={staticClasses.Text} style={{ fontSize: "13px", padding: "4px 0", display: "flex", alignItems: "center", gap: 6 }}>
-          <FaChartLine /> Est FPS
-        </div>
-      </PanelSectionRow>
-      {data.estFps ? (
-        <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ fontSize: "13px", padding: "0 0 6px 0" }}>
-            <strong>{data.estFps.avg}</strong> avg · {data.estFps.low ?? "—"} low · {data.estFps.onePct ?? "—"} 1% · {data.estFps.high ?? "—"} high
-            <span style={{ opacity: 0.5, fontSize: "11px" }}> · {data.estFps.count} entries</span>
-          </div>
-        </PanelSectionRow>
+      {/* Est FPS — hidden when "All devices" selected to avoid mixing hardware */}
+      {device ? (
+        <>
+          <PanelSectionRow>
+            <div className={staticClasses.Text} style={{ fontSize: "13px", padding: "4px 0", display: "flex", alignItems: "center", gap: 6 }}>
+              <FaChartLine /> Est FPS
+            </div>
+          </PanelSectionRow>
+          {data.estFps ? (
+            <PanelSectionRow>
+              <div className={staticClasses.Text} style={{ fontSize: "13px", padding: "0 0 6px 0" }}>
+                <strong>{data.estFps.avg}</strong> avg · {data.estFps.low ?? "—"} low · {data.estFps.onePct ?? "—"} 1% · {data.estFps.high ?? "—"} high
+                <span style={{ opacity: 0.5, fontSize: "11px" }}> · {data.estFps.count} entries</span>
+              </div>
+            </PanelSectionRow>
+          ) : (
+            <PanelSectionRow>
+              <div className={staticClasses.Text} style={{ fontSize: "12px", opacity: 0.6, padding: "0 0 6px 0" }}>
+                No entries for this device yet — be the first: open the DeckyVault plugin and record.
+              </div>
+            </PanelSectionRow>
+          )}
+        </>
       ) : (
         <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ fontSize: "12px", opacity: 0.6, padding: "0 0 6px 0" }}>
-            No entries for this device yet — be the first: open the DeckyVault plugin and record.
+          <div className={staticClasses.Text} style={{ fontSize: "12px", opacity: 0.6, padding: "4px 0" }}>
+            Select a device to see estimated FPS.
           </div>
         </PanelSectionRow>
       )}
@@ -180,6 +190,18 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
             </div>
           </PanelSectionRow>
           {data.topEntries.map((e) => <EntryCard key={e.id} e={e} />)}
+        </>
+      )}
+
+      {/* Recent entries */}
+      {data.recentEntries.length > 0 && (
+        <>
+          <PanelSectionRow>
+            <div className={staticClasses.Text} style={{ fontSize: "11px", opacity: 0.5, padding: "8px 0 2px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Recent entries
+            </div>
+          </PanelSectionRow>
+          {data.recentEntries.map((e) => <EntryCard key={e.id} e={e} />)}
         </>
       )}
     </PanelSection>

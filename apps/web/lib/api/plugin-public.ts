@@ -71,22 +71,23 @@ export async function buildPluginGameResponse(args: {
   game: PluginGameRow | null
   entries?: PluginEntryRow[]
   recent?: PluginEntryRow[]
+  estFps?: { avg: number; low: number | null; onePct: number | null; high: number | null; count: number } | null
 }): Promise<PluginGameResponse> {
   if (!args.game) {
-    return { game: null, estFps: null, topEntries: [], recentEntries: [], error: "Game not in DeckyVault" }
+    return { game: null, estFps: null, topEntries: [], recentEntries: [] }
   }
   const entries = args.entries ?? []
   const recent = args.recent ?? []
-  if (entries.length === 0) {
-    return { game: { ...args.game }, estFps: null, topEntries: [], recentEntries: [] }
-  }
-  const fpsAvgVals = entries.map((e) => e.fpsAvg)
-  const estFps = {
-    avg: Math.round((fpsAvgVals.reduce((a, b) => a + b, 0) / fpsAvgVals.length) * 10) / 10,
+  // Use provided estFps if available, otherwise compute from entries
+  const estFps = args.estFps ?? (entries.length > 0 ? {
+    avg: Math.round((entries.reduce((a, b) => a + b.fpsAvg, 0) / entries.length) * 10) / 10,
     low: entries.reduce<number | null>((m, e) => (m == null ? e.fpsLow : Math.min(m, e.fpsLow ?? m)), null),
     onePct: entries.reduce<number | null>((m, e) => (m == null ? e.fpsOnePercentLow : Math.min(m, e.fpsOnePercentLow ?? m)), null),
     high: entries.reduce<number | null>((m, e) => (m == null ? e.fpsHigh : Math.max(m, e.fpsHigh ?? m)), null),
     count: entries.length,
+  } : null)
+  if (!estFps) {
+    return { game: { ...args.game }, estFps: null, topEntries: [], recentEntries: [] }
   }
   const topEntries = entries.map(trimEntry)
   const recentEntries = recent.map(trimEntry)
@@ -206,12 +207,25 @@ export const pluginPublicRoutes = new Elysia({
         .orderBy(desc(performanceEntries.createdAt))
         .limit(query.limit ?? 3)
 
+      // Aggregate estFps from ALL matching entries (not just top-3)
+      const [agg] = await db
+        .select({
+          avg: sql<number>`round(avg(${performanceEntries.fpsAvg})::numeric, 1)`,
+          low: sql<number | null>`min(${performanceEntries.fpsLow})`,
+          onePct: sql<number | null>`min(${performanceEntries.fpsOnePercentLow})`,
+          high: sql<number | null>`max(${performanceEntries.fpsHigh})`,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(performanceEntries)
+        .where(baseWhere)
+
       set.headers["Cache-Control"] = "public, max-age=60"
       set.headers["Vary"] = "search-params"
       return await buildPluginGameResponse({
         game,
         entries: topRows as unknown as PluginEntryRow[],
         recent: recentRows as unknown as PluginEntryRow[],
+        estFps: agg.avg ? { avg: agg.avg, low: agg.low, onePct: agg.onePct, high: agg.high, count: agg.count } : null,
       })
     },
     {
