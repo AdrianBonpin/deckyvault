@@ -235,6 +235,20 @@ export function useGameDetection(
   return { detecting }
 }
 
+// ── FPS Sanitizer ────────────────────────────────────────────────
+
+const FPS_MAX = 1000
+
+/** Clamp/cap an FPS value to [0, 1000]; return null for null/undefined/NaN. */
+export function sanitizeFps(value: number | null | undefined): number | null {
+  if (value == null) return null
+  const n = Number(value)
+  if (isNaN(n)) return null
+  if (n < 0) return 0
+  if (n > FPS_MAX) return FPS_MAX
+  return n
+}
+
 // ── Payload Builder ─────────────────────────────────────────────
 
 export function buildImportPayload(sess: SessionData): DeckyVaultImportV1 {
@@ -242,10 +256,10 @@ export function buildImportPayload(sess: SessionData): DeckyVaultImportV1 {
     version: 1,
     steamAppId: sess.appId ?? 0,
     hardwareSlug: sess.hardwareSlug,
-    fpsAvg: sess.fpsAvg ?? 0,
-    fpsLow: sess.fpsLow,
-    fpsOnePercentLow: sess.fpsOnePercentLow,
-    fpsHigh: sess.fpsHigh,
+    fpsAvg: sess.fpsAvg == null || sess.fpsAvg <= 0 ? 0 : sanitizeFps(sess.fpsAvg)!,
+    fpsLow: sanitizeFps(sess.fpsLow),
+    fpsOnePercentLow: sanitizeFps(sess.fpsOnePercentLow),
+    fpsHigh: sanitizeFps(sess.fpsHigh),
     protonVersion: sess.protonVersion || null,
     osVersion: sess.osVersion || null,
     versionString: sess.versionString || null,
