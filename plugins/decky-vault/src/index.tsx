@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import {
   PanelSection,
   PanelSectionRow,
@@ -5,9 +6,11 @@ import {
 } from "@decky/ui"
 import {
   definePlugin,
+  routerHook,
 } from "@decky/api"
 import { FaChartLine } from "react-icons/fa"
 import MainPanel from "./components/main-panel"
+import { registerLibraryAppPatch, setLibraryAppPanelProps } from "./patches/LibraryApp"
 import { useSettings, useSession, useGameDetection } from "./lib/store"
 import {
   readAndParseMangohudLog,
@@ -24,6 +27,10 @@ import {
 
 function Content() {
   const { settings, updateSetting, loaded } = useSettings()
+  // keep the library panel's props in sync with settings
+  useEffect(() => {
+    setLibraryAppPanelProps({ hardwareSlug: settings.hardwareSlug, baseUrl: settings.baseUrl })
+  }, [settings.hardwareSlug, settings.baseUrl])
   const {
     recordingState,
     session,
@@ -199,6 +206,8 @@ function DeckyVaultIcon() {
 }
 
 export default definePlugin(() => {
+  const libraryAppPatch = registerLibraryAppPatch()
+
   return {
     name: "DeckyVault",
     titleView: <div className={staticClasses.Title}>DeckyVault</div>,
@@ -206,6 +215,7 @@ export default definePlugin(() => {
     icon: <DeckyVaultIcon />,
     alwaysRender: true,
     onDismount() {
+      try { routerHook.removePatch("/library/app/:appid", libraryAppPatch) } catch (e) { console.error("[DeckyVault] removePatch failed:", e) }
       console.log("[DeckyVault] Plugin unloading")
     },
   }
