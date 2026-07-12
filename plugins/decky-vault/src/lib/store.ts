@@ -256,7 +256,7 @@ export function buildImportPayload(sess: SessionData): DeckyVaultImportV1 {
     version: 1,
     steamAppId: sess.appId ?? 0,
     hardwareSlug: sess.hardwareSlug,
-    fpsAvg: sess.fpsAvg == null || sess.fpsAvg <= 0 ? 0 : sanitizeFps(sess.fpsAvg)!,
+    fpsAvg: sess.fpsAvg == null || !(sess.fpsAvg > 0) ? 0 : sanitizeFps(sess.fpsAvg)!,
     fpsLow: sanitizeFps(sess.fpsLow),
     fpsOnePercentLow: sanitizeFps(sess.fpsOnePercentLow),
     fpsHigh: sanitizeFps(sess.fpsHigh),
