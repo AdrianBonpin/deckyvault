@@ -16,6 +16,22 @@ interface Props {
   baseUrl: string
 }
 
+function openExternalUrl(url: string) {
+  try {
+    if (Router?.NavigateToExternalWeb) {
+      Router.NavigateToExternalWeb(url)
+      return
+    }
+  } catch (e) {
+    console.error("[DeckyVault] NavigateToExternalWeb failed:", e)
+  }
+  try {
+    window.open(url, "_blank")
+  } catch (e) {
+    console.error("[DeckyVault] window.open failed:", e)
+  }
+}
+
 export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }: Props) {
   const [data, setData] = useState<PluginGameResponse | null>(null)
   const [devices, setDevices] = useState<PluginDeviceRow[]>([])
@@ -65,7 +81,7 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
   if (loading) {
     return (
       <PanelSectionRow>
-        <div className={staticClasses.Text} style={{ padding: "8px 0", fontSize: "12px", opacity: 0.5 }}>
+        <div className={staticClasses.Text} style={{ padding: "8px 0", fontSize: "12px", opacity: 0.5, textAlign: "center" }}>
           DeckyVault loading…
         </div>
       </PanelSectionRow>
@@ -75,7 +91,7 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
   if (fetchError) {
     return (
       <PanelSectionRow>
-        <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px 0", opacity: 0.5, color: "#e74c3c" }}>
+        <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px 0", opacity: 0.5, color: "#e74c3c", textAlign: "center" }}>
           DeckyVault: {fetchError}
         </div>
       </PanelSectionRow>
@@ -85,7 +101,7 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
   if (!data || !data.game) {
     return (
       <PanelSectionRow>
-        <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px 0", opacity: 0.5 }}>
+        <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px 0", opacity: 0.5, textAlign: "center" }}>
           Not on DeckyVault — <a href={`${baseUrl}/games`}>add it</a>
         </div>
       </PanelSectionRow>
@@ -94,14 +110,14 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
 
   return (
     <>
-      {/* Quick stats + device dropdown — single row */}
+      {/* Centered stats row */}
       <PanelSectionRow>
-        <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "4px 0", fontSize: "13px" }}>
+        <div className={staticClasses.Text} style={{ padding: "4px 0", fontSize: "13px", textAlign: "center" }}>
           {data.estFps ? (
-            <span style={{ display: "flex", flexWrap: "wrap", gap: "4px 10px" }}>
+            <span style={{ display: "inline-flex", flexWrap: "wrap", gap: "4px 10px", justifyContent: "center" }}>
               <span><strong>{data.estFps.avg}</strong> <span style={{ opacity: 0.4 }}>avg</span></span>
               {data.estFps.onePct != null && <span><strong>{data.estFps.onePct}</strong> <span style={{ opacity: 0.4 }}>1% low</span></span>}
-              {data.estFps.low != null && <span><strong>{data.estFps.low}</strong> <span style={{ opacity: 0.4 }}>min</span></span>
+              {data.estFps.low != null && <span><strong>{data.estFps.low}</strong> <span style={{ opacity: 0.4 }}>min</span></span>}
               {data.estFps.high != null && <span><strong>{data.estFps.high}</strong> <span style={{ opacity: 0.4 }}>max</span></span>}
               {data.estFps.tdpAvg != null && <span><strong>{data.estFps.tdpAvg}W</strong> <span style={{ opacity: 0.4 }}>TDP</span></span>}
               <span style={{ opacity: 0.4 }}>({data.estFps.count})</span>
@@ -109,15 +125,23 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
           ) : (
             <span style={{ opacity: 0.4, fontSize: "12px" }}>No data yet</span>
           )}
-          <DropdownItem
-            rgOptions={deviceOptions}
-            selectedOption={device}
-            onChange={(opt) => setDevice(opt.data as string)}
-          />
-          <ButtonItem layout="below" onClick={() => Router.NavigateToExternalWeb(gameUrl)}>
-            ↗
-          </ButtonItem>
         </div>
+      </PanelSectionRow>
+
+      {/* Device dropdown */}
+      <PanelSectionRow>
+        <DropdownItem
+          rgOptions={deviceOptions}
+          selectedOption={device}
+          onChange={(opt) => setDevice(opt.data as string)}
+        />
+      </PanelSectionRow>
+
+      {/* View Details button */}
+      <PanelSectionRow>
+        <ButtonItem layout="below" onClick={() => openExternalUrl(gameUrl)}>
+          View Details
+        </ButtonItem>
       </PanelSectionRow>
     </>
   )
