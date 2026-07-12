@@ -19,6 +19,48 @@ type UpscalerType = (typeof VALID_UPSCALER_TYPES)[number]
 type FrameGenMethod = (typeof VALID_FRAME_GEN_METHODS)[number]
 type AntiCheatStatus = (typeof VALID_ANTICHEAT_STATUSES)[number]
 
+const FPS_MIN_AVG = 1
+const FPS_MIN_OTHER = 0
+const FPS_MAX = 1000
+
+export type FpsInput = {
+  fpsAvg: number
+  fpsLow?: number | null
+  fpsOnePercentLow?: number | null
+  fpsHigh?: number | null
+}
+
+export type FpsValues = {
+  fpsAvg: number
+  fpsLow: number | null
+  fpsOnePercentLow: number | null
+  fpsHigh: number | null
+}
+
+export type FpsValidationResult =
+  | { ok: true; values: FpsValues }
+  | { ok: false; error: string }
+
+export function validateFps(input: FpsInput): FpsValidationResult {
+  const fpsAvg = Number(input.fpsAvg)
+  if (input.fpsAvg == null || isNaN(fpsAvg) || fpsAvg < FPS_MIN_AVG || fpsAvg > FPS_MAX) {
+    return { ok: false, error: `fpsAvg must be between ${FPS_MIN_AVG} and ${FPS_MAX}` }
+  }
+  const fpsLow = input.fpsLow != null ? Number(input.fpsLow) : null
+  if (fpsLow !== null && (isNaN(fpsLow) || fpsLow < FPS_MIN_OTHER || fpsLow > FPS_MAX)) {
+    return { ok: false, error: `fpsLow must be between ${FPS_MIN_OTHER} and ${FPS_MAX}` }
+  }
+  const fpsOnePercentLow = input.fpsOnePercentLow != null ? Number(input.fpsOnePercentLow) : null
+  if (fpsOnePercentLow !== null && (isNaN(fpsOnePercentLow) || fpsOnePercentLow < FPS_MIN_OTHER || fpsOnePercentLow > FPS_MAX)) {
+    return { ok: false, error: `fpsOnePercentLow must be between ${FPS_MIN_OTHER} and ${FPS_MAX}` }
+  }
+  const fpsHigh = input.fpsHigh != null ? Number(input.fpsHigh) : null
+  if (fpsHigh !== null && (isNaN(fpsHigh) || fpsHigh < FPS_MIN_OTHER || fpsHigh > FPS_MAX)) {
+    return { ok: false, error: `fpsHigh must be between ${FPS_MIN_OTHER} and ${FPS_MAX}` }
+  }
+  return { ok: true, values: { fpsAvg, fpsLow, fpsOnePercentLow, fpsHigh } }
+}
+
 export const performanceImportRoutes = new Elysia({
   prefix: "/performance",
   detail: { tags: ["Performance"] },
@@ -37,6 +79,19 @@ export const performanceImportRoutes = new Elysia({
       set.status = 400
       return { error: "Unsupported import format version" }
     }
+
+    // ── Validate FPS fields (before game lookup so a 400 is never masked by a 404) ──
+    const fpsResult = validateFps({
+      fpsAvg: body.fpsAvg,
+      fpsLow: body.fpsLow,
+      fpsOnePercentLow: body.fpsOnePercentLow,
+      fpsHigh: body.fpsHigh,
+    })
+    if (!fpsResult.ok) {
+      set.status = 400
+      return { error: fpsResult.error }
+    }
+    const { fpsAvg, fpsLow, fpsOnePercentLow, fpsHigh } = fpsResult.values
 
     // ── Resolve game version from steamAppId ──────────────────────
     const steamAppId = body.steamAppId
@@ -109,35 +164,6 @@ export const performanceImportRoutes = new Elysia({
       return {
         error: `Unknown hardware slug: "${hardwareSlug}". Available devices: see /api/hardware`,
       }
-    }
-
-    // ── Validate FPS fields ───────────────────────────────────────
-    const fpsAvg = Number(body.fpsAvg)
-    if (isNaN(fpsAvg) || fpsAvg < 1 || fpsAvg > 500) {
-      set.status = 400
-      return { error: "fpsAvg must be between 1 and 500" }
-    }
-
-    const fpsLow = body.fpsLow != null ? Number(body.fpsLow) : null
-    if (fpsLow !== null && (isNaN(fpsLow) || fpsLow < 0 || fpsLow > 500)) {
-      set.status = 400
-      return { error: "fpsLow must be between 0 and 500" }
-    }
-
-    const fpsOnePercentLow =
-      body.fpsOnePercentLow != null ? Number(body.fpsOnePercentLow) : null
-    if (
-      fpsOnePercentLow !== null &&
-      (isNaN(fpsOnePercentLow) || fpsOnePercentLow < 0 || fpsOnePercentLow > 500)
-    ) {
-      set.status = 400
-      return { error: "fpsOnePercentLow must be between 0 and 500" }
-    }
-
-    const fpsHigh = body.fpsHigh != null ? Number(body.fpsHigh) : null
-    if (fpsHigh !== null && (isNaN(fpsHigh) || fpsHigh < 0 || fpsHigh > 500)) {
-      set.status = 400
-      return { error: "fpsHigh must be between 0 and 500" }
     }
 
     // ── Validate enums ────────────────────────────────────────────

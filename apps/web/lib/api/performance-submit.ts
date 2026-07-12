@@ -146,23 +146,23 @@ export const performanceSubmitRoutes = new Elysia({ prefix: "/performance", deta
       }
 
       // ── Validation: fpsAvg bounds ───────────────────────────────
-      if (typeof fpsAvg !== "number" || fpsAvg < 1 || fpsAvg > 500) {
+      if (typeof fpsAvg !== "number" || fpsAvg < 1 || fpsAvg > 1000) {
         set.status = 400
-        return { error: "fpsAvg must be between 1 and 500" }
+        return { error: "fpsAvg must be between 1 and 1000" }
       }
 
       // ── Validation: optional FPS bounds ─────────────────────────
-      if (fpsLow !== null && (fpsLow < 0 || fpsLow > 500)) {
+      if (fpsLow !== null && (fpsLow < 0 || fpsLow > 1000)) {
         set.status = 400
-        return { error: "fpsLow must be between 0 and 500" }
+        return { error: "fpsLow must be between 0 and 1000" }
       }
-      if (fpsHigh !== null && (fpsHigh < 0 || fpsHigh > 500)) {
+      if (fpsHigh !== null && (fpsHigh < 0 || fpsHigh > 1000)) {
         set.status = 400
-        return { error: "fpsHigh must be between 0 and 500" }
+        return { error: "fpsHigh must be between 0 and 1000" }
       }
-      if (fpsOnePercentLow !== null && (fpsOnePercentLow < 0 || fpsOnePercentLow > 500)) {
+      if (fpsOnePercentLow !== null && (fpsOnePercentLow < 0 || fpsOnePercentLow > 1000)) {
         set.status = 400
-        return { error: "fpsOnePercentLow must be between 0 and 500" }
+        return { error: "fpsOnePercentLow must be between 0 and 1000" }
       }
 
       // ── Validation: settingsJson size limits ────────────────────
