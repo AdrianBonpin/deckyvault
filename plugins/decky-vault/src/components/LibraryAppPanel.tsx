@@ -110,12 +110,12 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
 
   return (
     <>
-      {/* Stats + device dropdown inline */}
+      {/* Stats + device dropdown — space-between, with padding */}
       <PanelSectionRow>
-        <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "2px 0", fontSize: "13px" }}>
-          <span style={{ flex: 1, textAlign: "center" }}>
+        <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "4px 16px", fontSize: "13px" }}>
+          <span style={{ flex: 1, textAlign: "left" }}>
             {data.estFps ? (
-              <span style={{ display: "inline-flex", flexWrap: "wrap", gap: "4px 8px", justifyContent: "center" }}>
+              <span style={{ display: "inline-flex", flexWrap: "wrap", gap: "4px 8px" }}>
                 <span><strong>{data.estFps.avg}</strong> <span style={{ opacity: 0.4 }}>avg</span></span>
                 {data.estFps.onePct != null && <span><strong>{data.estFps.onePct}</strong> <span style={{ opacity: 0.4 }}>1% low</span></span>}
                 {data.estFps.low != null && <span><strong>{data.estFps.low}</strong> <span style={{ opacity: 0.4 }}>min</span></span>}
@@ -127,11 +127,13 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
               <span style={{ opacity: 0.4, fontSize: "12px" }}>No data yet</span>
             )}
           </span>
-          <DropdownItem
-            rgOptions={deviceOptions}
-            selectedOption={device}
-            onChange={(opt) => setDevice(opt.data as string)}
-          />
+          <span style={{ flexShrink: 0 }}>
+            <DropdownItem
+              rgOptions={deviceOptions}
+              selectedOption={device}
+              onChange={(opt) => setDevice(opt.data as string)}
+            />
+          </span>
         </div>
       </PanelSectionRow>
 
