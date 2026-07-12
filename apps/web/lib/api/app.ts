@@ -53,6 +53,7 @@ import { mobileRoutes } from "@/lib/api/mobile"
 import { gamesLookupRoutes } from "@/lib/api/games-lookup"
 import { performanceImportRoutes } from "@/lib/api/performance-import"
 import { pluginPairingRoutes } from "@/lib/api/plugin-pairing"
+import { pluginPublicRoutes } from "@/lib/api/plugin-public"
 
 const betterAuth = new Elysia({ name: "better-auth" })
   .mount(auth.handler)
@@ -247,6 +248,7 @@ export const app = new Elysia({ prefix: "/api" })
       .use(gamesLookupRoutes)
       .use(mobileRoutes)
       .use(pluginPairingRoutes)
+      .use(pluginPublicRoutes)
   )
   // ── Write routes ───────────────────────────────────────────
   .group("", (app) =>
