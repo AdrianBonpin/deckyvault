@@ -23,6 +23,52 @@ except ImportError:
     decky = None
 
 
+def _collect_screenshots(home: str, app_id: int | None = None, limit: int = 50) -> list[dict]:
+    """Pure helper: collect screenshots from Desktop and Game Mode paths under `home`.
+    Returns list of dicts sorted by mtime desc, limited to `limit` entries.
+    When `app_id` is given, keeps Desktop exports + that app's userdata shots."""
+    import glob
+    base = os.path.join(home, "Pictures", "Screenshots")
+    userdata = os.path.join(home, ".local", "share", "Steam", "userdata")
+    patterns = [
+        os.path.join(base, "*.jpg"),
+        os.path.join(base, "*.png"),
+        os.path.join(base, "Steam Client", "*.jpg"),
+        os.path.join(base, "Steam Client", "*.png"),
+        os.path.join(userdata, "*", "760", "remote", "*", "screenshots", "*.jpg"),
+        os.path.join(userdata, "*", "760", "remote", "*", "screenshots", "*.png"),
+    ]
+    seen, files = set(), []
+    for pat in patterns:
+        for f in glob.glob(pat):
+            if not os.path.isfile(f) or f in seen:
+                continue
+            if os.path.basename(f) == "most_recent.jpg":
+                continue
+            seen.add(f)
+            f_app_id = None
+            parts = f.split(os.sep)
+            if "760" in parts:
+                idx = parts.index("760")
+                if idx + 2 < len(parts):
+                    try:
+                        f_app_id = int(parts[idx + 2])
+                    except ValueError:
+                        pass
+            try:
+                files.append({
+                    "path": f, "name": os.path.basename(f),
+                    "mtime": os.path.getmtime(f), "size": os.path.getsize(f),
+                    "appId": f_app_id,
+                })
+            except OSError:
+                continue
+    if app_id is not None:
+        files = [x for x in files if x["appId"] is None or x["appId"] == app_id]
+    files.sort(key=lambda x: x["mtime"], reverse=True)
+    return files[:limit]
+
+
 def parse_mangohud_log(log_content: str) -> dict:
     """Parse a MangoHud log file's content and return FPS stats.
 
@@ -645,48 +691,10 @@ exec mangohud "$@"
         """RPC: List recent Steam screenshots from both Game Mode (userdata/760/remote)
         and Desktop Mode (~/Pictures/Screenshots). Returns newest first.
         When app_id is given, keeps all Desktop exports + that app's userdata shots."""
-        import glob
         try:
             home = os.path.expanduser("~")
-            base = os.path.join(home, "Pictures", "Screenshots")
-            userdata = os.path.join(home, ".local", "share", "Steam", "userdata")
-            patterns = [
-                os.path.join(base, "*.jpg"),
-                os.path.join(base, "*.png"),
-                os.path.join(base, "Steam Client", "*.jpg"),
-                os.path.join(base, "Steam Client", "*.png"),
-                os.path.join(userdata, "*", "760", "remote", "*", "screenshots", "*.jpg"),
-                os.path.join(userdata, "*", "760", "remote", "*", "screenshots", "*.png"),
-            ]
-            seen, files = set(), []
-            for pat in patterns:
-                for f in glob.glob(pat):
-                    if not os.path.isfile(f) or f in seen:
-                        continue
-                    if os.path.basename(f) == "most_recent.jpg":
-                        continue
-                    seen.add(f)
-                    f_app_id = None
-                    parts = f.split(os.sep)
-                    if "760" in parts:
-                        idx = parts.index("760")
-                        if idx >= 2:
-                            try:
-                                f_app_id = int(parts[idx + 2])
-                            except (ValueError, IndexError):
-                                pass
-                    try:
-                        files.append({
-                            "path": f, "name": os.path.basename(f),
-                            "mtime": os.path.getmtime(f), "size": os.path.getsize(f),
-                            "appId": f_app_id,
-                        })
-                    except OSError:
-                        continue
-            if app_id is not None:
-                files = [x for x in files if x["appId"] is None or x["appId"] == app_id]
-            files.sort(key=lambda x: x["mtime"], reverse=True)
-            return {"screenshots": files[:limit]}
+            files = _collect_screenshots(home, app_id=app_id, limit=limit)
+            return {"screenshots": files}
         except Exception as e:
             return {"screenshots": [], "error": str(e)}
 
