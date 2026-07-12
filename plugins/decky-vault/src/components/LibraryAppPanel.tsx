@@ -1,13 +1,12 @@
 import { useEffect, useState, useRef } from "react"
-import { PanelSection, PanelSectionRow, DropdownItem, staticClasses } from "@decky/ui"
-import { FaCheck, FaTimes, FaChartLine } from "react-icons/fa"
+import { PanelSectionRow, DropdownItem, ButtonItem, staticClasses } from "@decky/ui"
+import { Router } from "@decky/ui"
 import {
   fetchPluginGame,
   fetchPluginDevices,
   setPluginApiBaseUrl,
   type PluginGameResponse,
   type PluginDeviceRow,
-  type PluginEntry,
 } from "../lib/plugin-api"
 
 interface Props {
@@ -15,40 +14,6 @@ interface Props {
   title: string
   hardwareSlug: string | null      // detected device
   baseUrl: string
-}
-
-function EntryCard({ e }: { e: PluginEntry }) {
-  const [expanded, setExpanded] = useState(false)
-  const settingsCount = Array.isArray(e.settingsJson)
-    ? (e.settingsJson as Array<{ settings: unknown[] }>).reduce((s, c) => s + (c.settings?.length ?? 0), 0)
-    : 0
-  const label = e.isPinned ? "Pinned" : e.upvotes > 0 ? `${e.upvotes}👍` : "Recent"
-  return (
-    <PanelSectionRow>
-      <div
-        onClick={() => setExpanded((v) => !v)}
-        style={{ padding: "8px 10px", borderRadius: "8px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", cursor: "pointer" }}
-      >
-        <div className={staticClasses.Text} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
-          <strong>{e.fpsAvg} FPS avg</strong>
-          <span style={{ opacity: 0.7 }}>{label}</span>
-        </div>
-        <div className={staticClasses.Text} style={{ fontSize: "11px", opacity: 0.6, marginTop: 2 }}>
-          {e.fpsLow ?? "—"} low · {e.fpsOnePercentLow ?? "—"} 1% · {e.fpsHigh ?? "—"} high
-          {e.tdpWatts ? ` · ${e.tdpWatts}W` : ""}
-          {e.upscalerType && e.upscalerType !== "none" ? ` · ${e.upscalerType}` : ""}
-          {e.protonVersion ? ` · Proton ${e.protonVersion}` : ""}
-        </div>
-        {expanded && (
-          <div className={staticClasses.Text} style={{ fontSize: "11px", opacity: 0.7, marginTop: 6, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 6 }}>
-            <div>By {e.userName ?? "unknown"} · {new Date(e.createdAt).toLocaleDateString()}</div>
-            <div>{settingsCount} settings</div>
-            {e.osVersion && <div>OS: {e.osVersion}</div>}
-          </div>
-        )}
-      </div>
-    </PanelSectionRow>
-  )
 }
 
 export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }: Props) {
@@ -68,16 +33,12 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
       try {
         const d = await fetchPluginGame(appId, device || null, 3)
         if (cancelled || id !== reqIdRef.current) return
-        if (d.error && !d.game) {
-          setFetchError(d.error)
-        } else {
-          setFetchError("")
-        }
+        setFetchError(d.error && !d.game ? d.error : "")
         setData(d)
         setLoading(false)
         const devs = await fetchPluginDevices(appId)
         if (!cancelled && id === reqIdRef.current) setDevices(devs)
-      } catch (e) {
+      } catch {
         if (!cancelled && id === reqIdRef.current) {
           setData(null)
           setFetchError("Request failed")
@@ -89,16 +50,6 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
     return () => { cancelled = true }
   }, [appId, device, baseUrl])
 
-  if (loading) {
-    return (
-      <PanelSection title="DeckyVault">
-        <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ padding: "8px 0", fontSize: "12px", opacity: 0.6 }}>Loading DeckyVault…</div>
-        </PanelSectionRow>
-      </PanelSection>
-    )
-  }
-
   const deviceOptions = [
     { label: "All devices", data: "" },
     ...(hardwareSlug ? [{ label: `Your device (${hardwareSlug})`, data: hardwareSlug }] : []),
@@ -107,103 +58,79 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
       .map((d) => ({ label: `${d.name} (${d.count})`, data: d.slug })),
   ]
 
+  const gameUrl = data?.game?.slug
+    ? `${baseUrl}/games/${data.game.slug}`
+    : `${baseUrl}/games`
+
+  if (loading) {
+    return (
+      <PanelSectionRow>
+        <div className={staticClasses.Text} style={{ padding: "8px 0", fontSize: "12px", opacity: 0.5 }}>
+          DeckyVault loading…
+        </div>
+      </PanelSectionRow>
+    )
+  }
+
   if (fetchError) {
     return (
-      <PanelSection title="DeckyVault">
-        <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "6px 0", opacity: 0.7, color: "#e74c3c" }}>
-            <FaTimes /> Could not load DeckyVault data: {fetchError}
-          </div>
-        </PanelSectionRow>
-      </PanelSection>
+      <PanelSectionRow>
+        <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px 0", opacity: 0.5, color: "#e74c3c" }}>
+          DeckyVault: {fetchError}
+        </div>
+      </PanelSectionRow>
     )
   }
 
   if (!data || !data.game) {
     return (
-      <PanelSection title="DeckyVault">
-        <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "6px 0", opacity: 0.7 }}>
-            <FaTimes /> Not in DeckyVault yet. Open <strong>{title}</strong> on{" "}
-            <a href={`${baseUrl}/games`}>deckyvault.xyz</a> to add it.
-          </div>
-        </PanelSectionRow>
-      </PanelSection>
+      <PanelSectionRow>
+        <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "8px 0", opacity: 0.5 }}>
+          Not on DeckyVault — <a href={`${baseUrl}/games`}>add it</a>
+        </div>
+      </PanelSectionRow>
     )
   }
 
   return (
-    <PanelSection title="DeckyVault">
+    <>
+      {/* Quick stats row */}
       <PanelSectionRow>
-        <div className={staticClasses.Text} style={{ fontSize: "12px", padding: "4px 0", display: "flex", alignItems: "center", gap: 6 }}>
-          <FaCheck style={{ color: "#2ecc71" }} /> In DeckyVault
+        <div className={staticClasses.Text} style={{ padding: "4px 0", fontSize: "13px" }}>
+          {device && data.estFps ? (
+            <span style={{ display: "flex", flexWrap: "wrap", gap: "4px 12px" }}>
+              <span><strong>{data.estFps.avg}</strong> <span style={{ opacity: 0.4 }}>avg FPS</span></span>
+              {data.estFps.onePct != null && <span><strong>{data.estFps.onePct}</strong> <span style={{ opacity: 0.4 }}>1% low</span></span>}
+              {data.estFps.low != null && <span><strong>{data.estFps.low}</strong> <span style={{ opacity: 0.4 }}>min</span></span>}
+              {data.estFps.high != null && <span><strong>{data.estFps.high}</strong> <span style={{ opacity: 0.4 }}>max</span></span>}
+              {data.estFps.tdpAvg != null && <span><strong>{data.estFps.tdpAvg}W</strong> <span style={{ opacity: 0.4 }}>TDP</span></span>}
+              <span><strong>{data.estFps.count}</strong> <span style={{ opacity: 0.4 }}>entries</span></span>
+            </span>
+          ) : (
+            <span style={{ opacity: 0.5, fontSize: "12px" }}>
+              {device
+                ? "No entries for this device yet"
+                : "Select a device to see estimated FPS"}
+            </span>
+          )}
         </div>
       </PanelSectionRow>
 
-      {/* Est FPS — hidden when "All devices" selected to avoid mixing hardware */}
-      {device ? (
-        <>
-          <PanelSectionRow>
-            <div className={staticClasses.Text} style={{ fontSize: "13px", padding: "4px 0", display: "flex", alignItems: "center", gap: 6 }}>
-              <FaChartLine /> Est FPS
-            </div>
-          </PanelSectionRow>
-          {data.estFps ? (
-            <PanelSectionRow>
-              <div className={staticClasses.Text} style={{ fontSize: "13px", padding: "0 0 6px 0" }}>
-                <strong>{data.estFps.avg}</strong> avg · {data.estFps.low ?? "—"} low · {data.estFps.onePct ?? "—"} 1% · {data.estFps.high ?? "—"} high
-                <span style={{ opacity: 0.5, fontSize: "11px" }}> · {data.estFps.count} entries</span>
-              </div>
-            </PanelSectionRow>
-          ) : (
-            <PanelSectionRow>
-              <div className={staticClasses.Text} style={{ fontSize: "12px", opacity: 0.6, padding: "0 0 6px 0" }}>
-                No entries for this device yet — be the first: open the DeckyVault plugin and record.
-              </div>
-            </PanelSectionRow>
-          )}
-        </>
-      ) : (
-        <PanelSectionRow>
-          <div className={staticClasses.Text} style={{ fontSize: "12px", opacity: 0.6, padding: "4px 0" }}>
-            Select a device to see estimated FPS.
-          </div>
-        </PanelSectionRow>
-      )}
-
-      {/* Device switcher */}
+      {/* Device dropdown */}
       <PanelSectionRow>
         <DropdownItem
-          label="Device"
           rgOptions={deviceOptions}
           selectedOption={device}
           onChange={(opt) => setDevice(opt.data as string)}
         />
       </PanelSectionRow>
 
-      {/* Top entries */}
-      {data.topEntries.length > 0 && (
-        <>
-          <PanelSectionRow>
-            <div className={staticClasses.Text} style={{ fontSize: "11px", opacity: 0.5, padding: "8px 0 2px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Top entries
-            </div>
-          </PanelSectionRow>
-          {data.topEntries.map((e) => <EntryCard key={e.id} e={e} />)}
-        </>
-      )}
-
-      {/* Recent entries */}
-      {data.recentEntries.length > 0 && (
-        <>
-          <PanelSectionRow>
-            <div className={staticClasses.Text} style={{ fontSize: "11px", opacity: 0.5, padding: "8px 0 2px 0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Recent entries
-            </div>
-          </PanelSectionRow>
-          {data.recentEntries.map((e) => <EntryCard key={e.id} e={e} />)}
-        </>
-      )}
-    </PanelSection>
+      {/* Open on DeckyVault button */}
+      <PanelSectionRow>
+        <ButtonItem layout="below" onClick={() => Router.NavigateToExternalWeb(gameUrl)}>
+          View on DeckyVault
+        </ButtonItem>
+      </PanelSectionRow>
+    </>
   )
 }

@@ -22,7 +22,7 @@ export interface PluginEntry {
 
 export interface PluginGameResponse {
   game: { id: string; steamAppId: number | null; title: string; slug: string | null } | null
-  estFps: { avg: number; low: number | null; onePct: number | null; high: number | null; count: number } | null
+  estFps: { avg: number; low: number | null; onePct: number | null; high: number | null; count: number; tdpAvg: number | null } | null
   topEntries: PluginEntry[]
   recentEntries: PluginEntry[]
   error?: string
