@@ -125,14 +125,20 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
           ) : (
             <span style={{ opacity: 0.4, fontSize: "12px" }}>No data yet</span>
           )}
+          {/* Device scope badge */}
+          <div style={{ fontSize: "10px", opacity: 0.4, marginTop: "2px" }}>
+            {detectedSlug ? detectedSlug : <span style={{ color: "#e0a030" }}>⚠ global (device not detected)</span>}
+          </div>
         </div>
       </PanelSectionRow>
 
-      {/* View Details button */}
+      {/* Compact View Details button */}
       <PanelSectionRow>
-        <ButtonItem layout="below" onClick={() => openExternalUrl(gameUrl)}>
-          View Details
-        </ButtonItem>
+        <div style={{ display: "flex", justifyContent: "center", padding: "0 16px" }}>
+          <ButtonItem layout="below" onClick={() => openExternalUrl(gameUrl)} style={{ width: "auto", minWidth: "120px" }}>
+            View Details
+          </ButtonItem>
+        </div>
       </PanelSectionRow>
     </>
   )
