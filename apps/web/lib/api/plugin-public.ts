@@ -39,7 +39,7 @@ export type PluginEntryRow = {
 
 export type PluginGameResponse = {
   game: { id: string; steamAppId: number | null; title: string; slug: string | null } | null
-  estFps: { avg: number; low: number | null; onePct: number | null; high: number | null; count: number } | null
+  estFps: { avg: number; low: number | null; onePct: number | null; high: number | null; count: number; tdpAvg: number | null } | null
   topEntries: ReturnType<typeof trimEntry>[]
   recentEntries: ReturnType<typeof trimEntry>[]
   error?: string
@@ -85,6 +85,9 @@ export async function buildPluginGameResponse(args: {
     onePct: entries.reduce<number | null>((m, e) => (m == null ? e.fpsOnePercentLow : Math.min(m, e.fpsOnePercentLow ?? m)), null),
     high: entries.reduce<number | null>((m, e) => (m == null ? e.fpsHigh : Math.max(m, e.fpsHigh ?? m)), null),
     count: entries.length,
+    tdpAvg: entries.length > 0
+      ? Math.round((entries.filter((e) => e.tdpWatts != null).reduce((a, b) => a + (b.tdpWatts ?? 0), 0) / Math.max(1, entries.filter((e) => e.tdpWatts != null).length)) * 10) / 10
+      : null,
   } : null)
   if (!estFps) {
     return { game: { ...args.game }, estFps: null, topEntries: [], recentEntries: [] }
@@ -215,6 +218,7 @@ export const pluginPublicRoutes = new Elysia({
           onePct: sql<number | null>`min(${performanceEntries.fpsOnePercentLow})`,
           high: sql<number | null>`max(${performanceEntries.fpsHigh})`,
           count: sql<number>`count(*)::int`,
+          tdpAvg: sql<number | null>`round(avg(${performanceEntries.tdpWatts})::numeric, 1)`,
         })
         .from(performanceEntries)
         .where(baseWhere)
@@ -225,7 +229,7 @@ export const pluginPublicRoutes = new Elysia({
         game,
         entries: topRows as unknown as PluginEntryRow[],
         recent: recentRows as unknown as PluginEntryRow[],
-        estFps: agg.avg ? { avg: agg.avg, low: agg.low, onePct: agg.onePct, high: agg.high, count: agg.count } : null,
+        estFps: agg.avg ? { avg: agg.avg, low: agg.low, onePct: agg.onePct, high: agg.high, count: agg.count, tdpAvg: agg.tdpAvg ?? null } : null,
       })
     },
     {
