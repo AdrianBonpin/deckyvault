@@ -109,8 +109,11 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
   }
 
   return (
-    <PanelSectionRow>
-      <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "4px 0", fontSize: "13px", overflow: "hidden", maxWidth: "100%", boxSizing: "border-box" }}>
+    <>
+      <style>{`
+        .deckyvault-lib-btn { width: auto !important; min-width: 0 !important; display: inline-block !important; }
+      `}</style>
+      <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "4px 0", fontSize: "13px", overflow: "hidden" }}>
         {/* Stats */}
         <span style={{ flex: "1 1 0", minWidth: 0, overflow: "hidden" }}>
           {data.estFps ? (
@@ -130,13 +133,11 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
             {detectedSlug ? detectedSlug : <span style={{ color: "#e0a030" }}>⚠ global</span>}
           </span>
         </span>
-        {/* View Details — compact, gamepad-navigable, constrained */}
-        <div style={{ flexShrink: 0, width: "110px", overflow: "hidden", boxSizing: "border-box" }}>
-          <DialogButtonPrimary onClick={() => openExternalUrl(gameUrl)}>
-            View Details
-          </DialogButtonPrimary>
-        </div>
+        {/* View Details — gamepad-navigable, CSS-constrained width */}
+        <DialogButtonPrimary className="deckyvault-lib-btn" onClick={() => openExternalUrl(gameUrl)}>
+          View Details
+        </DialogButtonPrimary>
       </div>
-    </PanelSectionRow>
+    </>
   )
 }
