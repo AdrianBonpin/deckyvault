@@ -110,9 +110,9 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
 
   return (
     <PanelSectionRow>
-      <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "4px 16px", fontSize: "13px" }}>
+      <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "4px 0", fontSize: "13px", overflow: "hidden", maxWidth: "100%", boxSizing: "border-box" }}>
         {/* Stats */}
-        <span style={{ flex: 1 }}>
+        <span style={{ flex: "1 1 0", minWidth: 0, overflow: "hidden" }}>
           {data.estFps ? (
             <span style={{ display: "inline-flex", flexWrap: "wrap", gap: "4px 8px" }}>
               <span><strong>{data.estFps.avg}</strong> <span style={{ opacity: 0.4 }}>avg</span></span>
@@ -130,8 +130,8 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
             {detectedSlug ? detectedSlug : <span style={{ color: "#e0a030" }}>⚠ global</span>}
           </span>
         </span>
-        {/* View Details — constrained width */}
-        <div style={{ flexShrink: 0, width: "130px" }}>
+        {/* View Details — compact, gamepad-navigable, constrained */}
+        <div style={{ flexShrink: 0, width: "110px", overflow: "hidden", boxSizing: "border-box" }}>
           <DialogButtonPrimary onClick={() => openExternalUrl(gameUrl)}>
             View Details
           </DialogButtonPrimary>
