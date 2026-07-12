@@ -94,42 +94,30 @@ export default function LibraryAppPanel({ appId, title, hardwareSlug, baseUrl }:
 
   return (
     <>
-      {/* Quick stats row */}
+      {/* Quick stats + device dropdown — single row */}
       <PanelSectionRow>
-        <div className={staticClasses.Text} style={{ padding: "4px 0", fontSize: "13px" }}>
-          {device && data.estFps ? (
-            <span style={{ display: "flex", flexWrap: "wrap", gap: "4px 12px" }}>
-              <span><strong>{data.estFps.avg}</strong> <span style={{ opacity: 0.4 }}>avg FPS</span></span>
+        <div className={staticClasses.Text} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "4px 0", fontSize: "13px" }}>
+          {data.estFps ? (
+            <span style={{ display: "flex", flexWrap: "wrap", gap: "4px 10px" }}>
+              <span><strong>{data.estFps.avg}</strong> <span style={{ opacity: 0.4 }}>avg</span></span>
               {data.estFps.onePct != null && <span><strong>{data.estFps.onePct}</strong> <span style={{ opacity: 0.4 }}>1% low</span></span>}
-              {data.estFps.low != null && <span><strong>{data.estFps.low}</strong> <span style={{ opacity: 0.4 }}>min</span></span>}
+              {data.estFps.low != null && <span><strong>{data.estFps.low}</strong> <span style={{ opacity: 0.4 }}>min</span></span>
               {data.estFps.high != null && <span><strong>{data.estFps.high}</strong> <span style={{ opacity: 0.4 }}>max</span></span>}
               {data.estFps.tdpAvg != null && <span><strong>{data.estFps.tdpAvg}W</strong> <span style={{ opacity: 0.4 }}>TDP</span></span>}
-              <span><strong>{data.estFps.count}</strong> <span style={{ opacity: 0.4 }}>entries</span></span>
+              <span style={{ opacity: 0.4 }}>({data.estFps.count})</span>
             </span>
           ) : (
-            <span style={{ opacity: 0.5, fontSize: "12px" }}>
-              {device
-                ? "No entries for this device yet"
-                : "Select a device to see estimated FPS"}
-            </span>
+            <span style={{ opacity: 0.4, fontSize: "12px" }}>No data yet</span>
           )}
+          <DropdownItem
+            rgOptions={deviceOptions}
+            selectedOption={device}
+            onChange={(opt) => setDevice(opt.data as string)}
+          />
+          <ButtonItem layout="below" onClick={() => Router.NavigateToExternalWeb(gameUrl)}>
+            ↗
+          </ButtonItem>
         </div>
-      </PanelSectionRow>
-
-      {/* Device dropdown */}
-      <PanelSectionRow>
-        <DropdownItem
-          rgOptions={deviceOptions}
-          selectedOption={device}
-          onChange={(opt) => setDevice(opt.data as string)}
-        />
-      </PanelSectionRow>
-
-      {/* Open on DeckyVault button */}
-      <PanelSectionRow>
-        <ButtonItem layout="below" onClick={() => Router.NavigateToExternalWeb(gameUrl)}>
-          View on DeckyVault
-        </ButtonItem>
       </PanelSectionRow>
     </>
   )
