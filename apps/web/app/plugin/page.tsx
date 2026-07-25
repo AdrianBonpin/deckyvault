@@ -80,7 +80,7 @@ const jsonLd = {
     name: "DeckyVault Plugin",
     applicationCategory: "UtilitiesApplication",
     operatingSystem: "SteamOS",
-    softwareVersion: "1.0.0",
+    softwareVersion: "1.1.0",
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
     description:
         "A Decky Loader plugin that records Steam Deck performance metrics (FPS, frame times, power draw) with MangoHud and uploads them to DeckyVault.",
