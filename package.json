@@ -1,7 +1,11 @@
 {
   "name": "deckyvault",
   "private": true,
-  "workspaces": ["apps/*", "packages/*", "plugins/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "plugins/*"
+  ],
   "scripts": {
     "dev": "bun run --filter @deckyvault/web dev",
     "build": "bun run --filter @deckyvault/web build",
@@ -20,12 +24,18 @@
     "plugin:release": "bun run --filter @deckyvault/plugin release",
     "plugin:deploy": "bun run --filter @deckyvault/plugin build && bash plugins/decky-vault/scripts/deploy.sh"
   },
-  "trustedDependencies": ["sharp", "unrs-resolver"],
+  "trustedDependencies": [
+    "sharp",
+    "unrs-resolver"
+  ],
   "overrides": {
     "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3"
+    "@types/react-dom": "19.2.3",
+    "@better-auth/core": "1.6.22",
+    "better-call": "1.3.7"
   },
   "dependencies": {
     "better-auth": "1.6.22"
-  }
+  },
+  "packageManager": "bun@1.3.14"
 }

@@ -106,8 +106,10 @@
     "unrs-resolver",
   ],
   "overrides": {
+    "@better-auth/core": "1.6.22",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "better-call": "1.3.7",
   },
   "packages": {
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
