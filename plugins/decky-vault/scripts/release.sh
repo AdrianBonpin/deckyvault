@@ -148,7 +148,7 @@ if tea release list -r "$REPO" -o simple 2>/dev/null | grep -q "^$TAG"; then
     --prerelease "$([[ "$PRERELEASE" -eq 1 ]] && echo true || echo false)" >/dev/null
   tea release assets create "$TAG" "$ZIP_PATH" --repo "$REPO" >/dev/null
 else
-  echo "› Creating Gitea release $TAG…"
+  echo "› Creating Gitea release ${TAG}…"
   tea release "${RELEASE_ARGS[@]}" --asset "$ZIP_PATH"
 fi
 
