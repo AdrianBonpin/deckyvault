@@ -185,7 +185,7 @@ const STEPS = [
             <>
                 Download{" "}
                 <a
-                    href="https://github.com/AdrianBonpin/deckyvault/releases"
+                    href="https://git.ranio.xyz/adrianbonpin/deckyvault/releases"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary hover:underline"
@@ -342,7 +342,7 @@ export function PluginPageClient() {
                         className="flex flex-col sm:flex-row gap-3 mt-2"
                     >
                         <a
-                            href="https://github.com/AdrianBonpin/deckyvault/releases"
+                            href="https://git.ranio.xyz/adrianbonpin/deckyvault/releases"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
@@ -594,7 +594,7 @@ export function PluginPageClient() {
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3">
                         <a
-                            href="https://github.com/AdrianBonpin/deckyvault/releases"
+                            href="https://git.ranio.xyz/adrianbonpin/deckyvault/releases"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
@@ -603,7 +603,7 @@ export function PluginPageClient() {
                             Download ZIP
                         </a>
                         <a
-                            href="https://github.com/AdrianBonpin/deckyvault"
+                            href="https://git.ranio.xyz/adrianbonpin/deckyvault"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border border-border text-text text-sm font-medium hover:border-primary/40 hover:text-primary transition-colors"

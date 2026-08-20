@@ -154,7 +154,7 @@ The Decky Loader plugin uses a dual architecture: a React/TypeScript frontend (r
 ### Installation
 
 ```bash
-git clone https://github.com/AdrianBonpin/deckyvault.git
+git clone https://git.ranio.xyz/adrianbonpin/deckyvault.git
 cd deckyvault
 bun install
 ```
@@ -349,9 +349,9 @@ deckyvault/
 
 Contributions are welcome. Here's how to get involved:
 
-1. **Report bugs** — [Open an issue](https://github.com/AdrianBonpin/deckyvault/issues) with steps to reproduce
+1. **Report bugs** — [Open an issue](https://git.ranio.xyz/adrianbonpin/deckyvault/issues) with steps to reproduce
 2. **Suggest features** — Describe the problem you're solving and your proposed approach
-3. **Submit code** — Fork the repo, create a branch, and [open a PR](https://github.com/AdrianBonpin/deckyvault/pulls)
+3. **Submit code** — Fork the repo, create a branch, and [open a PR](https://git.ranio.xyz/adrianbonpin/deckyvault/pulls)
 
 ### Guidelines
 

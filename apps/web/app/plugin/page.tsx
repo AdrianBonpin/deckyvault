@@ -86,7 +86,7 @@ const jsonLd = {
         "A Decky Loader plugin that records Steam Deck performance metrics (FPS, frame times, power draw) with MangoHud and uploads them to DeckyVault.",
     url: CANONICAL,
     downloadUrl:
-        "https://github.com/AdrianBonpin/deckyvault/releases",
+        "https://git.ranio.xyz/adrianbonpin/deckyvault/releases",
     author: {
         "@type": "Organization",
         name: "DeckyVault",

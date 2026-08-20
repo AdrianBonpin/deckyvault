@@ -38,7 +38,7 @@ export const metadata: Metadata = {
         "compatibility",
     ],
     authors: [
-        { name: "Adrian Bonpin", url: "https://github.com/AdrianBonpin" },
+        { name: "Adrian Bonpin", url: "https://git.ranio.xyz/adrianbonpin" },
     ],
     creator: "@adrianbonpin",
     openGraph: {

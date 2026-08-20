@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Create a GitHub release for the DeckyVault Decky plugin with the
-# installable ZIP attached.
+# Create a Gitea release (git.ranio.xyz/adrianbonpin/deckyvault) for the
+# DeckyVault Decky plugin with the installable ZIP attached.
 #
 # Usage:
 #   ./scripts/release.sh                 # uses version from package.json
@@ -9,7 +9,7 @@
 #   ./scripts/release.sh 1.1.0 --prerelease
 #
 # Prerequisites:
-#   - gh CLI installed and authenticated (gh auth login)
+#   - tea CLI installed and authenticated (tea login) for the gitea.ranio.xyz login
 #   - on the branch you want to tag (usually prod)
 #
 # What it does:
@@ -108,7 +108,7 @@ Record Steam Deck performance metrics with MangoHud and upload them straight to 
 
 ### From URL
 1. Decky → Plugin Browser → **⋮** → **Install Plugin from URL**
-2. Paste: \`https://github.com/AdrianBonpin/deckyvault/releases/download/${TAG}/${ZIP_NAME}\`
+2. Paste: \`https://git.ranio.xyz/adrianbonpin/deckyvault/releases/download/${TAG}/${ZIP_NAME}\`
 
 ## Setup
 1. Open the plugin (QAM → DeckyVault) → **Account** → **Pair with Phone**
@@ -123,12 +123,15 @@ Record Steam Deck performance metrics with MangoHud and upload them straight to 
 Full guide: https://deckyvault.xyz/plugin
 EOF
 
-# ── Create release ───────────────────────────────────────────
+# ── Create release (Gitea via tea) ───────────────────────────
+REPO="adrianbonpin/deckyvault"
+
 RELEASE_ARGS=(
-  "$TAG"
-  "$ZIP_PATH"
+  create
+  --repo "$REPO"
+  --tag "$TAG"
   --title "DeckyVault Plugin v${VERSION}"
-  --notes-file "$NOTES_FILE"
+  --note-file "$NOTES_FILE"
   --target "$(git rev-parse --abbrev-ref HEAD)"
 )
 
@@ -136,18 +139,22 @@ if [[ "$PRERELEASE" -eq 1 ]]; then
   RELEASE_ARGS+=(--prerelease)
 fi
 
-if gh release view "$TAG" >/dev/null 2>&1; then
-  echo "› Release $TAG exists — updating asset + notes"
-  gh release upload "$TAG" "$ZIP_PATH" --clobber >/dev/null
-  gh release edit "$TAG" --title "DeckyVault Plugin v${VERSION}" --notes-file "$NOTES_FILE" >/dev/null
+if tea release list -r "$REPO" -o simple 2>/dev/null | grep -q "^$TAG"; then
+  echo "› Release $TAG exists — updating notes + asset"
+  tea release edit "$TAG" --repo "$REPO" \
+    --title "DeckyVault Plugin v${VERSION}" \
+    --note "$(cat "$NOTES_FILE")" \
+    --draft false \
+    --prerelease "$([[ "$PRERELEASE" -eq 1 ]] && echo true || echo false)" >/dev/null
+  tea release assets create "$TAG" "$ZIP_PATH" --repo "$REPO" >/dev/null
 else
-  echo "› Creating GitHub release $TAG…"
-  gh release create "${RELEASE_ARGS[@]}"
+  echo "› Creating Gitea release $TAG…"
+  tea release "${RELEASE_ARGS[@]}" --asset "$ZIP_PATH"
 fi
 
 echo
 echo "✓ Released v${VERSION}"
-echo "  Release:  https://github.com/AdrianBonpin/deckyvault/releases/tag/${TAG}"
-echo "  ZIP URL:  https://github.com/AdrianBonpin/deckyvault/releases/download/${TAG}/${ZIP_NAME}"
+echo "  Release:  https://git.ranio.xyz/adrianbonpin/deckyvault/releases/tag/${TAG}"
+echo "  ZIP URL:  https://git.ranio.xyz/adrianbonpin/deckyvault/releases/download/${TAG}/${ZIP_NAME}"
 echo
 echo "Use the ZIP URL above with Decky's 'Install Plugin from URL'."

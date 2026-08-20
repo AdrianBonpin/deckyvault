@@ -512,7 +512,7 @@ export default function Landing() {
                     <span className='opacity-60'>2026 DeckyVault.</span>
                     <Link
                         title='Visit our Github Repository'
-                        href='https://github.com/AdrianBonpin/deckyvault'
+                        href='https://git.ranio.xyz/adrianbonpin/deckyvault'
                         className='text-accent opacity-60 hover:opacity-100 transition-opacity cursor-pointer'
                     >
                         Github.
@@ -596,7 +596,7 @@ export default function Landing() {
                         url: "https://deckyvault.xyz",
                         logo: "https://deckyvault.xyz/icon.png",
                         sameAs: [
-                            "https://github.com/AdrianBonpin/deckyvault",
+                            "https://git.ranio.xyz/adrianbonpin/deckyvault",
                         ],
                     }),
                 }}
